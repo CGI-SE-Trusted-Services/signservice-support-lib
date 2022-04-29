@@ -81,6 +81,11 @@ public class SupportAPIConfiguration {
     private Map<String, List<X509Certificate>> encryptedSignMessageRecipients = new HashMap<>();
 
     /**
+     * Map containing mappings between authentication contexts and level of assurance.
+     */
+    private Map<String, Map> authContextMappings = new HashMap<>();
+
+    /**
      * Message source to use for internationalization of messages or null to use
      * default language.
      * Default value: null
@@ -157,6 +162,14 @@ public class SupportAPIConfiguration {
 
     public void setEncryptedSignMessageRecipients(Map<String, List<X509Certificate>> encryptedSignMessageRecipients) {
         this.encryptedSignMessageRecipients = encryptedSignMessageRecipients;
+    }
+
+    public Map<String, Map> getAuthContextMappings() {
+        return authContextMappings;
+    }
+
+    public void setAuthContextMappings(Map<String, Map> authContextMappings) {
+        this.authContextMappings = authContextMappings;
     }
 
     public MessageSource getMessageSource() {

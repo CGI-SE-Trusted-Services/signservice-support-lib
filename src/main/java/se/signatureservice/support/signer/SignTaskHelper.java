@@ -16,8 +16,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
@@ -25,17 +24,25 @@ import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.encoders.Base64;
 import org.certificateservices.messages.MessageProcessingException;
+import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
+import org.certificateservices.messages.dss1.core.jaxb.SignResponse;
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.AdESObjectType;
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.SignResponseExtensionType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.SignTaskDataType;
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.SignTasksType;
+import org.certificateservices.messages.utils.CertUtils;
 import org.certificateservices.messages.utils.DefaultSystemTime;
 import org.certificateservices.messages.utils.SystemTime;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import se.signatureservice.support.common.InvalidArgumentException;
 import se.signatureservice.support.common.keygen.SignAlgorithm;
 
 import javax.xml.bind.DatatypeConverter;
+import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,10 +58,9 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Helper class that contains functionality needed when generating, preparing
@@ -252,6 +258,28 @@ public class SignTaskHelper {
     }
 
     /**
+     * Retrieve Xades signing time from a sign task
+     * @param signTask Sign task to retrieve xades signing time from
+     * @return Signing time in xades object or null if not found
+     */
+    public static Date getXadesSigningTime(SignTaskDataType signTask) throws ParserConfigurationException, IOException, SAXException {
+        Date signingTime = null;
+
+        if(signTask == null || signTask.getAdESObject() == null || signTask.getAdESObject().getAdESObjectBytes() == null){
+            return null;
+        }
+
+        Document xadesObject = getSignedInfoDocumentBuilder().parse(new ByteArrayInputStream(signTask.getAdESObject().getAdESObjectBytes()));
+        NodeList nodeList = xadesObject.getElementsByTagNameNS(NS_ETSI_1_3_2, XADES_SIGNING_TIME);
+        if(nodeList.getLength() > 0){
+            Element element = (Element)nodeList.item(0);
+            signingTime = se.signatureservice.support.utils.DateUtils.parseXMLDate(element.getFirstChild().getTextContent());
+        }
+
+        return signingTime;
+    }
+
+    /**
      * Create new reference to XAdES SignedProperties and incorporate it into given SignedInfo.
      *
      * @param signedInfo SignedInfo document to incorporate reference into
@@ -390,5 +418,83 @@ public class SignTaskHelper {
             return null;
         }
         return deterministicId;
+    }
+
+    /**
+     * Check if signature type in signtask is XML/Xades
+     * @param signTask Signtask to check
+     * @return true if xml/xades otherwise false
+     */
+    public static boolean isXadesSignTask(SignTaskDataType signTask){
+        return signTask.getSigType().equals(SigType.XML.name()) && signTask.getAdESType() != null;
+    }
+
+    /**
+     * Check if signature type in signtask is CMS/Cades
+     * @param signTask Signtask to check
+     * @return true if cms/cades otherwise false
+     */
+    public static boolean isCadesSignTask(SignTaskDataType signTask){
+        return signTask.getSigType().equals(SigType.CMS.name()) && signTask.getAdESType() != null;
+    }
+
+    /**
+     * Check if signature type in signtask is PDF/Pades
+     * @param signTask Signtask to check
+     * @return true if pdf/pades otherwise false
+     */
+    public static boolean isPadesSignTask(SignTaskDataType signTask){
+        return signTask.getSigType().equals(SigType.PDF.name()) && signTask.getAdESType() != null;
+    }
+
+    /**
+     * Retrieve list of sign tasks available within a given sign response.
+     *
+     * @param signResponse Sign response to retrieve sign tasks from
+     * @return List of sign tasks within sign request
+     * @throws InvalidArgumentException If no sign tasks could be found in sign request.
+     */
+    public static List<SignTaskDataType> getSignTasks(SignResponse signResponse) throws InvalidArgumentException {
+        if(signResponse != null && signResponse.getSignatureObject() != null && signResponse.getSignatureObject().getOther() != null){
+            List<Object> anyObjects = signResponse.getSignatureObject().getOther().getAny();
+            if(anyObjects != null) {
+                for(Object anyObject : anyObjects) {
+                    if(anyObject instanceof JAXBElement) {
+                        JAXBElement e = (JAXBElement)anyObject;
+                        if(e.getValue() instanceof SignTasksType) {
+                            SignTasksType s = (SignTasksType)e.getValue();
+                            return s.getSignTaskData();
+                        }
+                    }
+                }
+            }
+        }
+
+        throw new InvalidArgumentException("Error no SignTasks found in response.");
+    }
+
+    /**
+     * Retrieve list of certificates that builds up the signature certificate chain
+     * for a given signature response.
+     * @param signResponse Sogm response to retrieve certificate chain from
+     * @return List of certificates that builds the signing certificate chain for the given sign response
+     */
+    public static List<X509Certificate> getSignatureCertificateChain(SignResponse signResponse) throws CertificateException {
+        List<X509Certificate> chain = new ArrayList<>();
+        if(signResponse != null && signResponse.getOptionalOutputs() != null) {
+            for (Object o : signResponse.getOptionalOutputs().getAny()) {
+                if (o instanceof JAXBElement) {
+                    JAXBElement e = (JAXBElement) o;
+                    if (e.getValue() instanceof SignResponseExtensionType) {
+                        SignResponseExtensionType ext = (SignResponseExtensionType) e.getValue();
+
+                        for(byte[] buf : ext.getSignatureCertificateChain().getX509Certificate()){
+                            chain.add(CertUtils.getCertfromByteArray(buf));
+                        }
+                    }
+                }
+            }
+        }
+        return chain;
     }
 }

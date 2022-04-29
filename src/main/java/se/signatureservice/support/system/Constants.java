@@ -74,6 +74,10 @@ public class Constants {
     public final static String DEFAULT_IMAGE_PATH = "/visibleSignatures/CGI_Logon.png";
     public final static String VISIBLE_SIGNATURE_REQUEST_TIME = "visible_signature_request_time";
 
+    public final static String DEFAULT_USER_ID_ATTRIBUTE_MAPPING = "urn:oid:1.2.752.29.4.13";
+    public final static Integer DEFAULT_REQUEST_VALIDITY_IN_MINUTES = 5;
+    public final static Integer DEFAULT_REQUEST_VALIDITY_OVERLAP_IN_MINUTES = 2;
+
     /**
      * Indicates a value as not set.
      */

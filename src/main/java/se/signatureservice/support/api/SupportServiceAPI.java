@@ -54,17 +54,32 @@ public interface SupportServiceAPI {
     ) throws ClientErrorException, ServerErrorException;
 
     /**
-     * Process a signature response along with the transaction state in order to compile
-     * a complete signature response containing signed document(s).
+     * Process sign response from central signature service and create a complete signature response.
      *
+     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
      * @param signResponse Signature response to process.
-     * @param transactionState Related transaction state given by the initial call to generateSignRequest.
+     * @param transactionId Transaction ID for signature to process
      * @return CompleteSignatureResponse that contains the signed document(s).
      * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     CompleteSignatureResponse completeSignature(
+            SupportConfiguration profileConfig,
             String signResponse,
-            byte[] transactionState
+            String transactionId
+    ) throws ClientErrorException, ServerErrorException;
+
+    /**
+     * Verify a signed document.
+     *
+     * @param profileConfig Profile configuration containing various settings to control how the document is verified.
+     * @param signedDocument Signed document to verify.
+     * @return VerifyDocumentResponse that contains the result of the verification.
+     * @throws ClientErrorException If an error occurred when verifying the document due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when verifying the document.
+     */
+    VerifyDocumentResponse verifyDocument(
+            SupportConfiguration profileConfig,
+            Document signedDocument
     ) throws ClientErrorException, ServerErrorException;
 }

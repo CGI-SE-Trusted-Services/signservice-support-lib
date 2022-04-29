@@ -10,7 +10,7 @@
  *  See terms of license at gnu.org.                                     *
  *                                                                       *
  *************************************************************************/
-package se.signatureservice.support.models;
+package se.signatureservice.support.system;
 
 import se.signatureservice.support.api.v2.DocumentRequests;
 import se.signatureservice.support.api.v2.User;

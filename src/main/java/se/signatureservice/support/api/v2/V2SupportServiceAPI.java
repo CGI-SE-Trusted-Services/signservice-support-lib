@@ -12,17 +12,12 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
-import com.sun.security.ntlm.Client;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
-import eu.europa.esig.dss.enumerations.SignatureLevel;
-import eu.europa.esig.dss.enumerations.SignaturePackaging;
-import eu.europa.esig.dss.enumerations.SignerTextPosition;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.model.MimeType;
+import eu.europa.esig.dss.enumerations.*;
+import eu.europa.esig.dss.model.*;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
@@ -32,6 +27,7 @@ import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -43,13 +39,17 @@ import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
+import org.certificateservices.messages.authcontsaci1.AuthContSaciMessageParser;
+import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
 import org.certificateservices.messages.csmessages.manager.MessageSecurityProviderManager;
+import org.certificateservices.messages.dss1.core.jaxb.SignResponse;
 import org.certificateservices.messages.saml2.assertion.jaxb.*;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.AdESType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*;
+import org.certificateservices.messages.utils.CertUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -58,12 +58,12 @@ import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.common.InternalErrorException;
+import se.signatureservice.support.common.InternalServerException;
 import se.signatureservice.support.common.InvalidArgumentException;
 import se.signatureservice.support.common.cache.CacheProvider;
 import se.signatureservice.support.common.cache.SimpleCacheProvider;
 import se.signatureservice.support.common.cache.MetaData;
-import se.signatureservice.support.models.PreparedSignatureInfo;
-import se.signatureservice.support.models.TransactionState;
+import se.signatureservice.support.system.TransactionState;
 import se.signatureservice.support.signer.SignTaskHelper;
 import se.signatureservice.support.system.Constants;
 import se.signatureservice.support.system.SupportAPIConfiguration;
@@ -107,6 +107,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private final Integer transactionTimeToLive = Constants.DEFAULT_TRANSACTION_TTL;
 
     private SweEID2DSSExtensionsMessageParser sweEID2DSSExtensionsMessageParser;
+    private AuthContSaciMessageParser authContSaciMessageParser;
     private org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory sweEid2ObjectFactory;
     private org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
@@ -134,6 +135,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             sweEid2ObjectFactory = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
             saml2ObjectFactory = new org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory();
             sweEID2DSSExtensionsMessageParser = new SweEID2DSSExtensionsMessageParser();
+            authContSaciMessageParser = new AuthContSaciMessageParser();
             sweEID2DSSExtensionsMessageParser.init(apiConfig.getMessageSecurityProvider(), null);
         } catch(MessageProcessingException e){
             log.error("Failed to initialize message security provider", e);
@@ -213,33 +215,94 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Process a signature response along with the transaction state in order to compile
-     * a complete signature response containing signed document(s).
+     * Process sign response from central signature service and create a complete signature response.
      *
-     * @param signResponse     Signature response to process.
-     * @param transactionState Related transaction state given by the initial call to generateSignRequest.
+     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
+     * @param signResponse Signature response to process.
+     * @param transactionId Transaction ID for signature to process
      * @return CompleteSignatureResponse that contains the signed document(s).
      * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public CompleteSignatureResponse completeSignature(String signResponse, byte[] transactionState) throws ClientErrorException, ServerErrorException {
+    public CompleteSignatureResponse completeSignature(SupportConfiguration profileConfig, String signResponse, String transactionId) throws ClientErrorException, ServerErrorException {
+        long operationStart = System.currentTimeMillis();
+        CompleteSignatureResponse signatureResponse = null;
+        X509Certificate[] signatureCertificateChain;
 
+        try {
+            TransactionState transactionState = fetchTransactionState(transactionId);
+            if (transactionState == null) {
+                log.error("Could not find any transaction related to transaction ID " + transactionId);
+                throw (ClientErrorException)ErrorCode.UNKNOWN_TRANSACTION.toException("Could not find transaction", messageSource);
+            }
+
+            if (transactionState.isCompleted()) {
+                log.error("Transaction has already been completed (TransactionID: " + transactionId + ")");
+                throw (ClientErrorException)ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Transaction has already been completed", messageSource);
+            }
+
+            ContextMessageSecurityProvider.Context context = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, transactionState.getProfile());
+            SignResponse response = (SignResponse)synchronizedParseMessage(context, Base64.decode(signResponse.getBytes("UTF-8")), true);
+
+            if(!response.getResult().getResultMajor().contains("Success")){
+                throw (ServerErrorException)ErrorCode.SIGN_RESPONSE_FAILED.toException("Sign response failed with error message: " + response.getResult().getResultMessage().getValue());
+            }
+            if(!response.getRequestID().equals(transactionId)){
+                throw (ClientErrorException)ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Sign response transaction ID does not match the sign request transaction ID.");
+            }
+
+            List<SignTaskDataType> signTasks = synchronizedGetSignTasks(response);
+            signatureCertificateChain = SignTaskHelper.getSignatureCertificateChain(response).toArray(new X509Certificate[0]);
+
+            List<Document> signedDocuments = new ArrayList<>();
+            for(SignTaskDataType signTask : signTasks){
+                // TODO: handle references
+                DocumentSigningRequest relatedDocument = null;
+                for(Object object : transactionState.getDocuments().getDocuments()){
+                    if(object instanceof DocumentSigningRequest){
+                        DocumentSigningRequest document = (DocumentSigningRequest)object;
+                        if(document.referenceId.equals(signTask.getSignTaskId())){
+                            relatedDocument = document;
+                        }
+                    }
+                }
+                if (relatedDocument != null) {
+                    // TODO: handle returnReference
+                    signedDocuments.add(signDocument(relatedDocument, signTask, signatureCertificateChain, transactionState, profileConfig));
+                }
+            }
+
+            signatureResponse = new CompleteSignatureResponse();
+            CompleteSignatureResponse.DocumentResponses documentResponses = new CompleteSignatureResponse.DocumentResponses();
+            documentResponses.documents = new ArrayList<>();
+            documentResponses.documents.addAll(signedDocuments);
+            signatureResponse.setDocuments(documentResponses);
+        } catch(Exception e){
+            if(e instanceof ServerErrorException){
+                throw (ServerErrorException)e;
+            } else if(e instanceof ClientErrorException){
+                throw (ClientErrorException)e;
+            } else {
+                throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to process sign response: " + e.getMessage());
+            }
+        }
         return null;
     }
 
     /**
-     * Serialize transaction state object into byte array.
+     * Verify a signed document.
      *
-     * @param transactionState Transaction state object to serialize.
-     * @return Serialized transactioon state as byte array.
-     * @throws IOException If serialization failed.
+     * @param profileConfig  Profile configuration containing various settings to control how the document is verified.
+     * @param signedDocument Signed document to verify.
+     * @return VerifyDocumentResponse that contains the result of the verification.
+     * @throws ClientErrorException If an error occurred when verifying the document due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when verifying the document.
      */
-    private byte[] serializeTransactionState(TransactionState transactionState) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(transactionState);
-        return baos.toByteArray();
+    @Override
+    public VerifyDocumentResponse verifyDocument(SupportConfiguration profileConfig, Document signedDocument) throws ClientErrorException, ServerErrorException {
+        // TODO: Implement verification.
+        return null;
     }
 
     /**
@@ -312,11 +375,184 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return new String(Base64.encode(signRequest), "UTF-8");
     }
 
+    /**
+     * Apply signature onto a document to create a valid signed document to include in response.
+     *
+     * @param document Original document to apply signature upon.
+     * @param signTask Sign task containing generated signature information.
+     * @param signatureCertificateChain Signature certificate trust chain.
+     * @param relatedTransaction Transaction that is related to the document to sign
+     * @param config Configuration to use.
+     * @return Signed document according to given parameters.
+     */
+    private synchronized Document signDocument(DocumentSigningRequest document, SignTaskDataType signTask, X509Certificate[] signatureCertificateChain,
+                          TransactionState relatedTransaction, SupportConfiguration config) throws ClientErrorException, ServerErrorException, MessageContentException, IOException, MessageProcessingException, ParserConfigurationException, SAXException {
+        Document signedDocument = null;
+
+        if(document == null) {
+            throw (ClientErrorException)ErrorCode.INVALID_DOCUMENT.toException("Document to sign must be specified");
+        }
+
+        if(signTask == null){
+            throw (ClientErrorException)ErrorCode.INVALID_SIGN_TASK.toException("Sign task is null, it must be specified");
+        }
+
+        if(signatureCertificateChain == null || signatureCertificateChain.length == 0) {
+            throw (ServerErrorException)ErrorCode.INVALID_CERTIFICATE_CHAIN.toException("Signature certificate chain missing or empty");
+        }
+
+        SignatureForm signatureForm = getSignatureForm(signTask);
+        if(signatureForm == null){
+            throw (ClientErrorException)ErrorCode.INVALID_SIGN_TASK.toException("Sign task contains invalid or unsupported signature algorithm (${signTask.sigType})");
+        }
+
+        try {
+            CertificateToken signatureToken = new CertificateToken(signatureCertificateChain[0]);
+            SAMLAuthContextType authContext = SupportLibraryUtils.getAuthContextFromCertificate(authContSaciMessageParser, signatureCertificateChain[0]);
+            List<CertificateToken> signatureTokenChain = new ArrayList<>();
+
+            for(X509Certificate cert : signatureCertificateChain){
+                signatureTokenChain.add(new CertificateToken(cert));
+            }
+
+            DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(document);
+            SigType sigType = SigType.valueOf(getSigTypeFromMimeType(document.getType()));
+            AbstractSignatureParameters signatureParameters = getSignatureParameters(signTask, sigType, signatureToken, signatureTokenChain, document, relatedTransaction, config);
+            SignatureValue signatureValue = new SignatureValue(SignatureAlgorithm.forXML(signTask.getBase64Signature().getType()), signTask.getBase64Signature().getValue());
+
+            DSSDocument dssSignedDocument = null;
+            switch(sigType) {
+                case XML:
+                    XAdESSignatureParameters xAdESParameters = (XAdESSignatureParameters)signatureParameters;
+                    xAdESParameters.setSignedAdESObject(signTask.getAdESObject().getAdESObjectBytes());
+                    dssSignedDocument = xAdESService.signDocument(dssDocument, (XAdESSignatureParameters)signatureParameters, signatureValue);
+                    break;
+                case PDF:
+                    PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters)signatureParameters;
+                    boolean validAttributes = validateVisibleSignatureAttributesFromCache(relatedTransaction.getTransactionId());
+                    pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
+                    if (config.isEnableVisibleSignature()) {
+                        if (validAttributes) {
+                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), relatedTransaction.getTransactionId(), null);
+                        } else {
+                            log.warn("Visible signatures are enabled in configuration (enableVisibleSignature) but required signature attributes are missing. The following attributes are required: " +
+                                    AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_X + ", " +
+                                    AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_Y + ", " +
+                                    AvailableSignatureAttributes.VISIBLE_SIGNATURE_WIDTH + ", " +
+                                    AvailableSignatureAttributes.VISIBLE_SIGNATURE_HEIGHT);
+                        }
+                    }
+                    pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
+                    dssSignedDocument = pAdESService.signDocument(dssDocument, pAdESParameters, signatureValue);
+                    break;
+                case CMS:
+                    dssSignedDocument = cAdESService.signDocument(dssDocument, (CAdESSignatureParameters)signatureParameters, signatureValue);
+                    break;
+                default:
+                    break;
+            }
+
+            if(dssSignedDocument != null) {
+                String signerId = SupportLibraryUtils.getUserIdFromAuthContext(authContext, config);
+                if(signerId == null){
+                    signerId = signatureToken.getSubject().getPrincipal().getName();
+                }
+
+                String displayName = SupportLibraryUtils.getDisplayNameFromAuthContext(authContext);
+                if(displayName == null){
+                    displayName = CertUtils.getPartFromDN(signatureToken.getSubject().getPrincipal().getName(), "CN");
+                }
+
+                Signature signature = new Signature();
+                signature.signerCertificate = signatureToken.getEncoded();
+                signature.validFrom = signatureToken.getCertificate().getNotBefore();
+                signature.validTo = signatureToken.getCertificate().getNotAfter();
+                signature.signingDate = signatureParameters.bLevel().getSigningDate();
+                signature.setSignerId(signerId);
+                signature.setSignerDisplayName(displayName);
+                signature.setIssuerId(signatureToken.getIssuerX500Principal().getName());
+                signature.signingAlgorithm = SignatureAlgorithm.forXML(signTask.getBase64Signature().getType()).toString();
+                signature.levelOfAssurance = SupportLibraryUtils.getLevelOfAssuranceFromAuthContext(apiConfig, authContext);
+
+                signedDocument = new Document();
+                signedDocument.setName(document.getName());
+                signedDocument.setType(document.getType());
+                signedDocument.setReferenceId(document.getReferenceId());
+                signedDocument.setSignatures(new Signatures());
+                signedDocument.getSignatures().getSigner().add(signature);
+                signedDocument.data = IOUtils.toByteArray(dssSignedDocument.openStream());
+            }
+
+            if(config.isEnableAutomaticValidation()){
+                try {
+                    VerifyDocumentResponse validationInfo = verifyDocument(config, signedDocument);
+                    signedDocument.setValidationInfo(validationInfo);
+                } catch(Exception e){
+                    log.error("Error while performing automatic validation of document: " + e.getMessage() + ")");
+                }
+            }
+
+        } catch(DSSException | InvalidArgumentException | InternalErrorException | InternalServerException e){
+            throw (ServerErrorException)ErrorCode.SIGN_RESPONSE_FAILED.toException("Error while signing document: " + e.getMessage() + ")");
+        }
+
+        return signedDocument;
+    }
+
+    /**
+     * Parse and deserialize message.
+     *
+     * @param context Related context.
+     * @param message Message content to parse.
+     * @param requireSignature If message signature is expected and required.
+     * @return Parsed and deserialized message.
+     * @throws MessageContentException If error occurred when parsing the message content.
+     * @throws MessageProcessingException If error occurred when processing the message.
+     */
+    private synchronized Object synchronizedParseMessage(org.certificateservices.messages.ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException {
+        return sweEID2DSSExtensionsMessageParser.parseMessage(context, message, requireSignature);
+    }
+
+    /**
+     * Get list of sign tasks within a given signature response.
+     *
+     * @param response Signature response to read sign tasks from.
+     * @return List of sign tasks in given sign response.
+     */
+    private synchronized List<SignTaskDataType> synchronizedGetSignTasks(SignResponse response) throws InvalidArgumentException {
+        return SignTaskHelper.getSignTasks(response);
+    }
+
+    /**
+     * Create NameIDType instance.
+     *
+     * @param value Value of instance.
+     * @param format Format of instance.
+     * @return NameIDType instance based on given parameters.
+     */
     private NameIDType createNameIDType(String value, String format){
         NameIDType nameIDType = new NameIDType();
         nameIDType.setValue(value);
         nameIDType.setFormat(format);
         return nameIDType;
+    }
+
+    /**
+     * Get signature form for a given sign task
+     *
+     * @param signTask Sign task to get signature form for
+     * @return Signature form of given sign task
+     */
+    private SignatureForm getSignatureForm(SignTaskDataType signTask) {
+        if(SignTaskHelper.isXadesSignTask(signTask)) {
+            return SignatureForm.XAdES;
+        } else if(SignTaskHelper.isCadesSignTask(signTask)) {
+            return SignatureForm.CAdES;
+        } else if(SignTaskHelper.isPadesSignTask(signTask)) {
+            return SignatureForm.PAdES;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -364,6 +600,19 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
+     * Method to valida the cached signatureAttributes that contains all required attributes
+     */
+    protected boolean validateVisibleSignatureAttributesFromCache(String transactionId) throws InvalidArgumentException, IOException, InternalErrorException {
+        if (cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X) != null &&
+                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y) != null &&
+                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH) != null &&
+                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Generate a MappedAttributeType containing a requested attribute used to represent
      * requests for subject attributes in a signer certificate that is associated with the signer
      * of the generated signature as a result of the sign request.
@@ -385,10 +634,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             requestedAttribute = new MappedAttributeType();
             requestedAttribute.setCertAttributeRef((String)parameters.get("certAttributeRef"));
             requestedAttribute.setFriendlyName(friendlyName);
-            requestedAttribute.setRequired((boolean)parameters.get("required"));
+            requestedAttribute.setRequired(Boolean.parseBoolean((String)parameters.get("required")));
             requestedAttribute.setCertNameType((String)parameters.get("certNameType"));
         } catch(Exception e){
-            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Invalid parameter specified under profile: " + profile + ": " + e.getMessage());
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Invalid parameter specified in profile configuration: " + e.getMessage());
         }
 
         if(parameters.get("samlAttributeName") instanceof String){
@@ -627,13 +876,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Get signature parameters to use when creating request, depending on signature type and configuration
+     * Get signature parameters shared by both request and response flow.
      *
      * @param sigType Signature type to get parameters for.
      * @param config Configuration to use.
-     * @return Signature parameters to use when creating request
+     * @return Base signature parameters to use when creating requests and responses.
      */
-    protected AbstractSignatureParameters getSignatureParameters(SigType sigType, SupportConfiguration config) throws ClientErrorException {
+    AbstractSignatureParameters getBaseSignatureParameters(SigType sigType, SupportConfiguration config) throws ClientErrorException {
         AbstractSignatureParameters parameters;
         switch(sigType){
             case CMS:
@@ -661,11 +910,48 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             default:
                 throw (ClientErrorException)ErrorCode.UNSUPPORTED_SIGNATURE_TYPE.toException("Signature type not supported (" + sigType.name() + ")");
         }
+        return parameters;
+    }
 
+    /**
+     * Get signature parameters to use when creating request, depending on signature type and configuration
+     *
+     * @param sigType Signature type to get parameters for.
+     * @param config Configuration to use.
+     * @return Signature parameters to use when creating request
+     */
+    protected AbstractSignatureParameters getSignatureParameters(SigType sigType, SupportConfiguration config) throws ClientErrorException {
+        AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.bLevel().setSigningDate(DateUtils.round(new Date(), Calendar.SECOND));
         parameters.setEncryptionAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getEncryptionAlgorithm());
         parameters.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
+        return parameters;
+    }
+
+    /**
+     * Get signature parameters to use when creating response, depending on signature type and configuration
+     *
+     * @param sigType Signature type to get parameters for.
+     * @param signatureToken Signature token that was used when generating the signature
+     * @param signatureTokenChain Signature token trust chain
+     * @param relatedDocument Related document to get parameters for
+     * @param relatedTransaction Related transaction containing the document to get parameters for
+     * @param config Configuration to use.
+     * @return Signature parameters to use when creating response.
+     */
+    private AbstractSignatureParameters getSignatureParameters(SignTaskDataType signTask, SigType sigType, CertificateToken signatureToken, List<CertificateToken> signatureTokenChain,
+                                                               DocumentSigningRequest relatedDocument, TransactionState relatedTransaction, SupportConfiguration config) throws ClientErrorException, ParserConfigurationException, IOException, SAXException {
+        AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
+        parameters.setSigningCertificate(signatureToken);
+        parameters.setCertificateChain(signatureTokenChain);
+        parameters.setSignedData(signTask.getToBeSignedBytes());
+
+        if(sigType == SigType.XML && relatedTransaction.getSigningTime().get(relatedDocument.referenceId) == null){
+            parameters.bLevel().setSigningDate(SignTaskHelper.getXadesSigningTime(signTask));
+        } else {
+            parameters.bLevel().setSigningDate(relatedTransaction.getSigningTime().get(relatedDocument.referenceId));
+        }
 
         return parameters;
     }
@@ -1203,7 +1489,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param recipients Recipients of encrypted sign messages.
          * @return Updated builder.
          */
-        public Builder signMessageRecipients(String authenticationServiceId, List<X509Certificate> recipients){
+        public Builder addSignMessageRecipients(String authenticationServiceId, List<X509Certificate> recipients){
             if(!config.getEncryptedSignMessageRecipients().containsKey(authenticationServiceId)){
                 config.getEncryptedSignMessageRecipients().put(authenticationServiceId, new ArrayList<>());
             }
@@ -1218,11 +1504,35 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param recipient Recipient of encrypted sign messages.
          * @return Updated builder.
          */
-        public Builder signMessageRecipient(String authenticationServiceId, X509Certificate recipient){
+        public Builder addSignMessageRecipient(String authenticationServiceId, X509Certificate recipient){
             if(!config.getEncryptedSignMessageRecipients().containsKey(authenticationServiceId)){
                 config.getEncryptedSignMessageRecipients().put(authenticationServiceId, new ArrayList<>());
             }
             config.getEncryptedSignMessageRecipients().get(authenticationServiceId).add(recipient);
+            return this;
+        }
+
+        /**
+         * Add mapping between authentication context and level of assurance.
+         * Ex. name = softwarePKI
+         *     context = urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI
+         *     loa = http://id.elegnamnden.se/loa/1.0/loa3
+         * @param name Display name of mapping.
+         * @param context Authentication context identifier.
+         * @param loa Level of assurance identifier.
+         * @return Updated builder.
+         */
+        public Builder addAuthContextMapping(String name, String context, String loa){
+            Map<String,Map> mappings = config.getAuthContextMappings();
+            if(mappings == null){
+                mappings = new HashMap<>();
+            }
+            Map<String,String> entry = new HashMap<>();
+            entry.put("context", context);
+            entry.put("loa", loa);
+            mappings.put(name, entry);
+
+            config.setAuthContextMappings(mappings);
             return this;
         }
 
@@ -1239,10 +1549,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     public static void main(String args[]) throws ClientErrorException, ServerErrorException, IOException, MessageProcessingException {
         // 1) Create a message security provider.
         MessageSecurityProvider messageSecurityProvider = SupportLibraryUtils.createSimpleMessageSecurityProvider(
-            "/home/agerbergt/git/signservice/signservice-support/src/test/resources/keystores/rsasigner.p12",
-            "FKBA9a",
-            "702221c823a70a80;cn=lab mock issuing ca,o=lab,c=se",
-            "/home/agerbergt/git/signservice/signservice-support/src/test/resources/keystores/validation-truststore.jks",
+            "signservice-support-lib/src/test/resources/keystore.jks",
+            "TSWCeC",
+            "8af76eae8e1a201;cn=mock issuing ca,o=mockasiner ab,c=se",
+            "signservice-support-lib/src/test/resources/truststore.jks",
             "foo123"
         );
 
@@ -1250,21 +1560,31 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
                 .messageSecurityProvider(messageSecurityProvider)
                 .cacheProvider(new SimpleCacheProvider())
+                .addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3")
                 .build();
 
         // 3) Create user that is going to sign the document(s)
         User user = new User.Builder()
-                .userId("190101010001")
+                .userId("195207092072")
                 .role("testrole")
                 .build();
 
         // 4) Create profile configuration to use for the transaction. This can be re-used.
         SupportConfiguration profileConfig = new SupportConfiguration.Builder()
-                .addTrustedAuthenticationService(
-                        "testIdpST",
-                        "https://test.idp.signatureservice.se/samlv2/idp/metadata",
-                        "Signature Service Test iDP")
+                .signServiceId("http://localhost:8080/signservice-frontend/metadata/1834c194136")
+                .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/1834c194136")
+                .addTrustedAuthenticationService("Dummy idP", "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "Signature Service Dummy iDP")
+                .addRequestedCertAttribute("givenName",  "urn:oid:2.5.4.42", "2.5.4.42", true)
+                .addRequestedCertAttribute("sn", "urn:oid:2.5.4.4", "2.5.4.4", true)
+                .addRequestedCertAttribute("serialNumber", "urn:oid:1.2.752.29.4.13", "2.5.4.5", true)
+                .addRequestedCertAttribute("commonName", "urn:oid:2.16.840.1.113730.3.1.241", "2.5.4.3", false)
+                .addRequestedCertAttribute("displayName", "urn:oid:2.16.840.1.113730.3.1.241", "2.16.840.1.113730.3.1.241", false)
+                .addRequestedCertAttribute("c", "urn:oid:2.5.4.6", "2.5.4.6", false)
+                .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
                 .addAuthorizedConsumerURL("http://localhost")
+                .signRequester("http://localhost:9090/signservice-support/metadata")
+                .relatedProfile("rsaProfile")
+                .enableAuthnProfile(true)
                 .build();
 
         // 5) Create document requests to include in the transaction.
@@ -1279,11 +1599,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 null,
                 "Im signing everything",
                 user,
-                "https://test.idp.signatureservice.se/samlv2/idp/metadata",
+                "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata",
                 "http://localhost",
                 null
         );
 
-        System.out.println(preparedSignature.getSignRequest());
+        System.out.println(SupportLibraryUtils.generateRedirectHtml(preparedSignature));
     }
 }

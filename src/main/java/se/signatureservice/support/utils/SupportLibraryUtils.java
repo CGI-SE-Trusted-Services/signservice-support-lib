@@ -12,10 +12,33 @@
  *************************************************************************/
 package se.signatureservice.support.utils;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.certificateservices.messages.SimpleMessageSecurityProvider;
+import org.certificateservices.messages.authcontsaci1.AuthContSaciMessageParser;
+import org.certificateservices.messages.authcontsaci1.jaxb.AttributeMappingType;
+import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.signatureservice.support.api.ErrorCode;
+import se.signatureservice.support.api.v2.PreparedSignatureResponse;
+import se.signatureservice.support.api.v2.ServerErrorException;
+import se.signatureservice.support.api.v2.V2SupportServiceAPI;
+import se.signatureservice.support.common.InternalServerException;
+import se.signatureservice.support.system.Constants;
+import se.signatureservice.support.system.SupportAPIConfiguration;
+import se.signatureservice.support.system.SupportConfiguration;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -26,6 +49,9 @@ import java.util.UUID;
  * @author Tobias Agerberg
  */
 public class SupportLibraryUtils {
+    public static final String OID_AUTHCONTEXT_EXTENTION = "1.2.752.201.5.1";
+
+    private static final Logger log = LoggerFactory.getLogger(V2SupportServiceAPI.class);
 
     /**
      * Create a simple message security provider.
@@ -66,5 +92,150 @@ public class SupportLibraryUtils {
      */
     public static String generateReferenceId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Get user ID from SAMLAuthContextType
+     * @param authContext SAMLAuthContextType containing userId
+     * @param config SupportConfiguration
+     * @return User ID from SAMLAuthContextType
+     */
+    public static String getUserIdFromAuthContext(SAMLAuthContextType authContext, SupportConfiguration config){
+        if(config.getUserIdAttributeMapping() != null){
+            log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please remove it and use 'defaultUserIdAttributeMapping' instead.");
+        }
+
+        return getAttributeValueFromAuthContext(authContext, config.getDefaultUserIdAttributeMapping() != null ? config.getDefaultUserIdAttributeMapping() : config.getUserIdAttributeMapping());
+    }
+
+    /**
+     * Get user display name from SAMLAuthContextType. If display name is not available given name
+     * and surname is used as fallback.
+     * @param authContext SAMLAuthContextType containing user display
+     * @return User display from SAMLAuthContextType
+     */
+    public static String getDisplayNameFromAuthContext(SAMLAuthContextType authContext){
+        String displayName = getAttributeValueFromAuthContext(authContext, Constants.SWE_EID_DSS_SAML_ATTRIBUTE_DISPLAYNAME);
+        if(displayName == null){
+            String givenName = getAttributeValueFromAuthContext(authContext, Constants.SWE_EID_DSS_SAML_ATTRIBUTE_GIVENNAME);
+            String surName = getAttributeValueFromAuthContext(authContext, Constants.SWE_EID_DSS_SAML_ATTRIBUTE_SN);
+
+            if(givenName != null && surName != null){
+                displayName = givenName + " " + surName;
+            } else {
+                displayName = givenName;
+            }
+        }
+        return displayName;
+    }
+
+    /**
+     * Get level of assurance from a SAMLAuthContextType
+     *
+     * @param apiConfig API configuration
+     * @param authContext SAMLAuthContextType to get level of assurance from
+     * @return Level of assurance for given SAMLAuthContextType or null if not available
+     */
+    public static String getLevelOfAssuranceFromAuthContext(SupportAPIConfiguration apiConfig, SAMLAuthContextType authContext) throws InternalServerException, ServerErrorException {
+        String levelOfAssurance = null;
+
+        if(apiConfig.getAuthContextMappings() == null) {
+            throw (ServerErrorException)ErrorCode.INVALID_CONFIGURATION.toException("No mapping between authentication contexts and level of assurance have been added.");
+        }
+
+        if(authContext != null){
+            String classRef = authContext.getAuthContextInfo().getAuthnContextClassRef();
+
+            for(Map.Entry<String, Map> entry : apiConfig.getAuthContextMappings().entrySet()){
+                for(Object object : entry.getValue().entrySet()){
+                    if(object instanceof Map){
+                        Map<String,String> mapping = (Map<String,String>)object;
+                        if(mapping.get("context") != null){
+                            levelOfAssurance = mapping.get("loa");
+                            break;
+                        }
+                    }
+                }
+
+                if(levelOfAssurance != null){
+                    break;
+                }
+            }
+
+            if(levelOfAssurance == null){
+                levelOfAssurance = classRef;
+            }
+        }
+        return levelOfAssurance;
+    }
+
+    /**
+     * Get value of an attribute within an SAMLAuthContextType
+     * @param authContext SAMLAuthContextType to get attribute from
+     * @param attributeName attribute name
+     * @return Attribute value from given SAMLAuthContextType or null if not available
+     */
+    static String getAttributeValueFromAuthContext(SAMLAuthContextType authContext, String attributeName){
+        String value = null;
+
+        if(authContext != null){
+            List<AttributeMappingType> attributes = authContext.getIdAttributes().getAttributeMapping();
+            for(AttributeMappingType attribute : attributes){
+                if(attribute.getAttribute().getName().equals(attributeName) && attribute.getAttribute().getAttributeValue().size() > 0){
+                    value = attribute.getAttribute().getAttributeValue().get(0).toString();
+                    break;
+                }
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Extract SAMLAuthContextType from a X509 Certificate issued by signature services.
+     * @param messageParser Message parser to use
+     * @param certificate Certificate to extract SAMLAuthContextType from
+     * @return SAMLAuthContextType from given certificate or null if certificate does not contain one
+     */
+    public static SAMLAuthContextType getAuthContextFromCertificate(AuthContSaciMessageParser messageParser, X509Certificate certificate) throws IOException, MessageContentException, MessageProcessingException {
+        String retval = null;
+        byte[] extensionValue = certificate.getExtensionValue(OID_AUTHCONTEXT_EXTENTION);
+
+        if(extensionValue != null){
+            DEROctetString octetString = (DEROctetString)(new ASN1InputStream(new ByteArrayInputStream(extensionValue)).readObject());
+            ASN1Sequence extSequence = (ASN1Sequence)(new ASN1InputStream(new ByteArrayInputStream(octetString.getOctets())).readObject());
+            if(extSequence != null && extSequence.size() == 1){
+                ASN1Sequence authContextSequence = (ASN1Sequence)extSequence.getObjectAt(0);
+                if(authContextSequence.size() == 2){
+                    retval = authContextSequence.getObjectAt(1).toString();
+                }
+            }
+
+            if(retval != null){
+                return messageParser.parse(retval.getBytes("UTF-8"));
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate HTML redirect page based on a {@link PreparedSignatureResponse}
+     * @param preparedSignature Signature response to generate HTML redirect page for.
+     * @return HTML redirect page.
+     */
+    public static String generateRedirectHtml(PreparedSignatureResponse preparedSignature){
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html>\n");
+		sb.append("<body onload=\"document.forms[0].submit()\">\n");
+        sb.append("<center>Processing signature...</center>\n");
+		sb.append("<form method=\"post\" action=\"" + preparedSignature.getActionURL() + "\" style=\"display: none;\">\n");
+		sb.append("<input type=\"hidden\" name=\"RelayState\" value=\"" + preparedSignature.getTransactionId() + "\" />\n");
+		sb.append("<input type=\"hidden\" name=\"EidSignRequest\" value=\"" + preparedSignature.getSignRequest() + "\" />\n");
+		sb.append("<input type=\"submit\" value=\"Submit\" />\n");
+		sb.append("</form>\n");
+		sb.append("</body>\n");
+		sb.append("</html>\n");
+        return sb.toString();
     }
 }

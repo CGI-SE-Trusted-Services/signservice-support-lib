@@ -640,6 +640,8 @@ public final class SupportConfiguration extends Configuration {
          */
         public Builder(){
             config = new SupportConfiguration();
+            config.setDefaultUserIdAttributeMapping(Constants.DEFAULT_USER_ID_ATTRIBUTE_MAPPING);
+            config.setSignatureValidityMinutes(Constants.DEFAULT_REQUEST_VALIDITY_IN_MINUTES);
         }
 
         public Builder relatedProfile(String relatedProfile) {
@@ -788,6 +790,10 @@ public final class SupportConfiguration extends Configuration {
         }
 
         public Builder addRequestedCertAttribute(String name, String samlAttributeName, String certAttributeRef, boolean required) {
+            return addRequestedCertAttribute(name, samlAttributeName, certAttributeRef, null, required);
+        }
+
+        public Builder addRequestedCertAttribute(String name, String samlAttributeName, String certAttributeRef, String certNameType, boolean required) {
             Map<String,Map> certAttributes = config.getRequestedCertAttributes();
             if(certAttributes == null){
                 certAttributes = new HashMap<>();
@@ -796,6 +802,9 @@ public final class SupportConfiguration extends Configuration {
             Map<String,String> newAttribute = new HashMap<>();
             newAttribute.put("samlAttributeName", samlAttributeName);
             newAttribute.put("certAttributeRef", certAttributeRef);
+            if(certNameType != null) {
+                newAttribute.put("certNameType", certNameType);
+            }
             newAttribute.put("required", Boolean.toString(required));
             certAttributes.put(name, newAttribute);
 
