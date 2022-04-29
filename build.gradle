@@ -1,0 +1,76 @@
+group "se.signatureservice.support"
+
+certserviceSettings {
+    useGroovyInMain = false
+}
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+ext {
+    dssVersion = "5.7"
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss/"
+    }
+}
+
+dependencies {
+    compile "eu.europa.ec.joinup.sd-dss:dss-xades:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-cades:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-pades:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:${dssVersion}"
+    compile "eu.europa.ec.joinup.sd-dss:dss-service:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-utils:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$dssVersion"
+    compile "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:$dssVersion"
+    compile 'org.apache.pdfbox:pdfbox:2.0.26'
+    compile "org.apache.santuario:xmlsec:2.1.7"
+    compile 'org.slf4j:slf4j-api:1.7.36'
+    compile 'org.slf4j:slf4j-simple:1.7.36'
+    compile 'org.json:json:20220320'
+    compile ("org.springframework:spring-context:5.3.19") {
+        exclude module: "spring-beans"
+    }
+    compile ("org.certificateservices.messages:certservice-messages"){
+        // certservice-messages is using a newer version of xmlsec which
+        // is not compatible with the current version of DSS library.
+        exclude module: "xmlsec"
+    }
+    runtime "org.slf4j:slf4j-simple:1.7.36"
+}
+
+buildscript {
+    repositories {
+        mavenLocal()
+        maven { url 'https://repo.certificateservices.se/artifactory/libs-release-local' }
+        maven { url "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+shadowJar {
+    archiveBaseName = 'signservice-support-lib'
+    mergeServiceFiles()
+    archiveClassifier = ''
+    dependencies {
+        exclude(dependency("org.slf4j:slf4j-simple:1.7.29"))
+    }
+    relocate 'org.apache', 'certservice.org.apache'
+    relocate 'org.json', 'certservice.org.json'
+    relocate 'org.yaml', 'certservice.org.yaml'
+    relocate 'com.ctc', 'certservice.com.ctc'
+    relocate 'org.bouncycastle', 'certservice.org.bouncycastle'
+    relocate 'com.fasterxml', 'certservice.com.fasterxml'
+    relocate 'com.sun', 'certservice.com.sun'
+    relocate 'org.springframework', 'certservice.org.springframework'
+}
+
+tasks.build.dependsOn tasks.shadowJar
