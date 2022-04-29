@@ -1,5 +1,7 @@
 package se.signatureservice.support.api.v2;
 
+import se.signatureservice.support.api.SupportServiceAPI;
+import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.utils.SerializableUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -10,6 +12,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,5 +73,84 @@ public class User implements Externalizable {
         userId = SerializableUtils.deserializeNullableString(in);
         role = SerializableUtils.deserializeNullableString(in);
         userAttributes = (List) SerializableUtils.deserializeNullableList(in);
+    }
+
+    /**
+     * Builder class to use when building a User instance.
+     */
+    public static class Builder {
+        private String userId;
+        private String role;
+        private List<Attribute> attributes;
+
+        /**
+         * Create new TransactionSigner builder
+         */
+        public Builder(){
+        }
+
+        /**
+         * Specify user ID.
+         *
+         * @param userId User ID.
+         * @return Updated builder.
+         */
+        Builder userId(String userId){
+            this.userId = userId;
+            return this;
+        }
+
+        /**
+         * Specify user role.
+         *
+         * @param role User role.
+         * @return Updated builder.
+         */
+        Builder role(String role){
+            this.role = role;
+            return this;
+        }
+
+        /**
+         * Specify user attributes.
+         *
+         * @param attributes User attributes to use.
+         * @return Updated builder.
+         */
+        Builder attributes(List<Attribute> attributes){
+            this.attributes = attributes;
+            return this;
+        }
+
+        /**
+         * Add user attribute.
+         *
+         * @param key Attribute key.
+         * @param value Attribute value.
+         * @return Updated builder.
+         */
+        Builder addAttribute(String key, String value){
+            if(attributes == null){
+                attributes = new ArrayList<>();
+            }
+            Attribute attr = new Attribute();
+            attr.setKey(key);
+            attr.setValue(value);
+            attributes.add(attr);
+            return this;
+        }
+
+        /**
+         * Build the User.
+         *
+         * @return User instance based on builder settings.
+         */
+        public User build() {
+            User user = new User();
+            user.setUserId(userId);
+            user.setRole(role);
+            user.setUserAttributes(attributes);
+            return user;
+        }
     }
 }

@@ -12,6 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
+import com.sun.security.ntlm.Client;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
@@ -36,15 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.xml.security.Init;
 import org.apache.xml.security.c14n.CanonicalizationException;
-import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.IssuerSerial;
-import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.encoders.Base64;
 import org.certificateservices.messages.ContextMessageSecurityProvider;
 import org.certificateservices.messages.MessageContentException;
@@ -57,14 +50,9 @@ import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*;
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.SystemTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
@@ -72,42 +60,31 @@ import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.common.InternalErrorException;
 import se.signatureservice.support.common.InvalidArgumentException;
 import se.signatureservice.support.common.cache.CacheProvider;
-import se.signatureservice.support.common.cache.DummyCacheProvider;
+import se.signatureservice.support.common.cache.SimpleCacheProvider;
 import se.signatureservice.support.common.cache.MetaData;
-import se.signatureservice.support.common.keygen.SignAlgorithm;
 import se.signatureservice.support.models.PreparedSignatureInfo;
 import se.signatureservice.support.models.TransactionState;
+import se.signatureservice.support.signer.SignTaskHelper;
 import se.signatureservice.support.system.Constants;
 import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.system.SupportConfiguration;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.io.*;
-import java.math.BigInteger;
 import java.security.InvalidParameterException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
 
@@ -118,46 +95,6 @@ import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
  */
 public class V2SupportServiceAPI implements SupportServiceAPI {
     private static final Logger log = LoggerFactory.getLogger(V2SupportServiceAPI.class);
-    private static DocumentBuilderFactory documentBuilderFactory;
-
-    private static final String NS_ETSI_1_3_2 = "http://uri.etsi.org/01903/v1.3.2#";
-    private static final String NS_W3_XMLNS = "http://www.w3.org/2000/xmlns/";
-    private static final String NS_W3_XMLDSIG = "http://www.w3.org/2000/09/xmldsig#";
-    private static final String NS_ETSI_1_3_2_SIGNED_PROPERTIES = "http://uri.etsi.org/01903#SignedProperties";
-
-    private static final String XADES_PREFIX = "xades:";
-    private static final String XADES_SIGNED_PROPERTIES = "SignedProperties";
-    private static final String XADES_SIGNED_SIGNATURE_PROPERTIES = "SignedSignatureProperties";
-    private static final String XADES_SIGNING_TIME = "SigningTime";
-    private static final String XADES_SIGNING_CERTIFICATE_V2 = "SigningCertificateV2";
-    private static final String XADES_CERT = "Cert";
-    private static final String XADES_CERT_DIGEST = "CertDigest";
-    private static final String XADES_ISSUER_SERIAL_V2 = "IssuerSerialV2";
-    private static final String XADES_SIGNED_DATA_OBJECT_PROPERTIES = "SignedDataObjectProperties";
-    private static final String XADES_DATA_OBJECT_FORMAT = "DataObjectFormat";
-    private static final String XADES_MIME_TYPE = "MimeType";
-    private static final String XADES_QUALIFYING_PROPERTIES = "QualifyingProperties";
-
-    private static final String DS_PREFIX = "ds:";
-    private static final String DS_DIGESTMETHOD = "DigestMethod";
-    private static final String DS_DIGESTVALUE = "DigestValue";
-    private static final String DS_OBJECT = "Object";
-    private static final String DS_CANONICALIZATIONMETHOD = "CanonicalizationMethod";
-    private static final String DS_REFERENCE = "Reference";
-    private static final String DS_TRANSFORMS = "Transforms";
-    private static final String DS_TRANSFORM = "Transform";
-
-    private static final String XMLNS_DS = "xmlns:ds";
-    private static final String XMLNS_XADES = "xmlns:xades";
-
-    private static final String XML_ATTRIBUTE_ID = "Id";
-    private static final String XML_ATTRIBUTE_ALGORITHM = "Algorithm";
-    private static final String XML_ATTRIBUTE_OBJECT_REFERENCE = "ObjectReference";
-    private static final String XML_ATTRIBUTE_TARGET = "Target";
-    private static final String XML_ATTRIBUTE_TYPE = "Type";
-    private static final String XML_ATTRIBUTE_URI = "URI";
-    private static final String XML_MIMETYPE = "text/xml";
-    private static final String DSS_CERTIFICATETOKEN_XMLID_PREFIX = "C-";
 
     private XAdESService xAdESService;
     private PAdESService pAdESService;
@@ -173,7 +110,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory sweEid2ObjectFactory;
     private org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
-    private SystemTime systemTime;
+
 
     /**
      * Create an instance of the support service library.
@@ -210,9 +147,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Generate signature request info that contains the signature request
-     * along with the transaction state that needs to be persisted and supplied
-     * to processSignResponse in order to obtain the final signed document(s).
+     * Generate prepared signature response that contains a signature request
+     * and related information for given set of documents.
      *
      * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
      * @param documents Documents to generate sign request for.
@@ -227,9 +163,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public PreparedSignatureInfo prepareSignature(SupportConfiguration profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
+    public PreparedSignatureResponse prepareSignature(SupportConfiguration profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
         long operationStart = System.currentTimeMillis();
-        PreparedSignatureInfo signRequestInfo = null;
+        PreparedSignatureResponse preparedSignature = null;
         try {
             if (transactionId == null) {
                 transactionId = SupportLibraryUtils.generateTransactionId();
@@ -237,11 +173,16 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 validateTransactionId(transactionId);
             }
 
+            if(cacheProvider.getBinary(transactionId) != null){
+                log.error("Transaction ID has already been used (Transaction ID: " + transactionId + ")");
+                throw (ClientErrorException)ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Transaction ID has already been used", messageSource);
+            }
+
             validateDocuments(documents);
             validateAuthenticationServiceId(authenticationServiceId, profileConfig);
 
-            ContextMessageSecurityProvider.Context context  = new ContextMessageSecurityProvider.Context(se.signatureservice.support.common.Constants.CONTEXT_USAGE_SIGNREQUEST, profileConfig.getRelatedProfile());
-            PreparedSignatureResponse preparedSignature = new PreparedSignatureResponse();
+            ContextMessageSecurityProvider.Context context  = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, profileConfig.getRelatedProfile());
+            preparedSignature = new PreparedSignatureResponse();
             preparedSignature.setProfile(profileConfig.getRelatedProfile());
             preparedSignature.setActionURL(profileConfig.getSignServiceRequestURL());
             preparedSignature.setTransactionId(transactionId);
@@ -257,12 +198,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             transactionState.setTransactionStart(operationStart);
             transactionState.setCompleted(false);
 
-            signRequestInfo = new PreparedSignatureInfo(preparedSignature, serializeTransactionState(transactionState));
-        } catch(IOException | MessageContentException | MessageProcessingException | BaseAPIException | InvalidArgumentException | InternalErrorException | ClassNotFoundException | ParserConfigurationException | SAXException | InvalidCanonicalizerException | CanonicalizationException | CertificateEncodingException | NoSuchAlgorithmException | TransformerException e){
-            throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to generate sign request: " + e.getMessage());
+            storeTransactionState(preparedSignature.getTransactionId(), transactionState);
+        } catch(Exception e){
+            if(e instanceof ServerErrorException){
+                throw (ServerErrorException)e;
+            } else if(e instanceof ClientErrorException){
+                throw (ClientErrorException)e;
+            } else {
+                throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to generate sign request: " + e.getMessage());
+            }
         }
 
-        return signRequestInfo;
+        return preparedSignature;
     }
 
     /**
@@ -361,7 +308,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         JAXBElement<SignTasksType> signTasks = sweEid2ObjectFactory.createSignTasks(signTasksType);
-        byte[] signRequest = sweEID2DSSExtensionsMessageParser.genSignRequest(context, transactionId, se.signatureservice.support.common.Constants.SWE_EID_DSS_PROFILE, signRequestExtension, signTasks, true);
+        byte[] signRequest = sweEID2DSSExtensionsMessageParser.genSignRequest(context, transactionId, Constants.SWE_EID_DSS_PROFILE, signRequestExtension, signTasks, true);
         return new String(Base64.encode(signRequest), "UTF-8");
     }
 
@@ -556,7 +503,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         // XAdES is the only signature type that has a separate AdES-object.
         if(adESType == AdESType.BES && sigType == SigType.XML){
-            createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
+            SignTaskHelper.createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
         }
 
         // Store signing time in cache
@@ -912,246 +859,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Get DocumentBuilderFactory to use when creating new instance of
-     * DocumentBuilder. This is shared across threads.
-     * @return
-     */
-    static DocumentBuilderFactory getSignedInfoDocumentBuilderFactory(){
-        if(documentBuilderFactory == null){
-            documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-        }
-        return documentBuilderFactory;
-    }
-
-    /**
-     * Get document builder in order to build SignedInfo and SignedProperties document.
-     * DocumentBuilder is not thread safe so we create a new per thread.
-     * @return Document builder
-     */
-    static DocumentBuilder getSignedInfoDocumentBuilder() throws ParserConfigurationException {
-        return getSignedInfoDocumentBuilderFactory().newDocumentBuilder();
-    }
-
-    /**
-     * Create new XaDES-object from scratch that will be used during the signature process for
-     * advanced XML signatures (XAdES).
-     * @param signTask Sign task to update with new XAdES-object
-     * @param signTransformation Signature transformation that is used.
-     * @param signingCertificate Signature certificate that will be used to sign the ToBeSignedBytes
-     * @param signingTime Signing time to use or null to use the current system time.
-     */
-    private void createNewXadesObject(SignTaskDataType signTask, String signTransformation, X509Certificate signingCertificate, Date signingTime) throws MessageProcessingException, IOException, SAXException, ParserConfigurationException, TransformerException, InvalidCanonicalizerException, CertificateEncodingException, NoSuchAlgorithmException, CanonicalizationException {
-        SignAlgorithm signAlgorithm = SignAlgorithm.getAlgoByJavaName(signTransformation);
-        DocumentBuilder documentBuilder = getSignedInfoDocumentBuilder();
-        org.w3c.dom.Document signedInfo = documentBuilder.parse(new ByteArrayInputStream(signTask.getToBeSignedBytes()));
-
-        // We re-use the same canonicalization algorithm so we dont have to
-        // handle split-configuration between signservice-support and signservice-backend.
-        NodeList nodeList = signedInfo.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_CANONICALIZATIONMETHOD);
-        Element canonicalizationMethodElement = nodeList != null ? (Element)signedInfo.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_CANONICALIZATIONMETHOD).item(0) : null;
-        String canonicalizationMethod = canonicalizationMethodElement.getAttribute(XML_ATTRIBUTE_ALGORITHM);
-
-        if(signingTime == null){
-            signingTime = DateUtils.round(getSystemTime().getSystemTime(), Calendar.SECOND);
-        }
-
-        String signedPropertiesId = getSignedPropertiesId(signTask, signingTime, signingCertificate);
-
-        // Create new SignedProperties that includes signing-certificate
-        Document document = documentBuilder.newDocument();
-        Element object = document.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_OBJECT);
-        document.appendChild(object);
-        Element qualifyingProperties = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_QUALIFYING_PROPERTIES);
-        qualifyingProperties.setAttribute(XML_ATTRIBUTE_TARGET, "#" + signedPropertiesId);
-        object.appendChild(qualifyingProperties);
-        Element signedProperties = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNED_PROPERTIES);
-        signedProperties.setAttributeNS(NS_W3_XMLNS, XMLNS_DS, NS_W3_XMLDSIG);
-        signedProperties.setAttributeNS(NS_W3_XMLNS, XMLNS_XADES, NS_ETSI_1_3_2);
-        signedProperties.setAttribute(XML_ATTRIBUTE_ID, "xades-" + signedPropertiesId);
-        qualifyingProperties.appendChild(signedProperties);
-        Element signedSignatureProperties = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNED_SIGNATURE_PROPERTIES);
-        signedProperties.appendChild(signedSignatureProperties);
-        Element signingTimeElement = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNING_TIME);
-        final XMLGregorianCalendar xmlGregorianCalendar = se.signatureservice.support.common.utils.DateUtils.createXMLGregorianCalendar(signingTime);
-        final String xmlSigningTime = xmlGregorianCalendar.toXMLFormat();
-        signingTimeElement.appendChild(document.createTextNode(xmlSigningTime));
-        signedSignatureProperties.appendChild(signingTimeElement);
-
-        if(signingCertificate != null) {
-            Element signingCertificateV2 = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNING_CERTIFICATE_V2);
-            Element cert = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_CERT);
-            Element certDigest = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_CERT_DIGEST);
-            Element digestMethod = document.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTMETHOD);
-            digestMethod.setAttribute(XML_ATTRIBUTE_ALGORITHM, signAlgorithm.getDigestAlgo());
-            certDigest.appendChild(digestMethod);
-            Element digestValue = document.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTVALUE);
-            byte[] certDigestValue = MessageDigest.getInstance(signAlgorithm.getMessageDigestName()).digest(signingCertificate.getEncoded());
-            digestValue.appendChild(document.createTextNode(new String(Base64.encode(certDigestValue))));
-            certDigest.appendChild(digestValue);
-            cert.appendChild(certDigest);
-            Element issuerSerialV2 = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_ISSUER_SERIAL_V2);
-            X500Name issuerX500Name = new X509CertificateHolder(signingCertificate.getEncoded()).getIssuer();
-            GeneralName generalName = new GeneralName(issuerX500Name);
-            GeneralNames generalNames = new GeneralNames(generalName);
-            BigInteger serialNumber = signingCertificate.getSerialNumber();
-            IssuerSerial issuerSerial = new IssuerSerial(generalNames, new ASN1Integer(serialNumber));
-            issuerSerialV2.appendChild(document.createTextNode(new String(Base64.encode(issuerSerial.toASN1Primitive().getEncoded(ASN1Encoding.DER)))));
-            cert.appendChild(issuerSerialV2);
-            signingCertificateV2.appendChild(cert);
-            signedSignatureProperties.appendChild(signingCertificateV2);
-        }
-
-        Element signedDataObjectProperties = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNED_DATA_OBJECT_PROPERTIES);
-        Element dataObjectFormat = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_DATA_OBJECT_FORMAT);
-        dataObjectFormat.setAttribute(XML_ATTRIBUTE_OBJECT_REFERENCE, "#r-id-1");
-        Element mimeType = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_MIME_TYPE);
-        mimeType.appendChild(document.createTextNode(XML_MIMETYPE));
-        dataObjectFormat.appendChild(mimeType);
-        signedDataObjectProperties.appendChild(dataObjectFormat);
-        signedProperties.appendChild(signedDataObjectProperties);
-
-        // Calculate new digest based on the correct SignedProperties
-        byte[] updatedDigest = getSignedPropertiesDigest(canonicalizationMethod, signAlgorithm.getMessageDigestName(), signedProperties);
-
-        // Locate and update digest and reference ID within signedInfo
-        if(!updateXAdESReference(signedInfo, "#xades-" + signedPropertiesId, updatedDigest)){
-            // If XAdES reference was not found we construct it from scratch.
-            createSignedPropertiesReference(signedInfo, signedPropertiesId, canonicalizationMethod, signAlgorithm.getDigestAlgo(), updatedDigest);
-        }
-
-        // Canonicalize and update sign task
-        Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        signTask.setToBeSignedBytes(c14n.canonicalizeSubtree(signedInfo));
-
-        if(signTask.getAdESObject() == null){
-            signTask.setAdESObject(new AdESObjectType());
-        }
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        DOMSource source = new DOMSource(object);
-        baos = new ByteArrayOutputStream();
-        StreamResult result = new StreamResult(baos);
-        transformer.transform(source, result);
-
-        signTask.getAdESObject().setAdESObjectBytes(baos.toByteArray());
-
-        // If we dont have the signing certificate we set an empty signatureId. In this way
-        // the backend will generate a proper signatureId once the certifcate is generated.
-        signTask.getAdESObject().setSignatureId(signingCertificate != null ? signedPropertiesId : null);
-    }
-
-    /**
-     * Update XAdES object reference (with the type 'http://uri.etsi.org/01903#SignedProperties')
-     * within signedinfo structure with new URI and digest value. Only the first reference found
-     * is updated.
-     *
-     * @param signedInfo SignedInfo structure to update
-     * @param referenceURI New reference URI value
-     * @param digestValue New digest value
-     * @return true if reference was found and updated, otherwise false
-     */
-    static boolean updateXAdESReference(Document signedInfo, String referenceURI, byte[] digestValue) throws UnsupportedEncodingException {
-        NodeList references = signedInfo.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_REFERENCE);
-        for (int i = 0; i < references.getLength(); i++) {
-            Element reference = ((Element) references.item(i));
-            String type = reference.getAttribute(XML_ATTRIBUTE_TYPE);
-            if (type != null && type.equalsIgnoreCase(NS_ETSI_1_3_2_SIGNED_PROPERTIES)) {
-                reference.setAttribute(XML_ATTRIBUTE_URI, referenceURI);
-                Element element = (Element)reference.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_DIGESTVALUE).item(0);
-                element.getFirstChild().setNodeValue(new String(Base64.encode(digestValue), "UTF-8"));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Get ID to use for XAdES object.
-     *
-     * @param signTask Sign task related to the XAdES object or null if not available.
-     * @param signingTime Time when signature was performed
-     * @param signingCertificate Signing certificate or null if not available.
-     * @return signature ID from signtask if available. Otherwise a deterministic ID generated
-     * according to ESig DSS library if signing certificate is available. Last resort is a randomly generated ID.
-     */
-    static String getSignedPropertiesId(SignTaskDataType signTask, Date signingTime, X509Certificate signingCertificate){
-        String signedPropertiesId;
-
-        if(signTask != null && signTask.getAdESObject() != null && signTask.getAdESObject().getSignatureId() != null){
-            // If signatureId is present within the signtask we must use it when
-            // constructing the AdES-object accoring to The Swedish E-identification Board
-            // specification ELN-0609:4.1.1.1
-            signedPropertiesId = signTask.getAdESObject().getSignatureId();
-        } else if(signingCertificate != null) {
-            // If signing certificate is present we generate deterministic ID according to
-            // esig dss signature library.
-            signedPropertiesId = generateDeterministicId(signingCertificate, signingTime, "id-");
-        } else {
-            signedPropertiesId = generateRandomId("id-");
-        }
-
-        return signedPropertiesId;
-    }
-
-    private static String generateRandomId(String prefix){
-        return prefix + UUID.randomUUID().toString().toLowerCase();
-    }
-
-    /**
-     * Calculate deterministic ID to use within SignedInfo structure when incorporating
-     * signing certificate.
-     * @param x509Certificate Signing certificate part of the signature process
-     * @param signingTime Signature time
-     * @return Deterministic ID
-     */
-    private static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix){
-        String deterministicId;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-
-            if (signingTime != null) {
-                dos.writeLong(signingTime.getTime());
-            }
-            if(x509Certificate != null){
-                byte[] certDigest = MessageDigest.getInstance("SHA-256").digest(x509Certificate.getEncoded());
-                String xmlId = DSS_CERTIFICATETOKEN_XMLID_PREFIX + DatatypeConverter.printHexBinary(certDigest).toUpperCase();
-                dos.writeChars(xmlId);
-            }
-            dos.flush();
-            deterministicId = prefix + DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest(baos.toByteArray())).toLowerCase();
-        } catch(Exception e){
-            return null;
-        }
-        return deterministicId;
-    }
-
-    /**
-     * Calculate digest of SignedProperties element
-     *
-     * @param canonicalizationMethod Canonicalization method to use
-     * @param digestAlgorithm Digest algorithm to use
-     * @param signedProperties SignedProperties to calculate digest of
-     * @return Digest value of given SignedProperties
-     */
-    private static byte[] getSignedPropertiesDigest(String canonicalizationMethod, String digestAlgorithm, Element signedProperties) {
-        byte[] digestValue = null;
-        try {
-            Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-            byte[] canonicalized = c14n.canonicalizeSubtree(signedProperties);
-            MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithm);
-            digestValue = messageDigest.digest(canonicalized);
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-        return digestValue;
-    }
-
-    /**
      * Get list of AuthnContextClassRefs to request for a given authentication service.
      *
      * @param authenticationServiceId Authentication service identifier to get AuthnContextClassRefs for.
@@ -1228,33 +935,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return userIdAttributeMapping;
     }
 
-    /**
-     * Create new reference to XAdES SignedProperties and incorporate it into given SignedInfo.
-     *
-     * @param signedInfo SignedInfo document to incorporate reference into
-     * @param signedPropertiesId ID to use for the reference
-     * @param canonicalizationMethod Canonicalization method to use for the reference
-     * @param digestAlgorithm Digest algorithm to use for the reference
-     * @param digestValue Digest value to use for the reference
-     */
-    static void createSignedPropertiesReference(Document signedInfo, String signedPropertiesId, String canonicalizationMethod, String digestAlgorithm, byte[] digestValue){
-        Element referenceElement = signedInfo.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_REFERENCE);
-        signedInfo.getDocumentElement().appendChild(referenceElement);
-        referenceElement.setAttribute(XML_ATTRIBUTE_TYPE, NS_ETSI_1_3_2_SIGNED_PROPERTIES);
-        referenceElement.setAttribute(XML_ATTRIBUTE_URI, "#xades-" + signedPropertiesId);
 
-        Element transformsElement = signedInfo.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_TRANSFORMS);
-        referenceElement.appendChild(transformsElement);
-        Element transformElement = signedInfo.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_TRANSFORM);
-        transformsElement.appendChild(transformElement);
-        transformElement.setAttribute(XML_ATTRIBUTE_ALGORITHM, canonicalizationMethod);
-        Element digestMethodElement = signedInfo.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTMETHOD);
-        referenceElement.appendChild(digestMethodElement);
-        digestMethodElement.setAttribute(XML_ATTRIBUTE_ALGORITHM, digestAlgorithm);
-        Element digestValueElement = signedInfo.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTVALUE);
-        referenceElement.appendChild(digestValueElement);
-        digestValueElement.setTextContent(new String(Base64.encode(digestValue)));
-    }
 
     private AttributeType generateSignerAttribute(String name, String value) {
         AttributeType attributeType = saml2ObjectFactory.createAttributeType();
@@ -1305,14 +986,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         notOnOrAfter.setTime(requestTime.getTime());
         notOnOrAfter.add(GregorianCalendar.MINUTE, config.getSignatureValidityMinutes());
         return notOnOrAfter;
-    }
-
-    private SystemTime getSystemTime() {
-        if(systemTime == null){
-            systemTime = new DefaultSystemTime();
-        }
-
-        return systemTime;
     }
 
     /**
@@ -1576,12 +1249,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         // 2) Build an instance of the support service API
         SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
                 .messageSecurityProvider(messageSecurityProvider)
-                .cacheProvider(new DummyCacheProvider())
+                .cacheProvider(new SimpleCacheProvider())
                 .build();
 
         // 3) Create user that is going to sign the document(s)
-        User user = new User();
-        user.setUserId("190101010001");
+        User user = new User.Builder()
+                .userId("190101010001")
+                .role("testrole")
+                .build();
 
         // 4) Create profile configuration to use for the transaction. This can be re-used.
         SupportConfiguration profileConfig = new SupportConfiguration.Builder()
@@ -1597,8 +1272,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 .addXMLDocument("/home/agerbergt/git/signservice/signservice-support/src/test/resources/testdocument.xml")
                 .build();
 
-        // 6) Generate the signature request
-        PreparedSignatureInfo preparedSignatureInfo = supportServiceAPI.prepareSignature(
+        // 6) Generate the prepared signature request
+        PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature(
                 profileConfig,
                 documentRequests,
                 null,
@@ -1609,6 +1284,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 null
         );
 
-        System.out.println(preparedSignatureInfo.getPreparedSignature().getSignRequest());
+        System.out.println(preparedSignature.getSignRequest());
     }
 }

@@ -13,7 +13,6 @@
 package se.signatureservice.support.api;
 
 import se.signatureservice.support.api.v2.*;
-import se.signatureservice.support.models.PreparedSignatureInfo;
 import se.signatureservice.support.system.SupportConfiguration;
 
 import java.util.List;
@@ -43,7 +42,7 @@ public interface SupportServiceAPI {
      * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
-    PreparedSignatureInfo prepareSignature(
+    PreparedSignatureResponse prepareSignature(
             SupportConfiguration profileConfig,
             DocumentRequests documents,
             String transactionId,
@@ -64,5 +63,8 @@ public interface SupportServiceAPI {
      * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
-    CompleteSignatureResponse completeSignature(String signResponse, byte[] transactionState) throws ClientErrorException, ServerErrorException;
+    CompleteSignatureResponse completeSignature(
+            String signResponse,
+            byte[] transactionState
+    ) throws ClientErrorException, ServerErrorException;
 }

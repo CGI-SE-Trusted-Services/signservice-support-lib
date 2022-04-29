@@ -1,4 +1,4 @@
-package se.signatureservice.support.common.utils;
+package se.signatureservice.support.utils;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;

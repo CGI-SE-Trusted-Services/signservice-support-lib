@@ -11,20 +11,20 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Dummy implementation of cache provider that stores everying in memory as a in-memory map.
+ * Implementation of cache provider that stores everything in memory as an in-memory map.
  * <p>
  * The implementation only supports time to live.
  *
  * Created by philip on 08/02/17.
  */
-public class DummyCacheProvider implements CacheProvider {
+public class SimpleCacheProvider implements CacheProvider {
 
     SystemTime systemTime = new DefaultSystemTime();
 
     private ConcurrentHashMap<String,Object> objects;
     private ConcurrentHashMap<String, Date> expireDates;
 
-    public DummyCacheProvider(){
+    public SimpleCacheProvider(){
         objects = new ConcurrentHashMap<String,Object>();
         expireDates = new ConcurrentHashMap<String,Date>();
     }
