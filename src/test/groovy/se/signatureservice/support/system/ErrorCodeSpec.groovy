@@ -20,7 +20,7 @@ class ErrorCodeSpec extends Specification {
 
         where:
         errorCode                            | expectedException                                         | expectedCode | expectedMessageCode
-        ErrorCode.MISSING_CONFIGURATION | "se.signatureservice.support.api.v2.ServerErrorException" | "10001" | "error.missing.configuration"
+        ErrorCode.MISSING_CONFIGURATION      | "se.signatureservice.support.api.v2.ServerErrorException" | "10001"      | "error.missing.configuration"
         ErrorCode.INVALID_CONFIGURATION      | "se.signatureservice.support.api.v2.ServerErrorException" | "10002"      | "error.invalid.configuration"
         ErrorCode.UNSUPPORTED_ALGORITHM      | "se.signatureservice.support.api.v2.ClientErrorException" | "10003"      | "error.unsupported.algorithm"
         ErrorCode.INVALID_DIGEST_SIZE        | "se.signatureservice.support.api.v2.ServerErrorException" | "10004"      | "error.invalid.digest.size"

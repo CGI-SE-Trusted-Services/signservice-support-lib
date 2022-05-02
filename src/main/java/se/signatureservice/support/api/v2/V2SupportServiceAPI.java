@@ -226,7 +226,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     @Override
     public CompleteSignatureResponse completeSignature(SupportConfiguration profileConfig, String signResponse, String transactionId) throws ClientErrorException, ServerErrorException {
-        long operationStart = System.currentTimeMillis();
+        long currentTime, operationStart = System.currentTimeMillis();
+        int operationTime;
         CompleteSignatureResponse signatureResponse = null;
         X509Certificate[] signatureCertificateChain;
 
@@ -279,6 +280,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             documentResponses.documents.addAll(signedDocuments);
             signatureResponse.setDocuments(documentResponses);
         } catch(Exception e){
+            log.error("Error while processing sign response: " + e.getMessage());
+
             if(e instanceof ServerErrorException){
                 throw (ServerErrorException)e;
             } else if(e instanceof ClientErrorException){
@@ -287,7 +290,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to process sign response: " + e.getMessage());
             }
         }
-        return null;
+
+        currentTime = System.currentTimeMillis();
+        operationTime = (int)(currentTime - operationStart);
+        log.info("Sign response successfully processed (" + operationTime + " ms)");
+
+        return signatureResponse;
     }
 
     /**
@@ -904,7 +912,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             case PDF:
                 PAdESSignatureParameters pp = new PAdESSignatureParameters();
                 pp.setSignatureLevel(SignatureLevel.valueByName(config.getPadesSignatureLevel()));
-                pp.setSignaturePackaging(SignaturePackaging.valueOf(config.getPadesSignaturePacking()));
                 parameters = pp;
                 break;
             default:
@@ -1308,15 +1315,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
 
                 if(document.data == null){
-                    throw (ClientErrorException)ErrorCode.INVALID_DOCUMENT.toException("Missing data for document (${it.name})", messageSource);
+                    throw (ClientErrorException)ErrorCode.INVALID_DOCUMENT.toException("Missing data for document (" + document.getName() + ")", messageSource);
                 }
 
                 if(document.type == null || document.type.length() == 0){
-                    throw (ClientErrorException)ErrorCode.INVALID_MIMETYPE.toException("Missing document type for document (${it.name})", messageSource);
+                    throw (ClientErrorException)ErrorCode.INVALID_MIMETYPE.toException("Missing document type for document (" + document.getName() + ")", messageSource);
                 }
 
                 if(MimeType.getFileExtension(document.name) != null && !MimeType.fromFileName(document.name).getMimeTypeString().equals(document.type)){
-                    throw (ClientErrorException)ErrorCode.INVALID_MIMETYPE.toException("Invalid type (${it.type}) for document name (${it.name}). ${MimeType.fromFileName(it.name).mimeTypeString} was exptected.", messageSource);
+                    throw (ClientErrorException)ErrorCode.INVALID_MIMETYPE.toException("Invalid type (" + document.getType() + ") for document name (" + document.getName() + "). " + MimeType.fromFileName(document.getName()).getMimeTypeString() + " was exptected.", messageSource);
                 }
             } else if(object instanceof DocumentRef) {
                 throw (ClientErrorException)ErrorCode.UNSUPPORTED_OPERATION.toException("Document references are not supported", messageSource);
@@ -1544,66 +1551,5 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         public SupportServiceAPI build() {
             return new V2SupportServiceAPI(config);
         }
-    }
-
-    public static void main(String args[]) throws ClientErrorException, ServerErrorException, IOException, MessageProcessingException {
-        // 1) Create a message security provider.
-        MessageSecurityProvider messageSecurityProvider = SupportLibraryUtils.createSimpleMessageSecurityProvider(
-            "signservice-support-lib/src/test/resources/keystore.jks",
-            "TSWCeC",
-            "8af76eae8e1a201;cn=mock issuing ca,o=mockasiner ab,c=se",
-            "signservice-support-lib/src/test/resources/truststore.jks",
-            "foo123"
-        );
-
-        // 2) Build an instance of the support service API
-        SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
-                .messageSecurityProvider(messageSecurityProvider)
-                .cacheProvider(new SimpleCacheProvider())
-                .addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3")
-                .build();
-
-        // 3) Create user that is going to sign the document(s)
-        User user = new User.Builder()
-                .userId("195207092072")
-                .role("testrole")
-                .build();
-
-        // 4) Create profile configuration to use for the transaction. This can be re-used.
-        SupportConfiguration profileConfig = new SupportConfiguration.Builder()
-                .signServiceId("http://localhost:8080/signservice-frontend/metadata/1834c194136")
-                .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/1834c194136")
-                .addTrustedAuthenticationService("Dummy idP", "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "Signature Service Dummy iDP")
-                .addRequestedCertAttribute("givenName",  "urn:oid:2.5.4.42", "2.5.4.42", true)
-                .addRequestedCertAttribute("sn", "urn:oid:2.5.4.4", "2.5.4.4", true)
-                .addRequestedCertAttribute("serialNumber", "urn:oid:1.2.752.29.4.13", "2.5.4.5", true)
-                .addRequestedCertAttribute("commonName", "urn:oid:2.16.840.1.113730.3.1.241", "2.5.4.3", false)
-                .addRequestedCertAttribute("displayName", "urn:oid:2.16.840.1.113730.3.1.241", "2.16.840.1.113730.3.1.241", false)
-                .addRequestedCertAttribute("c", "urn:oid:2.5.4.6", "2.5.4.6", false)
-                .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
-                .addAuthorizedConsumerURL("http://localhost")
-                .signRequester("http://localhost:9090/signservice-support/metadata")
-                .relatedProfile("rsaProfile")
-                .enableAuthnProfile(true)
-                .build();
-
-        // 5) Create document requests to include in the transaction.
-        DocumentRequests documentRequests = new DocumentRequests.Builder()
-                .addXMLDocument("/home/agerbergt/git/signservice/signservice-support/src/test/resources/testdocument.xml")
-                .build();
-
-        // 6) Generate the prepared signature request
-        PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature(
-                profileConfig,
-                documentRequests,
-                null,
-                "Im signing everything",
-                user,
-                "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata",
-                "http://localhost",
-                null
-        );
-
-        System.out.println(SupportLibraryUtils.generateRedirectHtml(preparedSignature));
     }
 }

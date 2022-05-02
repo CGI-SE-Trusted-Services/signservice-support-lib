@@ -36,11 +36,13 @@ dependencies {
         exclude module: "spring-beans"
     }
     compile ("org.certificateservices.messages:certservice-messages"){
-        // certservice-messages is using a newer version of xmlsec which
-        // is not compatible with the current version of DSS library.
+        // certservice-messages is using a newer version of xmlsec and bouncy castle
+        // which is not compatible with the current version of DSS library.
         exclude module: "xmlsec"
+        exclude group: "org.bouncycastle"
     }
     runtime "org.slf4j:slf4j-simple:1.7.36"
+    testCompile "org.codehaus.groovy.modules.http-builder:http-builder:0.7.1"
 }
 
 buildscript {
