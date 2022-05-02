@@ -12,6 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.system;
 
+import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
 import se.signatureservice.support.common.cache.CacheProvider;
@@ -57,10 +58,10 @@ public class SupportAPIConfiguration {
     private String trustStoreType = "JKS";
 
     /**
-     * Policy file to use from the class path when validating documents.
-     * Default value: /validationpolicy.xml
+     * If simple report should be generated during validation.
+     * Default value: true
      */
-    private String validationPolicy = "/validationpolicy.xml";
+    private boolean useSimpleValidationReport = true;
 
     /**
      * If strict validation should be performed when validating documents.
@@ -73,6 +74,20 @@ public class SupportAPIConfiguration {
      * Default value: false
      */
     private boolean disableRevocationCheck = false;
+
+    /**
+     * Proxy configuration to use during validation when fetching
+     * revocation data or null if no proxy should be used.
+     * Default value: null
+     */
+    private ProxyConfig validationProxyConfig = null;
+
+    /**
+     * How long in milliseconds that the revocation data cache is valid before
+     * being refreshed.
+     * Default value: 86400000 (24h)
+     */
+    private long validationCacheExpirationTimeMS = Constants.DEFAULT_VALIDATION_CACHE_EXPIRATION_TIME;
 
     /**
      * Map containing list of recipient certificates, for each authentication service
@@ -132,20 +147,28 @@ public class SupportAPIConfiguration {
         this.trustStoreType = trustStoreType;
     }
 
-    public String getValidationPolicy() {
-        return validationPolicy;
-    }
-
-    public void setValidationPolicy(String validationPolicy) {
-        this.validationPolicy = validationPolicy;
-    }
-
     public boolean isPerformStrictValidation() {
         return performStrictValidation;
     }
 
     public void setPerformStrictValidation(boolean performStrictValidation) {
         this.performStrictValidation = performStrictValidation;
+    }
+
+    public boolean isUseSimpleValidationReport() {
+        return useSimpleValidationReport;
+    }
+
+    public void setUseSimpleValidationReport(boolean useSimpleValidationReport) {
+        this.useSimpleValidationReport = useSimpleValidationReport;
+    }
+
+    public long getValidationCacheExpirationTimeMS() {
+        return validationCacheExpirationTimeMS;
+    }
+
+    public void setValidationCacheExpirationTimeMS(long validationCacheExpirationTimeMS) {
+        this.validationCacheExpirationTimeMS = validationCacheExpirationTimeMS;
     }
 
     public boolean isDisableRevocationCheck() {
@@ -162,6 +185,14 @@ public class SupportAPIConfiguration {
 
     public void setEncryptedSignMessageRecipients(Map<String, List<X509Certificate>> encryptedSignMessageRecipients) {
         this.encryptedSignMessageRecipients = encryptedSignMessageRecipients;
+    }
+
+    public ProxyConfig getValidationProxyConfig() {
+        return validationProxyConfig;
+    }
+
+    public void setValidationProxyConfig(ProxyConfig validationProxyConfig) {
+        this.validationProxyConfig = validationProxyConfig;
     }
 
     public Map<String, Map> getAuthContextMappings() {

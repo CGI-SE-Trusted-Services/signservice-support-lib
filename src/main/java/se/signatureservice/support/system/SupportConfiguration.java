@@ -81,7 +81,7 @@ public final class SupportConfiguration extends Configuration {
      * CAdES Signature packing setting.
      * Supported values: DETACHED, ENVELOPING
      */
-    private String cadesSignaturePacking;
+    private String cadesSignaturePacking = "ENVELOPING";
 
     /**
      * Overlap in minutes to overcome problems with time
@@ -265,9 +265,10 @@ public final class SupportConfiguration extends Configuration {
     /**
      * Validation policy to use when verifying signed documents. Policy file must be specified
      * using filename (with or without .xml extension) of policy file which must be present
-     * in the policy directory specified by the application setting 'validation.policy.directory'.
+     * in the class path.
+     * Default value: /validationpolicy.xml
      */
-    private String validationPolicy;
+    private String validationPolicy = "/validationpolicy.xml";
 
     /**
      * Flag indicating if enhanced logging should be enabled or not. If enhanced logging is

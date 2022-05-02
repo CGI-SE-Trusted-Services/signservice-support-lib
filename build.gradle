@@ -18,6 +18,14 @@ repositories {
     }
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
+}
+
 dependencies {
     compile "eu.europa.ec.joinup.sd-dss:dss-xades:$dssVersion"
     compile "eu.europa.ec.joinup.sd-dss:dss-cades:$dssVersion"

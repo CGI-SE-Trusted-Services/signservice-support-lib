@@ -15,7 +15,10 @@ package se.signatureservice.support.api.v2;
 import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
+import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.enumerations.*;
+import eu.europa.esig.dss.jaxb.SchemaFactoryBuilder;
+import eu.europa.esig.dss.jaxb.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
@@ -23,8 +26,22 @@ import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
+import eu.europa.esig.dss.service.crl.OnlineCRLSource;
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
+import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader;
+import eu.europa.esig.dss.service.http.commons.OCSPDataLoader;
+import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
+import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
+import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
+import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
+import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
+import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.validation.SignedDocumentValidator;
+import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import org.apache.commons.io.IOUtils;
@@ -61,7 +78,6 @@ import se.signatureservice.support.common.InternalErrorException;
 import se.signatureservice.support.common.InternalServerException;
 import se.signatureservice.support.common.InvalidArgumentException;
 import se.signatureservice.support.common.cache.CacheProvider;
-import se.signatureservice.support.common.cache.SimpleCacheProvider;
 import se.signatureservice.support.common.cache.MetaData;
 import se.signatureservice.support.system.TransactionState;
 import se.signatureservice.support.signer.SignTaskHelper;
@@ -71,6 +87,7 @@ import se.signatureservice.support.system.SupportConfiguration;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -100,6 +117,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private PAdESService pAdESService;
     private CAdESService cAdESService;
     private Map<String, OnlineTSPSource> onlineTSPSources;
+    private CommonCertificateVerifier certificateVerifier;
+    private CRLSource crlSource;
+    private OCSPSource ocspSource;
+    private boolean useSimpleReport;
 
     private final SupportAPIConfiguration apiConfig;
     private final MessageSource messageSource;
@@ -146,6 +167,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         cAdESService = new CAdESService(new CommonCertificateVerifier());
 
         onlineTSPSources = new HashMap<>();
+        useSimpleReport = apiConfig.isUseSimpleValidationReport();
     }
 
     /**
@@ -190,7 +212,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             preparedSignature.setTransactionId(transactionId);
             preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes));
 
-            TransactionState transactionState = new TransactionState();
+            TransactionState transactionState = fetchTransactionState(transactionId);
             transactionState.setProfile(profileConfig.getRelatedProfile());
             transactionState.setTransactionId(transactionId);
             transactionState.setSignMessage(signMessage);
@@ -309,8 +331,110 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     @Override
     public VerifyDocumentResponse verifyDocument(SupportConfiguration profileConfig, Document signedDocument) throws ClientErrorException, ServerErrorException {
-        // TODO: Implement verification.
-        return null;
+        VerifyDocumentResponse response = null;
+        Reports reports;
+        int validSignatures = 0;
+        String validationPolicy = profileConfig.getValidationPolicy();
+
+        if(validationPolicy != null && !validationPolicy.endsWith(".xml")){
+            validationPolicy += ".xml";
+        }
+
+        try {
+            DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(signedDocument);
+            SignedDocumentValidator validator = null;
+            try {
+                validator = SignedDocumentValidator.fromDocument(dssDocument);
+            } catch(DSSException e){
+                log.error("Failed to create signed document validator: " + e.getMessage());
+            }
+
+            response = new VerifyDocumentResponse();
+            response.setReferenceId(signedDocument.referenceId);
+
+            List<Signature> signatures = new ArrayList<Signature>();
+            if(validator != null){
+                if(signedDocument.isHasDetachedSignature()){
+                    List<DSSDocument> detachedContentsList = new ArrayList<DSSDocument>();
+                    InMemoryDocument inMemoryDocument = new InMemoryDocument();
+                    inMemoryDocument.setBytes(signedDocument.getDetachedSignatureData());
+                    detachedContentsList.add(inMemoryDocument);
+                    validator.setDetachedContents(detachedContentsList);
+                }
+
+                validator.setCertificateVerifier(getCertificateVerifier());
+
+                // Removing unsupported attributes to solve "SECURITY : unable to set attribute(s)" error
+                SchemaFactoryBuilder schemaFactoryBuilder = SchemaFactoryBuilder.getSecureSchemaBuilder();
+                schemaFactoryBuilder.removeAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
+                schemaFactoryBuilder.removeAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA);
+                XmlDefinerUtils.getInstance().setSchemaFactoryBuilder(schemaFactoryBuilder);
+
+                // set tokenExtractionStategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStategy is NONE
+                validator.setTokenExtractionStategy(TokenExtractionStategy.EXTRACT_CERTIFICATES_ONLY);
+                reports = validator.validateDocument(validationPolicy);
+
+                for(String signatureId : reports.getSimpleReport().getSignatureIdList()){
+                    String certId = reports.getDiagnosticData().getSigningCertificateId(signatureId);
+                    CertificateWrapper signingCertificate = reports.getDiagnosticData().getUsedCertificateById(certId);
+                    X509Certificate signingCertificateX509 = CertUtils.getX509CertificateFromPEMorDER(signingCertificate.getBinaries());
+                    SAMLAuthContextType authContext = SupportLibraryUtils.getAuthContextFromCertificate(authContSaciMessageParser, signingCertificateX509);
+
+                    Signature signature = new Signature();
+                    signature.setSignerCertificate(signingCertificate.getBinaries());
+                    signature.setIssuerId(signingCertificate.getCertificateIssuerDN());
+                    signature.setSigningDate(reports.getDiagnosticData().getSignatureDate(signatureId));
+                    signature.setSigningAlgorithm(SignatureAlgorithm.getAlgorithm(signingCertificate.getEncryptionAlgorithm(), signingCertificate.getDigestAlgorithm()).getJCEId());
+                    signature.setValidFrom(signingCertificate.getNotBefore());
+                    signature.setValidTo(signingCertificate.getNotAfter());
+                    signature.setSignerId(SupportLibraryUtils.getUserIdFromAuthContext(authContext, profileConfig));
+                    signature.setSignerDisplayName(SupportLibraryUtils.getDisplayNameFromAuthContext(authContext));
+                    signature.setLevelOfAssurance(SupportLibraryUtils.getLevelOfAssuranceFromAuthContext(apiConfig, authContext));
+                    signatures.add(signature);
+                }
+
+                for(String signatureId : reports.getSimpleReport().getSignatureIdList()){
+                    Indication indication = reports.getSimpleReport().getIndication(signatureId);
+                    if(indication == Indication.TOTAL_PASSED){
+                        validSignatures++;
+                    } else if(response.getVerificationErrorCode() == null || response.getVerificationErrorCode() < indication.ordinal()){
+                        response.setVerificationErrorCode(indication.ordinal());
+                        response.setVerificationErrorMessages(getMessagesFromList(reports.getSimpleReport().getErrors(signatureId), "en"));
+                    }
+                }
+
+                response.setVerifies((validSignatures == reports.getSimpleReport().getSignaturesCount() && validSignatures > 0));
+
+                if(reports.getSimpleReport().getSignaturesCount() > 0){
+                    if(useSimpleReport){
+                        response.setReportData(reports.getXmlSimpleReport().getBytes("UTF-8"));
+                    } else {
+                        response.setReportData(reports.getXmlDetailedReport().getBytes("UTF-8"));
+                    }
+                    response.setReportMimeType(MimeType.XML.getMimeTypeString());
+                } else {
+                    response.setReportData(null);
+                }
+            } else {
+                // Failed to initialize signature validator. This could either mean we have an
+                // unsigned document or an unsupported signature format.
+                response.setVerifies(false);
+            }
+
+            response.setSignatures(new Signatures(signatures));
+
+        } catch(Exception e){
+            log.error("Error while verifying signed document: " + e.getMessage());
+
+            if(e instanceof ServerErrorException){
+                throw (ServerErrorException)e;
+            } else if(e instanceof ClientErrorException){
+                throw (ClientErrorException)e;
+            } else {
+                throw (ServerErrorException)ErrorCode.VERIFY_DOCUMENT_FAILED.toException("Failed to verify document: " + e.getMessage());
+            }
+        }
+        return response;
     }
 
     /**
@@ -505,6 +629,100 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         return signedDocument;
+    }
+
+    /**
+     * Create Messages instance based on a given list of messages and a
+     * corresponding language.
+     *
+     * @param messageList List of messages.
+     * @param language Language to use.
+     * @return Messages instance.
+     */
+    private Messages getMessagesFromList(List<String> messageList, String language){
+        Messages messages = new Messages();
+        messages.message = new ArrayList<Message>();
+        for(String messageText : messageList){
+            Message message = new Message();
+            message.setText(messageText);
+            message.setLang(language);
+            messages.message.add(message);
+        }
+
+        return messages;
+    }
+
+    /**
+     * Get certificate verifier instance used during document validation.
+     *
+     * @return CertificateVerifier to use during validation.
+     * @throws IOException If certificate verifier instance could not be created.
+     */
+    private CertificateVerifier getCertificateVerifier() throws IOException {
+        if(certificateVerifier == null){
+            certificateVerifier = new CommonCertificateVerifier();
+            certificateVerifier.setCrlSource(getCRLSource());
+            certificateVerifier.setOcspSource(getOCSPSource());
+
+            String validationTruststore = apiConfig.getTrustStorePath();
+            String truststorePassword = apiConfig.getTrustStorePassword();
+            String truststoreType = apiConfig.getTrustStoreType();
+
+            if(validationTruststore == null || truststorePassword == null){
+                log.warn("Verification of documents will not work properly as validation truststore is not specified in configuration file. Correct this by specifying 'validation.truststore.path' and 'validation.truststore.password'.");
+            } else {
+                KeyStoreCertificateSource trustedCertificateSource = new KeyStoreCertificateSource(new File(validationTruststore), truststoreType, truststorePassword);
+                CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+                certificateSource.importAsTrusted(trustedCertificateSource);
+                certificateVerifier.setTrustedCertSources(certificateSource);
+            }
+        }
+
+        return certificateVerifier;
+    }
+
+    /**
+     * Get CRL source to use during document validation.
+     *
+     * @return CRL source
+     */
+    private CRLSource getCRLSource() {
+        if(crlSource == null){
+            log.debug("Initializing CRL loader");
+            FileCacheDataLoader cacheDataLoader = new FileCacheDataLoader();
+            CommonsDataLoader dataLoader = new CommonsDataLoader();
+
+            if(apiConfig.getValidationProxyConfig() != null){
+                dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
+            }
+
+            cacheDataLoader.setDataLoader(dataLoader);
+            cacheDataLoader.setFileCacheDirectory(new File(System.getProperty("java.io.tmpdir")));
+
+            Long cacheExpirationTime = apiConfig.getValidationCacheExpirationTimeMS();
+            log.info("Setting validation cache expiration time to " + cacheExpirationTime + " ms");
+            cacheDataLoader.setCacheExpirationTime(cacheExpirationTime);
+            crlSource = new OnlineCRLSource(cacheDataLoader);
+        }
+
+        return crlSource;
+    }
+
+    /**
+     * Get OCSP source to use during document validation.
+     *
+     * @return OCSP source.
+     */
+    private OCSPSource getOCSPSource() {
+        if(ocspSource == null){
+            log.debug("Initializing OCSP loader");
+            OCSPDataLoader dataLoader = new OCSPDataLoader();
+            if(apiConfig.getValidationProxyConfig() != null){
+                dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
+            }
+            ocspSource = new OnlineOCSPSource(dataLoader);
+        }
+        return ocspSource;
     }
 
     /**
@@ -1457,13 +1675,88 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         /**
-         * Specify custom policy file to use from the class path when validating documents.
+         * Specify proxy settings to use during document validation when fetching
+         * revocation data.
          *
-         * @param policy Policy file to use.
+         * @param host Proxy host
+         * @param port Proxy port
          * @return Updated builder.
          */
-        public Builder validationPolicy(String policy){
-            config.setValidationPolicy(policy);
+        public Builder validationProxy(String host, int port){
+            return validationProxy(host, port, null, null, null);
+        }
+
+        /**
+         * Specify proxy settings to use during document validation when fetching
+         * revocation data.
+         *
+         * @param host Proxy host
+         * @param port Proxy port
+         * @param excludedHosts Excluded hosts. Multiple hosts can be seperated by ',', ';' or ' '.
+         * @return Updated builder.
+         */
+        public Builder validationProxy(String host, int port, String excludedHosts){
+            return validationProxy(host, port, null, null, excludedHosts);
+        }
+
+        /**
+         * Specify proxy settings to use during document validation when fetching
+         * revocation data.
+         *
+         * @param host Proxy host
+         * @param port Proxy port
+         * @param user Proxy username
+         * @param password Proxy Password
+         * @return Updated builder.
+         */
+        public Builder validationProxy(String host, int port, String user, String password){
+            return validationProxy(host, port, user, password, null);
+        }
+
+        /**
+         * Specify proxy settings to use during document validation when fetching
+         * revocation data.
+         *
+         * @param host Proxy host
+         * @param port Proxy port
+         * @param user Proxy username
+         * @param password Proxy Password
+         * @param excludedHosts Excluded hosts. Multiple hosts can be seperated by ',', ';' or ' '.
+         * @return Updated builder.
+         */
+        public Builder validationProxy(String host, int port, String user, String password, String excludedHosts){
+            ProxyConfig proxyConfig = new ProxyConfig();
+            ProxyProperties proxyProperties = new ProxyProperties();
+            proxyProperties.setHost(host);
+            proxyProperties.setPort(port);
+
+            if(user != null){
+                proxyProperties.setUser(user);
+            }
+
+            if(password != null){
+                proxyProperties.setPassword(password);
+            }
+
+            if(excludedHosts != null){
+                proxyProperties.setExcludedHosts(excludedHosts);
+            }
+            proxyConfig.setHttpProperties(proxyProperties);
+            proxyConfig.setHttpsProperties(proxyProperties);
+            config.setValidationProxyConfig(proxyConfig);
+
+            return this;
+        }
+
+        /**
+         * Set expiration time in milliseconds of cache used during
+         * validation to store revocation data.
+         *
+         * @param expirationTimeMS Expiration time in milliseconds.
+         * @return Updated builder.
+         */
+        Builder validationCacheExpirationTimeMS(long expirationTimeMS){
+            config.setValidationCacheExpirationTimeMS(expirationTimeMS);
             return this;
         }
 
@@ -1486,6 +1779,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          */
         public Builder disableRevocationCheck(boolean revocationCheck){
             config.setDisableRevocationCheck(revocationCheck);
+            return this;
+        }
+
+        /**
+         * Specify if simple validation report should be generated or not.
+         * If false the validation report will be detailed.
+         *
+         * @param simpleReport If simple validation report should be used.
+         * @return Updated builder.
+         */
+        public Builder simpleValidationReport(boolean simpleReport) {
+            config.setUseSimpleValidationReport(simpleReport);
             return this;
         }
 

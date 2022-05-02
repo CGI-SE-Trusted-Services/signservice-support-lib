@@ -78,6 +78,8 @@ public class Constants {
     public final static Integer DEFAULT_REQUEST_VALIDITY_IN_MINUTES = 5;
     public final static Integer DEFAULT_REQUEST_VALIDITY_OVERLAP_IN_MINUTES = 2;
 
+    public final static long DEFAULT_VALIDATION_CACHE_EXPIRATION_TIME = 86400000;
+
     /**
      * Indicates a value as not set.
      */

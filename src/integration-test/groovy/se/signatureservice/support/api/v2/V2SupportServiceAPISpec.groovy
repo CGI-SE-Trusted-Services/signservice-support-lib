@@ -32,6 +32,10 @@ class V2SupportServiceAPISpec extends Specification  {
                 .messageSecurityProvider(messageSecurityProvider)
                 .cacheProvider(new SimpleCacheProvider())
                 .addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3")
+                .trustStore("src/test/resources/validation-truststore.jks")
+                .trustStorePassword("foo123")
+                .performStrictValidation(false)
+                .disableRevocationCheck(true)
                 .build()
 
         // Create profile configuration to use for the transaction. This can be re-used if needed.
@@ -50,14 +54,13 @@ class V2SupportServiceAPISpec extends Specification  {
                 .signRequester("http://localhost:9090/signservice-support/metadata")
                 .relatedProfile("rsaProfile")
                 .enableAuthnProfile(true)
-                .padesSignaturePacking("ENVELOPED")
                 .build()
     }
 
     def cleanupSpec(){
     }
 
-    def "perform XML document signing"(){
+    def "perform XML document signing and verification"(){
         when:
 
         // Create user that is going to sign the document(s)
@@ -100,10 +103,18 @@ class V2SupportServiceAPISpec extends Specification  {
         )
 
         Document signedDocument = completeSignature.documents.documents.first() as Document
-        new File("/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
+        assert signedDocument != null
+        new File("build/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
+
+        VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(profileConfig, signedDocument);
 
         then:
-        signedDocument != null
+        verifiedDocument != null
+
+        println "-----BEGIN VALIDATION REPORT-----"
+        println new String(verifiedDocument.reportData)
+        println "-----END VALIDATION REPORT-----"
+        verifiedDocument.isVerifies()
     }
 
     def "perform PDF document signing"(){
@@ -116,7 +127,7 @@ class V2SupportServiceAPISpec extends Specification  {
 
         // Create document requests to include in the transaction.
         DocumentRequests documentRequests = new DocumentRequests.Builder()
-                .addPDFDocument("/home/agerbergt/git/signservice/signservice-support/src/test/resources/testdocument.pdf")
+                .addPDFDocument("src/test/resources/testdocument.pdf")
                 .build()
 
         // Generate the prepared signature request using the support service API.
@@ -148,7 +159,55 @@ class V2SupportServiceAPISpec extends Specification  {
         )
 
         Document signedDocument = completeSignature.documents.documents.first() as Document
-        new File("/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
+        new File("build/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
+
+        then:
+        signedDocument != null
+    }
+
+    def "perform CMS document signing"(){
+        when:
+        // Create user that is going to sign the document(s)
+        User user = new User.Builder()
+                .userId("195207092072")
+                .role("testrole")
+                .build()
+
+        // Create document requests to include in the transaction.
+        DocumentRequests documentRequests = new DocumentRequests.Builder()
+                .addCMSDocument("src/test/resources/testdocument.doc")
+                .build()
+
+        // Generate the prepared signature request using the support service API.
+        PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature(
+                profileConfig,
+                documentRequests,
+                null,
+                "Im signing everything",
+                user,
+                "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata",
+                "http://localhost",
+                null
+        )
+
+        // Send the signature request to central system to receive SAML request.
+        Map<String,String> response = processSignRequest(preparedSignature.signRequest, preparedSignature.actionURL)
+
+        // Send SAML request to identity provider to receive the SAML response.
+        response = processAuthnRequest(response["SAMLRequest"] as String, response["RelayState"] as String, response["ActionURL"] as String, user.userId)
+
+        // Send SAML response to central system to receive the sign response.
+        response = processAuthnResponse(response["SAMLResponse"] as String, response["RelayState"] as String, response["ActionURL"] as String)
+
+        // Process the sign response using the support service API in order to get the complete signed document.
+        CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignature(
+                profileConfig,
+                response["EidSignResponse"] as String,
+                preparedSignature.transactionId
+        )
+
+        Document signedDocument = completeSignature.documents.documents.first() as Document
+        new File("build/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
 
         then:
         signedDocument != null
