@@ -77,7 +77,6 @@ shadowJar {
     relocate 'org.json', 'certservice.org.json'
     relocate 'org.yaml', 'certservice.org.yaml'
     relocate 'com.ctc', 'certservice.com.ctc'
-    relocate 'org.bouncycastle', 'certservice.org.bouncycastle'
     relocate 'com.fasterxml', 'certservice.com.fasterxml'
     relocate 'com.sun', 'certservice.com.sun'
     relocate 'org.springframework', 'certservice.org.springframework'
