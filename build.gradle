@@ -2,6 +2,8 @@ group "se.signatureservice.support"
 
 certserviceSettings {
     useGroovyInMain = false
+    licenseName = "GNU Lesser General Public License v3.0 or later"
+    licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
 }
 
 sourceCompatibility = "1.8"
