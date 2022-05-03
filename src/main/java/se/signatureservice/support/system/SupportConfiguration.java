@@ -266,9 +266,9 @@ public final class SupportConfiguration extends Configuration {
      * Validation policy to use when verifying signed documents. Policy file must be specified
      * using filename (with or without .xml extension) of policy file which must be present
      * in the class path.
-     * Default value: /validationpolicy.xml
+     * Default value: /defaultpolicy.xml
      */
-    private String validationPolicy = "/validationpolicy.xml";
+    private String validationPolicy = "/defaultpolicy.xml";
 
     /**
      * Flag indicating if enhanced logging should be enabled or not. If enhanced logging is

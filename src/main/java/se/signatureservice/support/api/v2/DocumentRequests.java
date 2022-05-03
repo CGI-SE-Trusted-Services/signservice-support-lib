@@ -66,14 +66,26 @@ public class DocumentRequests implements Externalizable {
             documentRequests.documents = new ArrayList<>();
         }
 
+        public Builder addCMSDocument(String fileName, FileInputStream fileStream) throws IOException {
+            return addDocument(fileName, "application/octet-stream", fileStream, SupportLibraryUtils.generateReferenceId());
+        }
+
         public Builder addCMSDocument(String filePath) throws IOException {
             File file = new File(filePath);
             return addDocument(file.getName(), "application/octet-stream", new FileInputStream(file), SupportLibraryUtils.generateReferenceId());
         }
 
+        public Builder addPDFDocument(String fileName, FileInputStream fileStream) throws IOException {
+            return addDocument(fileName, "application/pdf", fileStream, SupportLibraryUtils.generateReferenceId());
+        }
+
         public Builder addPDFDocument(String filePath) throws IOException {
             File file = new File(filePath);
             return addDocument(file.getName(), "application/pdf", new FileInputStream(file), SupportLibraryUtils.generateReferenceId());
+        }
+
+        public Builder addXMLDocument(String fileName, FileInputStream fileStream) throws IOException {
+            return addDocument(fileName, "text/xml", fileStream, SupportLibraryUtils.generateReferenceId());
         }
 
         public Builder addXMLDocument(String filePath) throws IOException {

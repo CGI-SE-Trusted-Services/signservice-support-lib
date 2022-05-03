@@ -64,7 +64,7 @@ public class Constants {
     public final static String DEFAULT_CADES_SIGNATURELEVEL = "CAdES-BASELINE-B";
     public final static String DEFAULT_CADES_SIGNATUREPACKING = "ENVELOPING";
 
-    public final static String DEFAULT_VALIDATION_POLICY_NAME = "/validationpolicy.xml";
+    public final static String DEFAULT_VALIDATION_POLICY_NAME = "/defaultpolicy.xml";
     public final static String DEFAULT_VALIDATION_TRUSTSTORE_TYPE = "JKS";
     public final static String DEFAULT_VALIDATION_STRICT = "false";
     public final static String DEFAULT_VALIDATION_DISABLE_REVOCATIONCHECK = "false";

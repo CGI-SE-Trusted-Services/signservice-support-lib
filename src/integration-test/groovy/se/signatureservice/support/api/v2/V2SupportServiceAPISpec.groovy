@@ -7,8 +7,16 @@ import se.signatureservice.support.api.SupportServiceAPI
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.system.SupportConfiguration
 import se.signatureservice.support.utils.SupportLibraryUtils
+import spock.lang.Ignore
 import spock.lang.Specification
 
+/**
+ * Test used in order to verify the API. Requires that the following services are started
+ *  - eid2-dummy-idp
+ *  - signservice-frontend
+ *  - signservice-backend
+ */
+@Ignore
 class V2SupportServiceAPISpec extends Specification  {
     static MessageSecurityProvider messageSecurityProvider
     static SupportServiceAPI supportServiceAPI
@@ -31,11 +39,8 @@ class V2SupportServiceAPISpec extends Specification  {
         supportServiceAPI = new V2SupportServiceAPI.Builder()
                 .messageSecurityProvider(messageSecurityProvider)
                 .cacheProvider(new SimpleCacheProvider())
-                .addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3")
                 .trustStore("src/test/resources/validation-truststore.jks")
                 .trustStorePassword("foo123")
-                .performStrictValidation(false)
-                .disableRevocationCheck(true)
                 .build()
 
         // Create profile configuration to use for the transaction. This can be re-used if needed.
@@ -117,7 +122,7 @@ class V2SupportServiceAPISpec extends Specification  {
         verifiedDocument.isVerifies()
     }
 
-    def "perform PDF document signing"(){
+    def "perform PDF document signing and verification"(){
         when:
         // Create user that is going to sign the document(s)
         User user = new User.Builder()
@@ -161,11 +166,18 @@ class V2SupportServiceAPISpec extends Specification  {
         Document signedDocument = completeSignature.documents.documents.first() as Document
         new File("build/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
 
+        VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(profileConfig, signedDocument);
+
         then:
-        signedDocument != null
+        verifiedDocument != null
+
+        println "-----BEGIN VALIDATION REPORT-----"
+        println new String(verifiedDocument.reportData)
+        println "-----END VALIDATION REPORT-----"
+        verifiedDocument.isVerifies()
     }
 
-    def "perform CMS document signing"(){
+    def "perform CMS document signing and verification"(){
         when:
         // Create user that is going to sign the document(s)
         User user = new User.Builder()
@@ -209,8 +221,15 @@ class V2SupportServiceAPISpec extends Specification  {
         Document signedDocument = completeSignature.documents.documents.first() as Document
         new File("build/tmp/signed_${signedDocument.name}").bytes = signedDocument.data
 
+        VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(profileConfig, signedDocument);
+
         then:
-        signedDocument != null
+        verifiedDocument != null
+
+        println "-----BEGIN VALIDATION REPORT-----"
+        println new String(verifiedDocument.reportData)
+        println "-----END VALIDATION REPORT-----"
+        verifiedDocument.isVerifies()
     }
 
     private Map<String,String> processSignRequest(String signRequest, String actionURL) {

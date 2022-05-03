@@ -64,18 +64,6 @@ public class SupportAPIConfiguration {
     private boolean useSimpleValidationReport = true;
 
     /**
-     * If strict validation should be performed when validating documents.
-     * Default value: false
-     */
-    private boolean performStrictValidation = false;
-
-    /**
-     * If revocation check should be disabled when validating document signatures.
-     * Default value: false
-     */
-    private boolean disableRevocationCheck = false;
-
-    /**
      * Proxy configuration to use during validation when fetching
      * revocation data or null if no proxy should be used.
      * Default value: null
@@ -147,14 +135,6 @@ public class SupportAPIConfiguration {
         this.trustStoreType = trustStoreType;
     }
 
-    public boolean isPerformStrictValidation() {
-        return performStrictValidation;
-    }
-
-    public void setPerformStrictValidation(boolean performStrictValidation) {
-        this.performStrictValidation = performStrictValidation;
-    }
-
     public boolean isUseSimpleValidationReport() {
         return useSimpleValidationReport;
     }
@@ -169,14 +149,6 @@ public class SupportAPIConfiguration {
 
     public void setValidationCacheExpirationTimeMS(long validationCacheExpirationTimeMS) {
         this.validationCacheExpirationTimeMS = validationCacheExpirationTimeMS;
-    }
-
-    public boolean isDisableRevocationCheck() {
-        return disableRevocationCheck;
-    }
-
-    public void setDisableRevocationCheck(boolean disableRevocationCheck) {
-        this.disableRevocationCheck = disableRevocationCheck;
     }
 
     public Map<String, List<X509Certificate>> getEncryptedSignMessageRecipients() {

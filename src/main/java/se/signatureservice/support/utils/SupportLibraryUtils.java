@@ -25,9 +25,7 @@ import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.signatureservice.support.api.ErrorCode;
-import se.signatureservice.support.api.v2.PreparedSignatureResponse;
-import se.signatureservice.support.api.v2.ServerErrorException;
-import se.signatureservice.support.api.v2.V2SupportServiceAPI;
+import se.signatureservice.support.api.v2.*;
 import se.signatureservice.support.common.InternalServerException;
 import se.signatureservice.support.system.Constants;
 import se.signatureservice.support.system.SupportAPIConfiguration;
@@ -35,7 +33,6 @@ import se.signatureservice.support.system.SupportConfiguration;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -237,5 +234,13 @@ public class SupportLibraryUtils {
 		sb.append("</body>\n");
 		sb.append("</html>\n");
         return sb.toString();
+    }
+
+    public static void asdf(){
+        CompleteSignatureResponse completeSignature = new CompleteSignatureResponse();
+        Document signedDocument = (Document)completeSignature.getDocuments().getDocuments().get(0);
+        signedDocument.getName();
+        signedDocument.getData();
+
     }
 }

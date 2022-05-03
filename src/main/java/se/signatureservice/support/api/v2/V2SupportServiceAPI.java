@@ -1761,28 +1761,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         /**
-         * Specify if strict validation should be performed when validating documents.
-         *
-         * @param strictValidation True if strict validation should be performed, otherwise false.
-         * @return Updated builder.
-         */
-        public Builder performStrictValidation(boolean strictValidation){
-            config.setPerformStrictValidation(strictValidation);
-            return this;
-        }
-
-        /**
-         * Specify if revocation check should be performed when validating documents.
-         *
-         * @param revocationCheck True if revocation check should be performed, otherwise false.
-         * @return Updated builder.
-         */
-        public Builder disableRevocationCheck(boolean revocationCheck){
-            config.setDisableRevocationCheck(revocationCheck);
-            return this;
-        }
-
-        /**
          * Specify if simple validation report should be generated or not.
          * If false the validation report will be detailed.
          *
@@ -1854,6 +1832,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @return TransactionSigner instance based on builder settings.
          */
         public SupportServiceAPI build() {
+            if(config.getAuthContextMappings() == null){
+                log.info("Using default authentication context mappings.");
+                addAuthContextMapping("passwordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "http://id.elegnamnden.se/loa/1.0/loa2");
+                addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3");
+                addAuthContextMapping("mobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "http://id.elegnamnden.se/loa/1.0/loa3");
+                addAuthContextMapping("smartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "http://id.elegnamnden.se/loa/1.0/loa4");
+            }
+
             return new V2SupportServiceAPI(config);
         }
     }
