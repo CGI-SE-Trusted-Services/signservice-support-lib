@@ -1755,7 +1755,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param expirationTimeMS Expiration time in milliseconds.
          * @return Updated builder.
          */
-        Builder validationCacheExpirationTimeMS(long expirationTimeMS){
+        public Builder validationCacheExpirationTimeMS(long expirationTimeMS){
             config.setValidationCacheExpirationTimeMS(expirationTimeMS);
             return this;
         }

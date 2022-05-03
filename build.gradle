@@ -75,7 +75,6 @@ shadowJar {
     dependencies {
         exclude(dependency("org.slf4j:slf4j-simple:1.7.29"))
     }
-    relocate 'org.apache', 'certservice.org.apache'
     relocate 'org.json', 'certservice.org.json'
     relocate 'org.yaml', 'certservice.org.yaml'
     relocate 'com.ctc', 'certservice.com.ctc'

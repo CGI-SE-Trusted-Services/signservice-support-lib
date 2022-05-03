@@ -95,7 +95,7 @@ public class User implements Externalizable {
          * @param userId User ID.
          * @return Updated builder.
          */
-        Builder userId(String userId){
+        public Builder userId(String userId){
             this.userId = userId;
             return this;
         }
@@ -106,7 +106,7 @@ public class User implements Externalizable {
          * @param role User role.
          * @return Updated builder.
          */
-        Builder role(String role){
+        public Builder role(String role){
             this.role = role;
             return this;
         }
@@ -117,7 +117,7 @@ public class User implements Externalizable {
          * @param attributes User attributes to use.
          * @return Updated builder.
          */
-        Builder attributes(List<Attribute> attributes){
+        public Builder attributes(List<Attribute> attributes){
             this.attributes = attributes;
             return this;
         }
@@ -129,7 +129,7 @@ public class User implements Externalizable {
          * @param value Attribute value.
          * @return Updated builder.
          */
-        Builder addAttribute(String key, String value){
+        public Builder addAttribute(String key, String value){
             if(attributes == null){
                 attributes = new ArrayList<>();
             }
