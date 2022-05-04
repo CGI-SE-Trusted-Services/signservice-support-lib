@@ -1409,13 +1409,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         if(config.getTrustedAuthenticationServices() != null){
             for(Map.Entry<String,Map> entry : config.getTrustedAuthenticationServices().entrySet()){
                 if(entry.getValue().get("entityId").equals(authenticationServiceId)){
-                    explicitAccRefs.add((String)entry.getValue().get("authnContextClassRef"));
-                }
-
-                if(entry.getValue().get("authnContextClassRefs") != null){
-                    for(String ref : (List<String>)entry.getValue().get("authnContextClassRefs")){
-                        if(!explicitAccRefs.contains(ref)){
-                            explicitAccRefs.add(ref);
+                    if(entry.getValue().get("authnContextClassRef") != null){
+                        explicitAccRefs.add((String)entry.getValue().get("authnContextClassRef"));
+                    } else if(entry.getValue().get("authnContextClassRefs") != null){
+                        for(String ref : (List<String>)entry.getValue().get("authnContextClassRefs")){
+                            if(!explicitAccRefs.contains(ref)){
+                                explicitAccRefs.add(ref);
+                            }
                         }
                     }
                 }
