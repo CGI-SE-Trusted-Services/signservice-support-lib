@@ -848,7 +848,7 @@ public final class SupportConfiguration extends Configuration {
             if(authnContextClassRef != null){
                 refs.add(authnContextClassRef);
             }
-            return addTrustedAuthenticationService(name, entityId, defaultDisplayName, authnContextClassRef, userIdAttributeMapping);
+            return addTrustedAuthenticationService(name, entityId, defaultDisplayName, refs, userIdAttributeMapping);
         }
 
         public Builder addTrustedAuthenticationService(String name, String entityId, String defaultDisplayName, List<String> authnContextClassRefs, String userIdAttributeMapping) {
