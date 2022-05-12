@@ -45,7 +45,7 @@ dependencies {
     compile ("org.springframework:spring-context:5.3.19") {
         exclude module: "spring-beans"
     }
-    compile ("org.certificateservices.messages:certservice-messages"){
+    compile ("org.certificateservices.messages:certservice-messages:2203.1"){
         // certservice-messages is using a newer version of xmlsec and bouncy castle
         // which is not compatible with the current version of DSS library.
         exclude module: "xmlsec"
@@ -62,25 +62,36 @@ buildscript {
         maven { url "https://plugins.gradle.org/m2/" }
         mavenCentral()
     }
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+}
+
+task uploadGdc(type: Upload) {
+    configuration = configurations.archives
+    uploadDescriptor = true
+
+    repositories {
+        mavenDeployer {
+            repository(url: "https://nexus2.dk.cgi.com/repository/Inera-maven-releases.repository") {
+                authentication(userName: getGdcRepoUsername(), password: getGdcRepoPassword())
+            }
+            pom.version = version
+        }
     }
 }
 
-apply plugin: 'com.github.johnrengelman.shadow'
-shadowJar {
-    archiveBaseName = 'signservice-support-lib'
-    mergeServiceFiles()
-    archiveClassifier = ''
-    dependencies {
-        exclude(dependency("org.slf4j:slf4j-simple:1.7.29"))
+uploadGdc.dependsOn(build)
+
+def getGdcRepoUsername(){
+    def gdcRepoUsername = ext.has('repository.gdc.username') ? ext['repository.gdc.username'] : ""
+    if(gdcRepoUsername == null || gdcRepoUsername.trim() == ""){
+        println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
     }
-    relocate 'org.json', 'certservice.org.json'
-    relocate 'org.yaml', 'certservice.org.yaml'
-    relocate 'com.ctc', 'certservice.com.ctc'
-    relocate 'com.fasterxml', 'certservice.com.fasterxml'
-    relocate 'com.sun', 'certservice.com.sun'
-    relocate 'org.springframework', 'certservice.org.springframework'
+    return gdcRepoUsername
 }
 
-tasks.build.dependsOn tasks.shadowJar
+def getGdcRepoPassword(){
+    def gdcRepoPassword = ext.has('repository.gdc.password') ? ext['repository.gdc.password'] : ""
+    if(gdcRepoPassword == null || gdcRepoPassword.trim() == ""){
+        println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
+    }
+    return gdcRepoPassword
+}
