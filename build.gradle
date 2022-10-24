@@ -51,7 +51,7 @@ dependencies {
     api 'org.slf4j:slf4j-api:1.7.36'
     api 'org.slf4j:slf4j-simple:1.7.36'
     api 'org.json:json:20220320'
-    api ("org.springframework:spring-context:5.3.19") {
+    api ("org.springframework:spring-context:5.3.20") {
         exclude module: "spring-beans"
     }
     api ("org.certificateservices.messages:certservice-messages:2203.1"){
