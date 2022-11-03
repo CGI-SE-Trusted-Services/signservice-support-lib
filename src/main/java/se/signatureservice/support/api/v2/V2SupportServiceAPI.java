@@ -71,14 +71,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
+import se.signatureservice.configuration.common.InternalErrorException;
+import se.signatureservice.configuration.common.InternalServerException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.cache.CacheProvider;
+import se.signatureservice.configuration.common.cache.MetaData;
+import se.signatureservice.configuration.common.keystore.TrustStoreProvider;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
-import se.signatureservice.support.common.InternalErrorException;
-import se.signatureservice.support.common.InternalServerException;
-import se.signatureservice.support.common.InvalidArgumentException;
-import se.signatureservice.support.common.cache.CacheProvider;
-import se.signatureservice.support.common.cache.MetaData;
 import se.signatureservice.support.system.TransactionState;
 import se.signatureservice.support.signer.SignTaskHelper;
 import se.signatureservice.support.system.Constants;
@@ -624,7 +625,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
 
-        } catch(DSSException | InvalidArgumentException | InternalErrorException | InternalServerException e){
+        } catch(DSSException | InvalidArgumentException | InternalErrorException e){
             throw (ServerErrorException)ErrorCode.SIGN_RESPONSE_FAILED.toException("Error while signing document: " + e.getMessage() + ")");
         }
 
@@ -664,16 +665,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             certificateVerifier.setCrlSource(getCRLSource());
             certificateVerifier.setOcspSource(getOCSPSource());
 
-            String validationTruststore = apiConfig.getTrustStorePath();
-            String truststorePassword = apiConfig.getTrustStorePassword();
-            String truststoreType = apiConfig.getTrustStoreType();
-
-            if(validationTruststore == null || truststorePassword == null){
-                log.warn("Verification of documents will not work properly as validation truststore is not specified in configuration file. Correct this by specifying 'validation.truststore.path' and 'validation.truststore.password'.");
+            if(apiConfig.getTrustedCertificateSource() == null){
+                log.warn("Verification of documents will not work properly as trusted certificate source is not specified");
             } else {
-                KeyStoreCertificateSource trustedCertificateSource = new KeyStoreCertificateSource(new File(validationTruststore), truststoreType, truststorePassword);
                 CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
-                certificateSource.importAsTrusted(trustedCertificateSource);
+                certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
                 certificateVerifier.setTrustedCertSources(certificateSource);
             }
         }
@@ -1633,44 +1629,26 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             return this;
         }
 
+        /**
+         * Specify cache provider to use for temporary storage.
+         *
+         * @param cacheProvider Cache provider to use.
+         * @return Updated builder.
+         */
         public Builder cacheProvider(CacheProvider cacheProvider) {
             config.setCacheProvider(cacheProvider);
             return this;
         }
 
         /**
-         * Specify a SSL truststore to use when validating documents and signatures.
+         * Specify certificate source for trusted certificates that are
+         * used during validation of documents.
          *
-         * @param trustStorePath Path to trust store. This could point to either
-         *                       a path on the classpath or on the file system,
-         *                       with classpath having higher priority.
-         * @return Updated builder
+         * @param certificateSource Trusted certificate source.
+         * @return Updated builder.
          */
-        public Builder trustStore(String trustStorePath){
-            config.setTrustStorePath(trustStorePath);
-            return this;
-        }
-
-        /**
-         * Specify the password that protects the truststore. This is required
-         * if sslTrustStore is specified.
-         *
-         * @param trustStorePassword Password that protects the trust store
-         * @return Updated builder
-         */
-        public Builder trustStorePassword(String trustStorePassword){
-            config.setTrustStorePassword(trustStorePassword);
-            return this;
-        }
-
-        /**
-         * Specify the truststore type. Default is "JKS".
-         *
-         * @param trustStoreType Type of truststore being used.
-         * @return Updated builder
-         */
-        public Builder trustStoreType(String trustStoreType){
-            config.setTrustStoreType(trustStoreType);
+        public Builder trustedCertificateSource(KeyStoreCertificateSource certificateSource){
+            config.setTrustedCertificateSource(certificateSource);
             return this;
         }
 

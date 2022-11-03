@@ -30,4 +30,29 @@ public class AvailableSignatureAttributes {
      * which page to put the visible signature
      */
     public static final String VISIBLE_SIGNATURE_PAGE       = "visible_signature_page";
+
+    /**
+     * Default value for visible signature X-position
+     */
+    public static final String DEFAULT_VISIBLE_SIGNATURE_POSITION_X = "20";
+
+    /**
+     * Default value for visible signature Y-position
+     */
+    public static final String DEFAULT_VISIBLE_SIGNATURE_POSITION_Y = "20";
+
+    /**
+     * Default value for visible signature width
+     */
+    public static final String DEFAULT_VISIBLE_SIGNATURE_WIDTH = "0";
+
+    /**
+     * Default value for visible signature height
+     */
+    public static final String DEFAULT_VISIBLE_SIGNATURE_HEIGHT = "0";
+
+    /**
+     * Default value for visible signature page
+     */
+    public static final String DEFAULT_VISIBLE_SIGNATURE_PAGE = "1";
 }

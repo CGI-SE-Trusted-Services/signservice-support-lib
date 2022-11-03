@@ -13,10 +13,6 @@ certserviceSettings {
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
-ext {
-    dssVersion = "5.7"
-}
-
 repositories {
     maven {
         url "https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss/"
@@ -41,16 +37,16 @@ dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-xades:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-cades:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-pades:$dssVersion"
-    api "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-service:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-utils:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:$dssVersion"
-    api 'org.apache.pdfbox:pdfbox:2.0.26'
+    api "org.apache.pdfbox:pdfbox:2.0.26"
     api "org.apache.santuario:xmlsec:2.1.7"
-    api 'org.slf4j:slf4j-api:1.7.36'
-    api 'org.slf4j:slf4j-simple:1.7.36'
-    api 'org.json:json:20220320'
+    api "org.slf4j:slf4j-api:1.7.36"
+    api "org.slf4j:slf4j-simple:1.7.36"
+    api "org.json:json:20220320"
     api ("org.springframework:spring-context:5.3.20") {
         exclude module: "spring-beans"
     }
@@ -60,11 +56,12 @@ dependencies {
         exclude module: "xmlsec"
         exclude group: "org.bouncycastle"
     }
+    api project(":signservice-configuration")
     runtimeOnly "org.slf4j:slf4j-simple:1.7.36"
     testImplementation "org.codehaus.groovy.modules.http-builder:http-builder:0.7.1"
 
     // To fix vulnerability CVE-2020-13956.
-    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation "org.apache.httpcomponents:httpclient:4.5.13"
 
     // To fix vulnerability CVE-2020-0187, CVE-2020-15522, CVE-2020-28052.
     implementation "org.bouncycastle:bcprov-jdk15on:1.70"

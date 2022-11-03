@@ -38,7 +38,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import se.signatureservice.support.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.support.common.keygen.SignAlgorithm;
 
 import javax.xml.bind.DatatypeConverter;
@@ -201,7 +201,8 @@ public class SignTaskHelper {
         // Canonicalize and update sign task
         Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        signTask.setToBeSignedBytes(c14n.canonicalizeSubtree(signedInfo));
+        c14n.canonicalizeSubtree(signedInfo, baos);
+        signTask.setToBeSignedBytes(baos.toByteArray());
 
         if(signTask.getAdESObject() == null){
             signTask.setAdESObject(new AdESObjectType());
@@ -382,7 +383,9 @@ public class SignTaskHelper {
         byte[] digestValue = null;
         try {
             Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-            byte[] canonicalized = c14n.canonicalizeSubtree(signedProperties);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            c14n.canonicalizeSubtree(signedProperties, baos);
+            byte[] canonicalized = baos.toByteArray();
             MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithm);
             digestValue = messageDigest.digest(canonicalized);
         } catch(Exception e){

@@ -1,7 +1,7 @@
 package se.signatureservice.support.common.keygen;
 
 import org.certificateservices.messages.MessageProcessingException;
-import se.signatureservice.support.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
 
 /**
  * Class listing all available sign algorithms and based on the

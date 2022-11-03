@@ -24,9 +24,9 @@ import org.certificateservices.messages.authcontsaci1.jaxb.AttributeMappingType;
 import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.signatureservice.configuration.common.InternalServerException;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.v2.*;
-import se.signatureservice.support.common.InternalServerException;
 import se.signatureservice.support.system.Constants;
 import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.system.SupportConfiguration;
@@ -133,7 +133,7 @@ public class SupportLibraryUtils {
      * @param authContext SAMLAuthContextType to get level of assurance from
      * @return Level of assurance for given SAMLAuthContextType or null if not available
      */
-    public static String getLevelOfAssuranceFromAuthContext(SupportAPIConfiguration apiConfig, SAMLAuthContextType authContext) throws InternalServerException, ServerErrorException {
+    public static String getLevelOfAssuranceFromAuthContext(SupportAPIConfiguration apiConfig, SAMLAuthContextType authContext) throws ServerErrorException {
         String levelOfAssurance = null;
 
         if(apiConfig.getAuthContextMappings() == null) {

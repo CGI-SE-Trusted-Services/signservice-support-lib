@@ -2,8 +2,10 @@ package se.signatureservice.support.common.cache;
 
 import org.certificateservices.messages.utils.DefaultSystemTime;
 import org.certificateservices.messages.utils.SystemTime;
-import se.signatureservice.support.common.InternalErrorException;
-import se.signatureservice.support.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.InternalErrorException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.cache.CacheProvider;
+import se.signatureservice.configuration.common.cache.MetaData;
 
 import java.io.IOException;
 import java.util.Date;
@@ -139,8 +141,8 @@ public class SimpleCacheProvider implements CacheProvider {
             objects.remove(key);
         }
 
-        if(metaData != null && metaData.timeToLive != null){
-            expireDates.put(key, new Date(systemTime.getSystemTimeMS() + (metaData.timeToLive * 1000)));
+        if(metaData != null && metaData.getTimeToLive() != null){
+            expireDates.put(key, new Date(systemTime.getSystemTimeMS() + (metaData.getTimeToLive() * 1000)));
         } else if(expireDates.containsKey(key)){
             expireDates.remove(key);
         }

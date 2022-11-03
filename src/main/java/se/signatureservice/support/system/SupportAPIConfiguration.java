@@ -13,9 +13,11 @@
 package se.signatureservice.support.system;
 
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
-import se.signatureservice.support.common.cache.CacheProvider;
+import se.signatureservice.configuration.common.cache.CacheProvider;
+import se.signatureservice.configuration.common.keystore.TrustStoreProvider;
 
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -42,20 +44,10 @@ public class SupportAPIConfiguration {
     private CacheProvider cacheProvider;
 
     /**
-     * Path to trust store to use when validating signatures.
+     * Key store certificate source to use during validation
+     * of documents that contains trusted certificates.
      */
-    private String trustStorePath;
-
-    /**
-     * Password that protects the trust store.
-     */
-    private String trustStorePassword;
-
-    /**
-     * Trust store type. Supported values are "JKS" and "PKCS12".
-     * Default value: JKS
-     */
-    private String trustStoreType = "JKS";
+    private KeyStoreCertificateSource trustedCertificateSource;
 
     /**
      * If simple report should be generated during validation.
@@ -111,28 +103,12 @@ public class SupportAPIConfiguration {
         this.cacheProvider = cacheProvider;
     }
 
-    public String getTrustStorePath() {
-        return trustStorePath;
+    public KeyStoreCertificateSource getTrustedCertificateSource() {
+        return trustedCertificateSource;
     }
 
-    public void setTrustStorePath(String trustStorePath) {
-        this.trustStorePath = trustStorePath;
-    }
-
-    public String getTrustStorePassword() {
-        return trustStorePassword;
-    }
-
-    public void setTrustStorePassword(String trustStorePassword) {
-        this.trustStorePassword = trustStorePassword;
-    }
-
-    public String getTrustStoreType() {
-        return trustStoreType;
-    }
-
-    public void setTrustStoreType(String trustStoreType) {
-        this.trustStoreType = trustStoreType;
+    public void setTrustedCertificateSource(KeyStoreCertificateSource certificateSource) {
+        this.trustedCertificateSource = certificateSource;
     }
 
     public boolean isUseSimpleValidationReport() {
