@@ -12,7 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.utils;
 
-import se.signatureservice.support.system.Constants;
+import se.signatureservice.configuration.support.system.Constants;
 
 import java.io.IOException;
 import java.io.ObjectInput;

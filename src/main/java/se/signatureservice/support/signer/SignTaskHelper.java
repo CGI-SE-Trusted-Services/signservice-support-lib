@@ -200,9 +200,7 @@ public class SignTaskHelper {
 
         // Canonicalize and update sign task
         Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        c14n.canonicalizeSubtree(signedInfo, baos);
-        signTask.setToBeSignedBytes(baos.toByteArray());
+        signTask.setToBeSignedBytes(c14n.canonicalizeSubtree(signedInfo));
 
         if(signTask.getAdESObject() == null){
             signTask.setAdESObject(new AdESObjectType());
@@ -212,7 +210,7 @@ public class SignTaskHelper {
         Transformer transformer = transformerFactory.newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         DOMSource source = new DOMSource(object);
-        baos = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         StreamResult result = new StreamResult(baos);
         transformer.transform(source, result);
 
@@ -383,9 +381,7 @@ public class SignTaskHelper {
         byte[] digestValue = null;
         try {
             Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            c14n.canonicalizeSubtree(signedProperties, baos);
-            byte[] canonicalized = baos.toByteArray();
+            byte[] canonicalized = c14n.canonicalizeSubtree(signedProperties);
             MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithm);
             digestValue = messageDigest.digest(canonicalized);
         } catch(Exception e){

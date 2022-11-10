@@ -1,7 +1,7 @@
 package se.signatureservice.support.api.v2
 
-import se.signatureservice.support.common.InternalErrorException
-import se.signatureservice.support.common.InvalidArgumentException
+import se.signatureservice.configuration.common.InternalErrorException
+import se.signatureservice.configuration.common.InvalidArgumentException
 import spock.lang.Specification
 
 class UserSpec extends Specification {

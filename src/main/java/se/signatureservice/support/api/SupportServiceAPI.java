@@ -13,7 +13,7 @@
 package se.signatureservice.support.api;
 
 import se.signatureservice.support.api.v2.*;
-import se.signatureservice.support.system.SupportConfiguration;
+import se.signatureservice.support.system.SupportAPIProfile;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public interface SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     PreparedSignatureResponse prepareSignature(
-            SupportConfiguration profileConfig,
+            SupportAPIProfile profileConfig,
             DocumentRequests documents,
             String transactionId,
             String signMessage,
@@ -64,7 +64,7 @@ public interface SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     CompleteSignatureResponse completeSignature(
-            SupportConfiguration profileConfig,
+            SupportAPIProfile profileConfig,
             String signResponse,
             String transactionId
     ) throws ClientErrorException, ServerErrorException;
@@ -79,7 +79,7 @@ public interface SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when verifying the document.
      */
     VerifyDocumentResponse verifyDocument(
-            SupportConfiguration profileConfig,
+            SupportAPIProfile profileConfig,
             Document signedDocument
     ) throws ClientErrorException, ServerErrorException;
 }

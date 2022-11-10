@@ -11,21 +11,42 @@
  *                                                                       *
  *************************************************************************/
 package se.signatureservice.support.system;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.TextNode;
+import se.signatureservice.configuration.common.InternalErrorException;
+import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.configuration.support.system.SupportProfile;
+import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 
-import se.signatureservice.support.common.system.Configuration;
-
+import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Support service configuration. Contains all configuration parameters
+ * Support service API profile configuration. Contains all configuration parameters
  * that can be specified for each profile to control the signing process.
  *
  * Created by Tobias Agerberg on 24/05/17
  */
-public final class SupportConfiguration extends Configuration {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class SupportAPIProfile implements SupportProfile {
+
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
+    public SupportAPIProfile(){
+        objectMapper = new ObjectMapper();
+    }
 
     /**
      * The name of the related profile, set automatically by configuration manager.
@@ -163,7 +184,7 @@ public final class SupportConfiguration extends Configuration {
      * generated EID sign request (ex. https://esign.v2.st.signatureservice.se/signservice-frontend/request/4321a583928)
      */
     private String signServiceRequestURL;
-    
+
     /**
      * Name of signature requesting entity/organisation.
      */
@@ -206,7 +227,7 @@ public final class SupportConfiguration extends Configuration {
      *     }
      * }
      */
-    private Map<String, Map> requestedCertAttributes;
+    private Map<String, Map<String,Object>> requestedCertAttributes;
 
     /**
      * Map containing attributes to be included in the signer element within the sign request,
@@ -229,7 +250,7 @@ public final class SupportConfiguration extends Configuration {
      *     }
      * }
      */
-    private Map<String, Map> signerAttributes;
+    private Map<String, Map<String,Object>> signerAttributes;
 
     /**
      * Map containing trusted authentication services/identity providers that
@@ -248,7 +269,7 @@ public final class SupportConfiguration extends Configuration {
      *     }
      * }
      */
-    private Map<String,Map> trustedAuthenticationServices;
+    private Map<String,Map<String,Object>> trustedAuthenticationServices;
 
     /**
      * Required setting containing the Meta Data Entity Id of all trusted central services that
@@ -307,16 +328,9 @@ public final class SupportConfiguration extends Configuration {
     private String signRequestExtensionVersion = "1.5";
 
     /**
-     * Flag to enable/disable visible signatures in signed PDF documents. Visible signatures
-     * will only be included if all required attributes for visible signatures are included
-     * in the "signatureAttributes" parameters in call to prepareSignature.
+     * Visible signature configuration.
      */
-    private boolean enableVisibleSignature = false;
-
-    /**
-     * Image path to use for visible signatures. If not set the default image will be used.
-     */
-    private String visibleSignatureImage = null;
+    private VisibleSignatureConfig visibleSignature = null;
 
     public String getRelatedProfile() {
         return relatedProfile;
@@ -534,27 +548,27 @@ public final class SupportConfiguration extends Configuration {
         this.certificateType = certificateType;
     }
 
-    public Map<String, Map> getRequestedCertAttributes() {
+    public Map<String, Map<String,Object>> getRequestedCertAttributes() {
         return requestedCertAttributes;
     }
 
-    public void setRequestedCertAttributes(Map<String, Map> requestedCertAttributes) {
+    public void setRequestedCertAttributes(Map<String, Map<String,Object>> requestedCertAttributes) {
         this.requestedCertAttributes = requestedCertAttributes;
     }
 
-    public Map<String, Map> getSignerAttributes() {
+    public Map<String, Map<String,Object>> getSignerAttributes() {
         return signerAttributes;
     }
 
-    public void setSignerAttributes(Map<String, Map> signerAttributes) {
+    public void setSignerAttributes(Map<String, Map<String,Object>> signerAttributes) {
         this.signerAttributes = signerAttributes;
     }
 
-    public Map<String, Map> getTrustedAuthenticationServices() {
+    public Map<String,Map<String,Object>> getTrustedAuthenticationServices() {
         return trustedAuthenticationServices;
     }
 
-    public void setTrustedAuthenticationServices(Map<String, Map> trustedAuthenticationServices) {
+    public void setTrustedAuthenticationServices(Map<String,Map<String,Object>> trustedAuthenticationServices) {
         this.trustedAuthenticationServices = trustedAuthenticationServices;
     }
 
@@ -614,33 +628,28 @@ public final class SupportConfiguration extends Configuration {
         this.signRequestExtensionVersion = signRequestExtensionVersion;
     }
 
-    public boolean isEnableVisibleSignature() {
-        return enableVisibleSignature;
+    public VisibleSignatureConfig getVisibleSignature() throws InternalErrorException {
+        if(visibleSignature == null){
+            visibleSignature = new VisibleSignatureConfig(null);
+        }
+        return visibleSignature;
     }
 
-    public void setEnableVisibleSignature(boolean enableVisibleSignature) {
-        this.enableVisibleSignature = enableVisibleSignature;
-    }
-
-    public String getVisibleSignatureImage() {
-        return visibleSignatureImage;
-    }
-
-    public void setVisibleSignatureImage(String visibleSignatureImage) {
-        this.visibleSignatureImage = visibleSignatureImage;
+    public void setVisibleSignature(VisibleSignatureConfig visibleSignature){
+        this.visibleSignature = visibleSignature;
     }
 
     /**
-     * Builder class to help when building a SupportConfiguration instance.
+     * Builder class to help when building a ProfileConfiguration instance.
      */
     public static class Builder {
-        private SupportConfiguration config;
+        private SupportAPIProfile config;
 
         /**
          * Create new SupportConfiguration builder
          */
         public Builder(){
-            config = new SupportConfiguration();
+            config = new SupportAPIProfile();
             config.setDefaultUserIdAttributeMapping(Constants.DEFAULT_USER_ID_ATTRIBUTE_MAPPING);
             config.setSignatureValidityMinutes(Constants.DEFAULT_REQUEST_VALIDITY_IN_MINUTES);
         }
@@ -785,7 +794,7 @@ public final class SupportConfiguration extends Configuration {
             return this;
         }
 
-        public Builder requestedCertAttributes(Map<String, Map> requestedCertAttributes) {
+        public Builder requestedCertAttributes(Map<String, Map<String,Object>> requestedCertAttributes) {
             config.setRequestedCertAttributes(requestedCertAttributes);
             return this;
         }
@@ -795,12 +804,12 @@ public final class SupportConfiguration extends Configuration {
         }
 
         public Builder addRequestedCertAttribute(String name, String samlAttributeName, String certAttributeRef, String certNameType, boolean required) {
-            Map<String,Map> certAttributes = config.getRequestedCertAttributes();
+            Map<String,Map<String,Object>> certAttributes = config.getRequestedCertAttributes();
             if(certAttributes == null){
                 certAttributes = new HashMap<>();
             }
 
-            Map<String,String> newAttribute = new HashMap<>();
+            Map<String,Object> newAttribute = new HashMap<>();
             newAttribute.put("samlAttributeName", samlAttributeName);
             newAttribute.put("certAttributeRef", certAttributeRef);
             if(certNameType != null) {
@@ -813,18 +822,18 @@ public final class SupportConfiguration extends Configuration {
             return this;
         }
 
-        public Builder signerAttributes(Map<String, Map> signerAttributes) {
+        public Builder signerAttributes(Map<String, Map<String,Object>> signerAttributes) {
             config.setSignerAttributes(signerAttributes);
             return this;
         }
 
         public Builder addSignerAttribute(String name, String samlAttributeName, String userAttributeMapping, boolean required) {
-            Map<String,Map> signerAttributes = config.getSignerAttributes();
+            Map<String,Map<String,Object>> signerAttributes = config.getSignerAttributes();
             if(signerAttributes == null){
                 signerAttributes = new HashMap<>();
             }
 
-            Map<String,String> newAttribute = new HashMap<>();
+            Map<String,Object> newAttribute = new HashMap<>();
             newAttribute.put("samlAttributeName", samlAttributeName);
             newAttribute.put("userAttributeMapping", userAttributeMapping);
             newAttribute.put("required", Boolean.toString(required));
@@ -834,7 +843,7 @@ public final class SupportConfiguration extends Configuration {
             return this;
         }
 
-        public Builder trustedAuthenticationServices(Map<String, Map> trustedAuthenticationServices) {
+        public Builder trustedAuthenticationServices(Map<String, Map<String,Object>> trustedAuthenticationServices) {
             config.setTrustedAuthenticationServices(trustedAuthenticationServices);
             return this;
         }
@@ -852,7 +861,7 @@ public final class SupportConfiguration extends Configuration {
         }
 
         public Builder addTrustedAuthenticationService(String name, String entityId, String defaultDisplayName, List<String> authnContextClassRefs, String userIdAttributeMapping) {
-            Map<String,Map> trustedServices = config.getTrustedAuthenticationServices();
+            Map<String,Map<String,Object>> trustedServices = config.getTrustedAuthenticationServices();
             if(trustedServices == null){
                 trustedServices = new HashMap<>();
             }
@@ -933,13 +942,8 @@ public final class SupportConfiguration extends Configuration {
             return this;
         }
 
-        public Builder enableVisibleSignature(boolean enableVisibleSignature) {
-            config.setEnableVisibleSignature(enableVisibleSignature);
-            return this;
-        }
-
-        public Builder visibleSignatureImage(String visibleSignatureImage) {
-            config.setVisibleSignatureImage(visibleSignatureImage);
+        public Builder visibleSignatureConfig(VisibleSignatureConfig visibleSignatureConfig) {
+            config.setVisibleSignature(visibleSignatureConfig);
             return this;
         }
 
@@ -948,8 +952,19 @@ public final class SupportConfiguration extends Configuration {
          *
          * @return SupportConfiguration instance based on builder settings.
          */
-        public SupportConfiguration build() {
+        public SupportAPIProfile build() {
             return config;
         }
+    }
+
+    /**
+     * Create instance of SupportAPIProfile from a map containing
+     * properties.
+     *
+     * @param properties Map containing properties to use for new instance. Unknown properties will be ignored.
+     * @return Instance of SupportAPIProfile based on given properties.
+     */
+    public static SupportAPIProfile fromMap(Map<String,Object> properties){
+        return objectMapper.convertValue(properties, SupportAPIProfile.class);
     }
 }

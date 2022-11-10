@@ -21,6 +21,7 @@ import eu.europa.esig.dss.jaxb.SchemaFactoryBuilder;
 import eu.europa.esig.dss.jaxb.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.pades.DSSFileFont;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
@@ -34,8 +35,8 @@ import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
-import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
@@ -72,19 +73,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.xml.sax.SAXException;
 import se.signatureservice.configuration.common.InternalErrorException;
-import se.signatureservice.configuration.common.InternalServerException;
 import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.configuration.common.cache.CacheProvider;
 import se.signatureservice.configuration.common.cache.MetaData;
-import se.signatureservice.configuration.common.keystore.TrustStoreProvider;
+import se.signatureservice.configuration.common.utils.ColorParser;
+import se.signatureservice.configuration.common.utils.ConfigUtils;
+import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.support.system.*;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
-import se.signatureservice.support.system.TransactionState;
 import se.signatureservice.support.signer.SignTaskHelper;
-import se.signatureservice.support.system.Constants;
-import se.signatureservice.support.system.SupportAPIConfiguration;
-import se.signatureservice.support.system.SupportConfiguration;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
@@ -94,7 +93,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import java.awt.*;
 import java.io.*;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -188,7 +186,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public PreparedSignatureResponse prepareSignature(SupportConfiguration profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
+    public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
         long operationStart = System.currentTimeMillis();
         PreparedSignatureResponse preparedSignature = null;
         try {
@@ -248,14 +246,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public CompleteSignatureResponse completeSignature(SupportConfiguration profileConfig, String signResponse, String transactionId) throws ClientErrorException, ServerErrorException {
+    public CompleteSignatureResponse completeSignature(SupportAPIProfile profileConfig, String signResponse, String transactionId) throws ClientErrorException, ServerErrorException {
         long currentTime, operationStart = System.currentTimeMillis();
         int operationTime;
-        CompleteSignatureResponse signatureResponse = null;
+        CompleteSignatureResponse signatureResponse;
         X509Certificate[] signatureCertificateChain;
-
+        TransactionState transactionState;
         try {
-            TransactionState transactionState = fetchTransactionState(transactionId);
+            transactionState = fetchTransactionState(transactionId);
             if (transactionState == null) {
                 log.error("Could not find any transaction related to transaction ID " + transactionId);
                 throw (ClientErrorException)ErrorCode.UNKNOWN_TRANSACTION.toException("Could not find transaction", messageSource);
@@ -318,6 +316,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         operationTime = (int)(currentTime - operationStart);
         log.info("Sign response successfully processed (" + operationTime + " ms)");
 
+        try {
+            transactionState.setCompleted(true);
+            storeTransactionState(transactionId, transactionState);
+        } catch(Exception e){
+            throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to store transaction state: " + e.getMessage());
+        }
+
         return signatureResponse;
     }
 
@@ -331,15 +336,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when verifying the document.
      */
     @Override
-    public VerifyDocumentResponse verifyDocument(SupportConfiguration profileConfig, Document signedDocument) throws ClientErrorException, ServerErrorException {
-        VerifyDocumentResponse response = null;
+    public VerifyDocumentResponse verifyDocument(SupportAPIProfile profileConfig, Document signedDocument) throws ClientErrorException, ServerErrorException {
+        VerifyDocumentResponse response;
         Reports reports;
         int validSignatures = 0;
-        String validationPolicy = profileConfig.getValidationPolicy();
-
-        if(validationPolicy != null && !validationPolicy.endsWith(".xml")){
-            validationPolicy += ".xml";
-        }
 
         try {
             DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(signedDocument);
@@ -373,7 +373,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 // set tokenExtractionStategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStategy is NONE
                 validator.setTokenExtractionStategy(TokenExtractionStategy.EXTRACT_CERTIFICATES_ONLY);
-                reports = validator.validateDocument(validationPolicy);
+                reports = validator.validateDocument(profileConfig.getValidationPolicy());
 
                 for(String signatureId : reports.getSimpleReport().getSignatureIdList()){
                     String certId = reports.getDiagnosticData().getSigningCertificateId(signatureId);
@@ -452,8 +452,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Marshalled SignRequest XML-document based on given parameters
      */
     private synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
-                               String signMessage, User user, String authenticationServiceId, String consumerURL,
-                               SupportConfiguration config, List<Attribute> signatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+                                                    String signMessage, User user, String authenticationServiceId, String consumerURL,
+                                                    SupportAPIProfile config, List<Attribute> signatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
 
         GregorianCalendar requestTime = new GregorianCalendar();
         requestTime.setTime(new Date());
@@ -481,7 +481,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         if(config.getRequestedCertAttributes() != null) {
-            for(Map.Entry<String, Map> entry : config.getRequestedCertAttributes().entrySet()){
+            for(Map.Entry<String, Map<String,Object>> entry : config.getRequestedCertAttributes().entrySet()){
                 signRequestExtensionType.getCertRequestProperties().getRequestedCertAttributes().getRequestedCertAttribute().add(
                         generateRequestedAttribute(entry.getKey(), entry.getValue(), config.getRelatedProfile())
                 );
@@ -519,7 +519,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Signed document according to given parameters.
      */
     private synchronized Document signDocument(DocumentSigningRequest document, SignTaskDataType signTask, X509Certificate[] signatureCertificateChain,
-                          TransactionState relatedTransaction, SupportConfiguration config) throws ClientErrorException, ServerErrorException, MessageContentException, IOException, MessageProcessingException, ParserConfigurationException, SAXException {
+                          TransactionState relatedTransaction, SupportAPIProfile config) throws ClientErrorException, ServerErrorException, MessageContentException, IOException, MessageProcessingException, ParserConfigurationException, SAXException {
         Document signedDocument = null;
 
         if(document == null) {
@@ -564,7 +564,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters)signatureParameters;
                     boolean validAttributes = validateVisibleSignatureAttributesFromCache(relatedTransaction.getTransactionId());
                     pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
-                    if (config.isEnableVisibleSignature()) {
+                    if (config.getVisibleSignature().isEnable()) {
                         if (validAttributes) {
                             setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), relatedTransaction.getTransactionId(), null);
                         } else {
@@ -625,7 +625,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
 
-        } catch(DSSException | InvalidArgumentException | InternalErrorException e){
+        } catch(DSSException | InvalidArgumentException | InternalErrorException | BaseAPIException e){
             throw (ServerErrorException)ErrorCode.SIGN_RESPONSE_FAILED.toException("Error while signing document: " + e.getMessage() + ")");
         }
 
@@ -784,7 +784,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Configuration to use
      * @return Signing id (displayname) to use for signature.
      */
-    protected String getSigningId(User user, SupportConfiguration config) {
+    protected String getSigningId(User user, SupportAPIProfile config) {
         String signingId = user.getUserId();
         if(config.getUserDisplayNameAttribute() != null && user.getUserAttributes() != null) {
             Attribute userDisplayNameAttribute = null;
@@ -812,7 +812,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Sign task for given document data.
      */
     private SignTaskDataType generateSignTask(DocumentSigningRequest document, String transactionId, String signingId,
-                                              SupportConfiguration config, List<Attribute> signatureAttributes) throws InvalidArgumentException, ClientErrorException, IOException, InternalErrorException, ClassNotFoundException, ServerErrorException, ParserConfigurationException, MessageProcessingException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+                                              SupportAPIProfile config, List<Attribute> signatureAttributes) throws InvalidArgumentException, BaseAPIException, IOException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, MessageProcessingException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
         SignTaskDataType signTask = sweEid2ObjectFactory.createSignTaskDataType();
         signTask.setSigType(getSigTypeFromMimeType(document.type));
         signTask.setSignTaskId(document.getReferenceId());
@@ -850,14 +850,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param profile the profile name
      * @return MappedAttributeType element based on given parameters
      */
-    private MappedAttributeType generateRequestedAttribute(String friendlyName, Map parameters, String profile) throws BaseAPIException {
+    private MappedAttributeType generateRequestedAttribute(String friendlyName, Map<String,Object> parameters, String profile) throws BaseAPIException {
         MappedAttributeType requestedAttribute;
         try{
             requestedAttribute = new MappedAttributeType();
-            requestedAttribute.setCertAttributeRef((String)parameters.get("certAttributeRef"));
+            requestedAttribute.setCertAttributeRef(ConfigUtils.parseString(parameters.get("certAttributeRef"), null, false, null));
             requestedAttribute.setFriendlyName(friendlyName);
-            requestedAttribute.setRequired(Boolean.parseBoolean((String)parameters.get("required")));
-            requestedAttribute.setCertNameType((String)parameters.get("certNameType"));
+            requestedAttribute.setRequired(ConfigUtils.parseBoolean(parameters.get("required"), null, false, null));
+            requestedAttribute.setCertNameType(ConfigUtils.parseString(parameters.get("certNameType"), null, false, null));
         } catch(Exception e){
             throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Invalid parameter specified in profile configuration: " + e.getMessage());
         }
@@ -921,7 +921,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Data to be signed for the given document
      */
     private byte[] generateToBeSignedBytes(SignTaskDataType signTask, DocumentSigningRequest document, String transactionId,
-                                           String signingId, SupportConfiguration config, List<Attribute> signatureAttributes) throws ClientErrorException, InvalidArgumentException, IOException, InternalErrorException, ClassNotFoundException, ServerErrorException, ParserConfigurationException, MessageProcessingException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+                                           String signingId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws BaseAPIException, InvalidArgumentException, IOException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, MessageProcessingException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
         SigType sigType = SigType.valueOf(getSigTypeFromMimeType(document.getType()));
         DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(document);
         AbstractSignatureParameters dssParameters = getSignatureParameters(sigType, config);
@@ -940,19 +940,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters)dssParameters;
                 pAdESParameters.setSignerName(signingId);
 
-                boolean validAttributes = validateVisibleSignatureAttributes(signatureAttributes);
-                if (config.isEnableVisibleSignature()) {
-                    if (validAttributes) {
-                        setVisibleSignature(config, pAdESParameters, signingId, transactionId, signatureAttributes);
-                    } else {
-                        log.warn("Visible signatures are enabled in configuration (enableVisibleSignature) but required signature attributes are missing. The following attributes are required: " +
-                                AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_X + ", " +
-                                AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_Y + ", " +
-                                AvailableSignatureAttributes.VISIBLE_SIGNATURE_WIDTH + ", " +
-                                AvailableSignatureAttributes.VISIBLE_SIGNATURE_HEIGHT);
-                    }
-                } else if (validAttributes) {
-                    log.warn("Visible signature attributes are requested, but 'enableVisibleSignature' is disabled in the configuration.");
+                if (config.getVisibleSignature().isEnable()) {
+                    setVisibleSignature(config, pAdESParameters, signingId, transactionId, signatureAttributes);
                 }
 
                 pAdESService.setPdfObjFactory(new PdfBoxDefaultObjectFactory());
@@ -989,45 +978,88 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return signTask.getToBeSignedBytes();
     }
 
-    protected void setVisibleSignature(SupportConfiguration config, PAdESSignatureParameters parameters, String signerName,
-                                       String transactionId, List<Attribute> signatureAttributes) throws ServerErrorException {
+    /**
+     * Method to set parameters for the visible signature.
+     *
+     * @param config Profile configuration.
+     * @param parameters Signature parameters to update with parameters for visible signature.
+     * @param signerName Name of signatory.
+     * @param transactionId Related transaction ID.
+     * @param signatureAttributes Related signature attributes.
+     */
+    protected void setVisibleSignature(SupportAPIProfile config, PAdESSignatureParameters parameters, String signerName,
+                                       String transactionId, List<Attribute> signatureAttributes) throws BaseAPIException {
         try {
             SignatureImageParameters imageParameters = getImageParameters(transactionId, signatureAttributes);
 
-            boolean useDefaultImage = false;
-            if (config.getVisibleSignatureImage() == "" || config.getVisibleSignatureImage() == null) {
-                useDefaultImage = true;
-            } else {
-                File file = new File(config.getVisibleSignatureImage());
-                if (!file.exists() || !file.isFile() || !file.canRead()) {
-                    useDefaultImage = true;
-                    log.debug("The provided image path is not valid and use the default file. Check if the provided path points to an existing file and it has read permission.");
+            if(config.getVisibleSignature().isShowLogo()){
+                DSSDocument logoDocument = null;
+                InputStream logoStream = this.getClass().getResourceAsStream(config.getVisibleSignature().getLogoImage());
+                if(logoStream == null){
+                    File file = new File(config.getVisibleSignature().getLogoImage());
+                    if (!file.exists() || !file.isFile() || !file.canRead()) {
+                        log.error("The provided logo image path for visible signature is not valid (${config.visibleSignature.logoImage}). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                    } else {
+                        log.debug("Using logo image from file system: ${config.visibleSignature.logoImage}");
+                        logoDocument = new InMemoryDocument(new FileInputStream(file));
+                    }
+                } else {
+                    log.debug("Using logo image from classpath: ${config.visibleSignature.logoImage}");
+                    logoDocument = new InMemoryDocument(logoStream, null);
+                }
+
+                if(logoDocument != null){
+                    imageParameters.setImage(logoDocument);
                 }
             }
 
-            if (useDefaultImage) {
-                imageParameters.setImage(new InMemoryDocument(this.getClass().getResourceAsStream(Constants.DEFAULT_IMAGE_PATH), "CGI_Logon.png"));
-            } else {
-                imageParameters.setImage(new InMemoryDocument(new FileInputStream(new File(config.getVisibleSignatureImage())), "customizedImage.png"));
-            }
-
-            SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
             if(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
                 cacheProvider.set(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
             }
-            textParameters.setText("Document Digital Signed\nSigner: ${signerName} \nTime: ${cacheService.get(transactionId, VISIBLE_SIGNATURE_REQUEST_TIME)}");
+
+            StringBuilder signatureText = new StringBuilder();
+            if(config.getVisibleSignature().isShowHeadline()){
+                signatureText.append("${config.visibleSignature.headlineText}\n");
+            }
+            signatureText.append("${config.visibleSignature.signerLabel}: ${signerName}\n");
+            signatureText.append("${config.visibleSignature.timeStampLabel}: ${cacheService.get(transactionId, VISIBLE_SIGNATURE_REQUEST_TIME)}");
+
+            SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
+            textParameters.setText(signatureText.toString());
             textParameters.setSignerTextPosition(SignerTextPosition.RIGHT);
-            textParameters.setBackgroundColor(Color.WHITE);
-            textParameters.setTextColor(Color.BLACK);
+            textParameters.setBackgroundColor(ColorParser.parse(config.getVisibleSignature().getBackgroundColor()));
+            textParameters.setTextColor(ColorParser.parse(config.getVisibleSignature().getFontColor()));
+
+            if(config.getVisibleSignature().getFont() != null){
+                DSSDocument fontDocument = null;
+                InputStream fontStream = this.getClass().getResourceAsStream(config.getVisibleSignature().getFont());
+                if(fontStream == null){
+                    File file = new File(config.getVisibleSignature().getFont());
+                    if (!file.exists() || !file.isFile() || !file.canRead()) {
+                        log.error("The provided font file path for visible signature is not valid (${config.visibleSignature.font}). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                    } else {
+                        log.debug("Using font file from file system: ${config.visibleSignature.font}");
+                        fontDocument = new InMemoryDocument(new FileInputStream(file));
+                    }
+                } else {
+                    log.debug("Using font file from classpath: ${config.visibleSignature.font}");
+                    fontDocument = new InMemoryDocument(fontStream, null);
+                }
+
+                if(fontDocument != null){
+                    textParameters.setFont(new DSSFileFont(fontDocument));
+                }
+            }
+            textParameters.getFont().setSize(config.getVisibleSignature().getFontSize());
+            textParameters.setPadding(config.getVisibleSignature().getTextPadding());
             imageParameters.setTextParameters(textParameters);
             parameters.setImageParameters(imageParameters);
-        }catch(Exception e){
-            log.error("Can't set visible signature parameters for the PAdESSignatureParameters: " + e.getMessage());
-            throw (ServerErrorException)ErrorCode.SIGN_REQUEST_FAILED.toException(e, messageSource);
+        } catch(Exception e){
+            log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: " + e.getMessage());
+            throw ErrorCode.SIGN_REQUEST_FAILED.toException(e, messageSource);
         }
     }
-
     /**
      * Store transaction state in cache service with TTL from configuration or default.
      *
@@ -1072,7 +1104,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Configuration that is used
      * @return The AdESType to use for a given signature type and configuration.
      */
-    private AdESType getAdESType(SigType sigType, SupportConfiguration config){
+    private AdESType getAdESType(SigType sigType, SupportAPIProfile config){
         AdESType adESType = AdESType.None;
 
         switch(sigType) {
@@ -1104,7 +1136,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Configuration to use.
      * @return Base signature parameters to use when creating requests and responses.
      */
-    AbstractSignatureParameters getBaseSignatureParameters(SigType sigType, SupportConfiguration config) throws ClientErrorException {
+    AbstractSignatureParameters getBaseSignatureParameters(SigType sigType, SupportAPIProfile config) throws ClientErrorException {
         AbstractSignatureParameters parameters;
         switch(sigType){
             case CMS:
@@ -1141,7 +1173,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Configuration to use.
      * @return Signature parameters to use when creating request
      */
-    protected AbstractSignatureParameters getSignatureParameters(SigType sigType, SupportConfiguration config) throws ClientErrorException {
+    protected AbstractSignatureParameters getSignatureParameters(SigType sigType, SupportAPIProfile config) throws ClientErrorException {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.bLevel().setSigningDate(DateUtils.round(new Date(), Calendar.SECOND));
@@ -1162,7 +1194,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Signature parameters to use when creating response.
      */
     private AbstractSignatureParameters getSignatureParameters(SignTaskDataType signTask, SigType sigType, CertificateToken signatureToken, List<CertificateToken> signatureTokenChain,
-                                                               DocumentSigningRequest relatedDocument, TransactionState relatedTransaction, SupportConfiguration config) throws ClientErrorException, ParserConfigurationException, IOException, SAXException {
+                                                               DocumentSigningRequest relatedDocument, TransactionState relatedTransaction, SupportAPIProfile config) throws ClientErrorException, ParserConfigurationException, IOException, SAXException {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setSigningCertificate(signatureToken);
         parameters.setCertificateChain(signatureTokenChain);
@@ -1307,7 +1339,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param displayEntity The EntityID of the entity responsible for displaying the sign message to the signer.
      * @return SignMessageType element based on given parameters
      */
-    private SignMessageType generateSignMessage(ContextMessageSecurityProvider.Context context, String message, String displayEntity, SupportConfiguration config) throws UnsupportedEncodingException, MessageProcessingException {
+    private SignMessageType generateSignMessage(ContextMessageSecurityProvider.Context context, String message, String displayEntity, SupportAPIProfile config) throws UnsupportedEncodingException, MessageProcessingException {
         SignMessageType signMessage;
         SignMessageMimeType mimeType;
 
@@ -1334,7 +1366,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param user User to generate signer element from
      * @return Signer AttributeStatementType element based on given user data
      */
-    private AttributeStatementType generateSigner(User user, String authenticationServiceId, SupportConfiguration config) throws ServerErrorException {
+    private AttributeStatementType generateSigner(User user, String authenticationServiceId, SupportAPIProfile config) throws ServerErrorException {
         AttributeStatementType attributeStatementType = saml2ObjectFactory.createAttributeStatementType();
 
         // Add the mandatory userId signer attribute before processing any additional attributes.
@@ -1344,7 +1376,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         // Add any additional signer attributes defined in configuration.
         if(config.getSignerAttributes() != null) {
 
-            for(Map.Entry<String,Map> entry : config.getSignerAttributes().entrySet()){
+            for(Map.Entry<String,Map<String,Object>> entry : config.getSignerAttributes().entrySet()){
 
                 Attribute userAttribute = null;
                 for(Attribute attribute : user.getUserAttributes()){
@@ -1372,7 +1404,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Support service configuration to use.
      * @return List of AuthnContextClassRefs to request.
      */
-    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportConfiguration config){
+    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportAPIProfile config){
         List<String> accRefs = new ArrayList<>();
 
         if(config.getAuthnContextClassRef() != null){
@@ -1403,7 +1435,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         List<String> explicitAccRefs = new ArrayList<>();
         if(config.getTrustedAuthenticationServices() != null){
-            for(Map.Entry<String,Map> entry : config.getTrustedAuthenticationServices().entrySet()){
+            for(Map.Entry<String,Map<String,Object>> entry : config.getTrustedAuthenticationServices().entrySet()){
                 if(entry.getValue().get("entityId").equals(authenticationServiceId)){
                     if(entry.getValue().get("authnContextClassRef") != null){
                         explicitAccRefs.add((String)entry.getValue().get("authnContextClassRef"));
@@ -1421,7 +1453,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return (explicitAccRefs.isEmpty() ? accRefs : explicitAccRefs);
     }
 
-    private String getUserIdAttributeMapping(String authenticationServiceId, SupportConfiguration config){
+    private String getUserIdAttributeMapping(String authenticationServiceId, SupportAPIProfile config){
         if(config.getUserIdAttributeMapping() != null){
             log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please remove it and use 'defaultUserIdAttributeMapping' instead.");
         }
@@ -1432,7 +1464,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         if(config.getTrustedAuthenticationServices() != null){
-            for(Map.Entry<String, Map> entry : config.getTrustedAuthenticationServices().entrySet()){
+            for(Map.Entry<String, Map<String,Object>> entry : config.getTrustedAuthenticationServices().entrySet()){
                 if(entry.getValue().get("entityId").equals(authenticationServiceId) && entry.getValue().get("userIdAttributeMapping") != null){
                     userIdAttributeMapping = (String)entry.getValue().get("userIdAttributeMapping");
                 }
@@ -1458,7 +1490,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param consumerURL Consumer URL that was requested
      * @return ConditionsType element based on given parameters
      */
-    private ConditionsType generateConditions(GregorianCalendar requestTime, String consumerURL, SupportConfiguration config) throws ServerErrorException {
+    private ConditionsType generateConditions(GregorianCalendar requestTime, String consumerURL, SupportAPIProfile config) throws ServerErrorException {
         validateConsumerURL(consumerURL, config);
         ConditionsType conditionsType = saml2ObjectFactory.createConditionsType();
         AudienceRestrictionType audienceRestriction = saml2ObjectFactory.createAudienceRestrictionType();
@@ -1475,7 +1507,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param requestTime Time when the request was performed
      * @return Value of not-before to use within sign request
      */
-    private GregorianCalendar getNotBefore(GregorianCalendar requestTime, SupportConfiguration config) {
+    private GregorianCalendar getNotBefore(GregorianCalendar requestTime, SupportAPIProfile config) {
         GregorianCalendar notBefore = new GregorianCalendar();
         notBefore.setTime(requestTime.getTime());
         notBefore.add(GregorianCalendar.MINUTE, -config.getSignatureValidityOverlapMinutes());
@@ -1488,7 +1520,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param requestTime Time when the request was performed
      * @return Value of not-on-or-after to use within sign request
      */
-    private GregorianCalendar getNotOnOrAfter(GregorianCalendar requestTime, SupportConfiguration config) {
+    private GregorianCalendar getNotOnOrAfter(GregorianCalendar requestTime, SupportAPIProfile config) {
         GregorianCalendar notOnOrAfter = new GregorianCalendar();
         notOnOrAfter.setTime(requestTime.getTime());
         notOnOrAfter.add(GregorianCalendar.MINUTE, config.getSignatureValidityMinutes());
@@ -1553,7 +1585,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return true if consumer URL is valid and authorized
      * @throws ServerErrorException If consumer URL is not authorized to use
      */
-    private boolean validateConsumerURL(String consumerURL, SupportConfiguration config) throws ServerErrorException {
+    private boolean validateConsumerURL(String consumerURL, SupportAPIProfile config) throws ServerErrorException {
         boolean authorized = false;
         if(config.getAuthorizedConsumerURLs() != null){
             for(String url : config.getAuthorizedConsumerURLs()){
@@ -1572,11 +1604,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return authorized;
     }
 
-    private void validateAuthenticationServiceId(String authenticationServiceId, SupportConfiguration config) throws ClientErrorException {
+    private void validateAuthenticationServiceId(String authenticationServiceId, SupportAPIProfile config) throws ClientErrorException {
         boolean validated = false;
 
         if(config != null){
-            Map<String,Map> trustedAuthenticationServices = config.getTrustedAuthenticationServices();
+            Map<String,Map<String,Object>> trustedAuthenticationServices = config.getTrustedAuthenticationServices();
             if(trustedAuthenticationServices != null){
                 for(Map map : config.getTrustedAuthenticationServices().values()){
                     if(map.get("entityId") != null && map.get("entityId").equals(authenticationServiceId)){
@@ -1647,7 +1679,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param certificateSource Trusted certificate source.
          * @return Updated builder.
          */
-        public Builder trustedCertificateSource(KeyStoreCertificateSource certificateSource){
+        public Builder trustedCertificateSource(CertificateSource certificateSource){
             config.setTrustedCertificateSource(certificateSource);
             return this;
         }

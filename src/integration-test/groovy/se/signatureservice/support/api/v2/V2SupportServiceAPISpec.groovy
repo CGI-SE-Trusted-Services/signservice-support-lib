@@ -5,7 +5,7 @@ import groovyx.net.http.HTTPBuilder
 import org.certificateservices.messages.MessageSecurityProvider
 import se.signatureservice.support.api.SupportServiceAPI
 import se.signatureservice.support.common.cache.SimpleCacheProvider
-import se.signatureservice.support.system.SupportConfiguration
+import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Ignore
 import spock.lang.Specification
@@ -20,7 +20,7 @@ import spock.lang.Specification
 class V2SupportServiceAPISpec extends Specification  {
     static MessageSecurityProvider messageSecurityProvider
     static SupportServiceAPI supportServiceAPI
-    static SupportConfiguration profileConfig
+    static SupportAPIProfile profileConfig
 
     def setupSpec(){
         // Create a message security provider that will be used when signing
@@ -44,7 +44,7 @@ class V2SupportServiceAPISpec extends Specification  {
                 .build()
 
         // Create profile configuration to use for the transaction. This can be re-used if needed.
-        profileConfig = new SupportConfiguration.Builder()
+        profileConfig = new SupportAPIProfile.Builder()
                 .signServiceId("http://localhost:8080/signservice-frontend/metadata/1834c194136")
                 .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/1834c194136")
                 .addTrustedAuthenticationService("Dummy idP", "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "Signature Service Dummy iDP")

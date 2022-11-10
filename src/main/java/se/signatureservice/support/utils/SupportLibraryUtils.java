@@ -24,12 +24,11 @@ import org.certificateservices.messages.authcontsaci1.jaxb.AttributeMappingType;
 import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.signatureservice.configuration.common.InternalServerException;
+import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.v2.*;
-import se.signatureservice.support.system.Constants;
 import se.signatureservice.support.system.SupportAPIConfiguration;
-import se.signatureservice.support.system.SupportConfiguration;
+import se.signatureservice.support.system.SupportAPIProfile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class SupportLibraryUtils {
      * @param config SupportConfiguration
      * @return User ID from SAMLAuthContextType
      */
-    public static String getUserIdFromAuthContext(SAMLAuthContextType authContext, SupportConfiguration config){
+    public static String getUserIdFromAuthContext(SAMLAuthContextType authContext, SupportAPIProfile config){
         if(config.getUserIdAttributeMapping() != null){
             log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please remove it and use 'defaultUserIdAttributeMapping' instead.");
         }

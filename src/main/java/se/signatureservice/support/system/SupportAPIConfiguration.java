@@ -13,11 +13,11 @@
 package se.signatureservice.support.system;
 
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
-import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
+import eu.europa.esig.dss.spi.x509.CertificateSource;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
 import se.signatureservice.configuration.common.cache.CacheProvider;
-import se.signatureservice.configuration.common.keystore.TrustStoreProvider;
+import se.signatureservice.configuration.support.system.Constants;
 
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -44,10 +44,10 @@ public class SupportAPIConfiguration {
     private CacheProvider cacheProvider;
 
     /**
-     * Key store certificate source to use during validation
-     * of documents that contains trusted certificates.
+     * Certificate source to use during validation of documents
+     * that contains trusted certificates.
      */
-    private KeyStoreCertificateSource trustedCertificateSource;
+    private CertificateSource trustedCertificateSource;
 
     /**
      * If simple report should be generated during validation.
@@ -103,11 +103,11 @@ public class SupportAPIConfiguration {
         this.cacheProvider = cacheProvider;
     }
 
-    public KeyStoreCertificateSource getTrustedCertificateSource() {
+    public CertificateSource getTrustedCertificateSource() {
         return trustedCertificateSource;
     }
 
-    public void setTrustedCertificateSource(KeyStoreCertificateSource certificateSource) {
+    public void setTrustedCertificateSource(CertificateSource certificateSource) {
         this.trustedCertificateSource = certificateSource;
     }
 
