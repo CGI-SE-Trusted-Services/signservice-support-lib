@@ -1,6 +1,7 @@
 package se.signatureservice.support.api.v2
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import eu.europa.esig.dss.pades.PAdESSignatureParameters
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
@@ -14,12 +15,15 @@ import org.joda.time.format.ISODateTimeFormat
 import se.signatureservice.configuration.support.system.Constants
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.system.SupportAPIProfile
+import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.security.cert.X509Certificate
+
+import static se.signatureservice.support.api.AvailableSignatureAttributes.*
 
 class V2SupportServiceAPISpec extends Specification {
     @Shared V2SupportServiceAPI supportServiceAPI
@@ -30,6 +34,13 @@ class V2SupportServiceAPISpec extends Specification {
     static SupportAPIProfile testProfile1 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
     static SupportAPIProfile testProfile2 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile2.yml")) as Map)
     static SupportAPIProfile testProfile3 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile3.yml")) as Map)
+    static SupportAPIProfile testProfile4 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile4.yml")) as Map)
+    static SupportAPIProfile testProfile5 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile5.yml")) as Map)
+    static SupportAPIProfile testProfile6 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile6.yml")) as Map)
+    static SupportAPIProfile testProfile7 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile7.yml")) as Map)
+    static SupportAPIProfile testProfile8 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile8.yml")) as Map)
+    static SupportAPIProfile testProfile9 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile9.yml")) as Map)
+    static SupportAPIProfile testProfile10 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile10.yml")) as Map)
 
     static X509Certificate testRecipientCert
 
@@ -266,6 +277,317 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.OptionalInputs.SignRequestExtension.SignMessage.EncryptedMessage.EncryptedData?.KeyInfo?.EncryptedKey?.KeyInfo.X509Data?.X509Certificate == new String(Base64.encode(testRecipientCert.encoded))
         signRequest.OptionalInputs.SignRequestExtension.SignMessage.EncryptedMessage.EncryptedData?.KeyInfo?.EncryptedKey?.CipherData?.CipherValue != null
         signRequest.OptionalInputs.SignRequestExtension.SignMessage.EncryptedMessage.EncryptedData?.CipherData?.CipherValue != null
+    }
+
+
+    @Unroll
+    void "test generateSignRequest with multiple samlAttributeNames in the profileConfig"() {
+        setup:
+        User user = new User(userId: "190102030010", userAttributes: [
+                new Attribute(key: "employeehsaid", value: "123456")
+        ])
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+            context,
+            "a864b33d-244a-4072-b540-0b29e2e7f40b",
+            documents,
+            "You want to sign?",
+            user,
+            "https://idp.cgi.com/v2/metadata",
+            "https://localhost:8080/response",
+            testProfile4,
+            null
+        )
+
+        then:
+        response != null
+        println new String(Base64.decode(response), "UTF-8")
+        def signRequest = new groovy.util.XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 4
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.16.840.1.113730.3.1.241" && it.@FriendlyName == "displayName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.16.840.1.113730.3.1.241"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].@FriendlyName == "serialNumber"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].@Required == "true"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].@CertAttributeRef == "2.5.4.5"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].SamlAttributeName[0] == "urn:oid:1.2.752.29.4.13"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].SamlAttributeName[0].@Order == "1"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].SamlAttributeName[1] == "urn:oid:1.2.752.29.6.2.1"
+        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute[3].SamlAttributeName[1].@Order == "0"
+    }
+
+    @Unroll
+    void "test generateSignRequest with invalid order types in the profileConfig"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        supportServiceAPI.generateSignRequest(
+            context,
+            "a864b33d-244a-4072-b540-0b29e2e7f40b",
+            documents,
+            "You want to sign?",
+            user,
+            "https://idp.cgi.com/v2/metadata",
+            "https://localhost:8080/response",
+            testProfile5,
+            null
+        )
+
+        then:
+        def e = thrown(ClientErrorException)
+        e.message == "testProfile5.requestedCertAttributes.serialNumber.urn:oid:1.2.752.29.4.13 has no-integer order value."
+    }
+
+    @Unroll
+    void "test generateSignRequest with invalid order value in the profileConfig"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        supportServiceAPI.generateSignRequest(
+            context,"a864b33d-244a-4072-b540-0b29e2e7f40b",
+            documents,
+            "You want to sign?",
+            user,
+            "https://idp.cgi.com/v2/metadata",
+            "https://localhost:8080/response",
+            testProfile6,
+            null
+        )
+
+        then:
+        def e = thrown(ClientErrorException)
+        e.message == "testProfile6.requestedCertAttributes.serialNumber.urn:oid:1.2.752.29.4.13 has invalid order value. Order must be larger than or equal to 0"
+    }
+
+    @Unroll
+    void "test generateSignRequest with invalid attribute types in the profileConfig"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        supportServiceAPI.generateSignRequest(
+            context,
+            "a864b33d-244a-4072-b540-0b29e2e7f40b",
+            documents,
+            "You want to sign?",
+            user,
+            "https://idp.cgi.com/v2/metadata",
+            "https://localhost:8080/response",
+            testProfile7,
+            null
+        )
+
+        then:
+        def e = thrown(ClientErrorException)
+        e.message == "The samlAttributeName under testProfile7.requestedCertAttributes must be a string or a list of map."
+    }
+
+    @Unroll
+    void "test generateSignMessage with different mimeType"() {
+        setup:
+        SupportAPIProfile profile = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
+        ContextMessageSecurityProvider.Context context = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST)
+        when:
+        profile.signMessageMimeType = "text"
+        def signMessage = supportServiceAPI.generateSignMessage(
+                context,
+                "You want to sign?",
+                "https://idp.cgi.com/v2/metadata",
+                profile
+        )
+        then:
+        signMessage.mimeType == "text"
+
+        when:
+        profile.signMessageMimeType = "MARKDOWN"
+        signMessage = supportServiceAPI.generateSignMessage(
+                context,
+                "You want to sign?",
+                "https://idp.cgi.com/v2/metadata",
+                profile
+        )
+        then:
+        signMessage.mimeType == "text/markdown"
+
+        when:
+        profile.signMessageMimeType = "html"
+        signMessage = supportServiceAPI.generateSignMessage(
+                context,
+                "You want to sign?",
+                "https://idp.cgi.com/v2/metadata",
+                profile
+        )
+        then:
+        signMessage.mimeType == "text/html"
+
+        when:
+        profile.signMessageMimeType = "invalid"
+        signMessage = supportServiceAPI.generateSignMessage(
+                context,
+                "You want to sign?",
+                "https://idp.cgi.com/v2/metadata",
+                profile
+        )
+        then:
+        signMessage.mimeType == "text"
+    }
+
+    def "test getNotBefore"() {
+        when:
+        GregorianCalendar requestTime = new GregorianCalendar()
+        GregorianCalendar notBefore = supportServiceAPI.getNotBefore(requestTime, testProfile1)
+        GregorianCalendar expectedNotBefore = requestTime
+        expectedNotBefore.add(Calendar.MINUTE, -5)
+
+        then:
+        notBefore == expectedNotBefore
+    }
+
+    def "test getNotOnOrAfter"() {
+        when:
+        GregorianCalendar requestTime = new GregorianCalendar()
+        GregorianCalendar notBefore = supportServiceAPI.getNotOnOrAfter(requestTime, testProfile1)
+        GregorianCalendar expectedNotOnOrAfter = requestTime
+        expectedNotOnOrAfter.add(Calendar.MINUTE, 10)
+
+        then:
+        notBefore == expectedNotOnOrAfter
+    }
+
+    def "test validateTransactionId"() {
+        when:
+        boolean result
+        try {
+            supportServiceAPI.validateTransactionId(transactionId)
+            result = true
+        } catch(Exception){
+            result = false
+        }
+
+        then:
+        result == expectedResult
+
+        where:
+        transactionId                               | expectedResult
+        "hej"                                       | false
+        "1234567890123456789012345678901"           | false
+        null                                        | false
+        "2e2dda27-36d4-48db-8738-a8323ab7d52d"      | true
+        "123456789012345abcdefghijklmnopqrstuvwxyz" | true
+    }
+
+    def "test storeTransactionState"() {
+        when:
+        supportServiceAPI.storeTransactionState("123456", new TransactionState(transactionId: "123456"))
+        TransactionState restoredState = supportServiceAPI.fetchTransactionState("123456")
+
+        then:
+        restoredState != null
+        restoredState.transactionId == "123456"
+    }
+
+    def "test getAuthnContextClassRefs"() {
+        when:
+        List<String> accRefs = supportServiceAPI.getAuthnContextClassRefs(authServiceId, profile)
+
+        then:
+        accRefs == expectedAccRefs
+
+        where:
+        profile       | authServiceId      | expectedAccRefs
+        testProfile8  | "https://testidp1" | ["Ref:B"]
+        testProfile8  | "https://testidpX" | ["Ref:A"]
+        testProfile9  | "https://testidp1" | ["Ref:D"]
+        testProfile9  | "https://testidp2" | ["Ref:D","Ref:G"]
+        testProfile10 | "https://testidp1" | ["Ref:C", "Ref:D"]
+        testProfile10 | "https://testidpX" | ["Ref:A", "Ref:B"]
+        testProfile10  | "https://testidp2" | ["Ref:B"]
+    }
+
+    def "test setVisibleSignature with all kinds of invalid attributes"(){
+        setup:
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+
+        when:
+        Attribute attribute = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute])
+        then:
+        def e = thrown(Exception)
+        e.message == "Invalid sign attribute configured. Can't set visible_signature_position_x with empty value or null."
+
+        when:
+        attribute = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: null)
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner","11223344", [attribute])
+        then:
+        e = thrown(Exception)
+        e.message == "Invalid sign attribute configured. Can't set visible_signature_position_x with empty value or null."
+
+        when:
+        Attribute attribute1 = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "one")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute1])
+        then:
+        def e1 = thrown(Exception)
+        e1.message == "Invalid sign attribute visible_signature_position_x=one configured. Can't convert one to float value."
+
+        when:
+        Attribute attribute2 = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "-1")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute2])
+        then:
+        def e2 = thrown(Exception)
+        e2.message == "Make sure attribute: visible_signature_position_x is configured with a value equal or larger than 0."
+
+        when:
+        Attribute att_x = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "1")
+        Attribute att_y = new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "1")
+        Attribute att_width = new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200")
+        Attribute attribute5 = new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "10")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [att_x, att_y, att_width, attribute5])
+        then:
+        def e5 = thrown(Exception)
+        e5.message == "Make sure attribute: visible_signature_height is configured with a value larger than 40. The minimum image size is: 180*40."
+
+        when:
+        Attribute attribute6 = new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "10")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [att_x, att_y, attribute6])
+        then:
+        def e6 = thrown(Exception)
+        e6.message == "Make sure attribute: visible_signature_width is configured with a value larger than 180. The minimum image size is: 180*40."
+    }
+
+    // TODO: CONTINUE HERE <------------------------------------------
+    def "test setVisibleSignature with valid attributes input"(){
+        setup:
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+
+        when:
+        def attributes = [new Attribute(key: VISIBLE_SIGNATURE_PAGE, value: "1"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "20"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "30"),
+                          new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200"),
+                          new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
+        then:
+        parameters.imageParameters.page == 1
+        parameters.imageParameters.xAxis == 20
+        parameters.imageParameters.yAxis == 30
+        parameters.imageParameters.width == 200
+        parameters.imageParameters.height == 50
+        parameters.imageParameters.image != null
     }
 
     static int getMinutesBetween(String a, String b) {

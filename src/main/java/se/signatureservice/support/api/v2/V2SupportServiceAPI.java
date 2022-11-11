@@ -536,7 +536,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         SignatureForm signatureForm = getSignatureForm(signTask);
         if(signatureForm == null){
-            throw (ClientErrorException)ErrorCode.INVALID_SIGN_TASK.toException("Sign task contains invalid or unsupported signature algorithm (${signTask.sigType})");
+            throw (ClientErrorException)ErrorCode.INVALID_SIGN_TASK.toException("Sign task contains invalid or unsupported signature algorithm (" + signTask.getSigType() + ")");
         }
 
         try {
@@ -890,7 +890,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
         } else{
-            throw ErrorCode.INVALID_PROFILE.toException("The samlAttributeName under ${profile}.requestedCertAttributes must be a string or a list of map.");
+            throw ErrorCode.INVALID_PROFILE.toException("The samlAttributeName under " + profile + ".requestedCertAttributes must be a string or a list of map.");
         }
 
         return requestedAttribute;
@@ -998,13 +998,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if(logoStream == null){
                     File file = new File(config.getVisibleSignature().getLogoImage());
                     if (!file.exists() || !file.isFile() || !file.canRead()) {
-                        log.error("The provided logo image path for visible signature is not valid (${config.visibleSignature.logoImage}). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                        log.error("The provided logo image path for visible signature is not valid (" + config.getVisibleSignature().getLogoImage() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
                     } else {
-                        log.debug("Using logo image from file system: ${config.visibleSignature.logoImage}");
+                        log.debug("Using logo image from file system: " + config.getVisibleSignature().getLogoImage());
                         logoDocument = new InMemoryDocument(new FileInputStream(file));
                     }
                 } else {
-                    log.debug("Using logo image from classpath: ${config.visibleSignature.logoImage}");
+                    log.debug("Using logo image from classpath: " + config.getVisibleSignature().getLogoImage());
                     logoDocument = new InMemoryDocument(logoStream, null);
                 }
 
@@ -1020,10 +1020,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             StringBuilder signatureText = new StringBuilder();
             if(config.getVisibleSignature().isShowHeadline()){
-                signatureText.append("${config.visibleSignature.headlineText}\n");
+                signatureText.append(config.getVisibleSignature()).append("\n");
             }
-            signatureText.append("${config.visibleSignature.signerLabel}: ${signerName}\n");
-            signatureText.append("${config.visibleSignature.timeStampLabel}: ${cacheService.get(transactionId, VISIBLE_SIGNATURE_REQUEST_TIME)}");
+            signatureText
+                .append(config.getVisibleSignature().getSignerLabel()).append(": ").append(signerName).append("\n")
+                .append(config.getVisibleSignature().getTimeStampLabel()).append(": ").append(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
 
             SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
             textParameters.setText(signatureText.toString());
@@ -1037,13 +1038,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if(fontStream == null){
                     File file = new File(config.getVisibleSignature().getFont());
                     if (!file.exists() || !file.isFile() || !file.canRead()) {
-                        log.error("The provided font file path for visible signature is not valid (${config.visibleSignature.font}). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                        log.error("The provided font file path for visible signature is not valid (" + config.getVisibleSignature().getFont() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
                     } else {
-                        log.debug("Using font file from file system: ${config.visibleSignature.font}");
+                        log.debug("Using font file from file system: " + config.getVisibleSignature().getFont());
                         fontDocument = new InMemoryDocument(new FileInputStream(file));
                     }
                 } else {
-                    log.debug("Using font file from classpath: ${config.visibleSignature.font}");
+                    log.debug("Using font file from classpath: " + config.getVisibleSignature().getFont());
                     fontDocument = new InMemoryDocument(fontStream, null);
                 }
 
@@ -1240,14 +1241,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 // Perform some basic validation on the attributes to fail early.
                 if (imageParameters.getxAxis() <= 0) {
-                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_X} is configured with a value equal or larger than 0.");
+                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_POSITION_X + " is configured with a value equal or larger than 0.");
                 } else if (imageParameters.getyAxis() <= 0) {
-                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_Y} is configured with a value equal or larger than 0.");
+                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_POSITION_Y + " is configured with a value equal or larger than 0.");
                 } else if (imageParameters.getWidth() != 0 && imageParameters.getHeight() != 0) {
                     if (imageParameters.getWidth() < 180) {
-                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_WIDTH} is configured with a value larger than 180. The minimum image size is: 180*40.");
+                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_WIDTH + " is configured with a value larger than 180. The minimum image size is: 180*40.");
                     } else if (imageParameters.getHeight() < 40) {
-                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_HEIGHT} is configured with a value larger than 40. The minimum image size is: 180*40.");
+                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_HEIGHT + " is configured with a value larger than 40. The minimum image size is: 180*40.");
                     }
                 }
             }
@@ -1275,13 +1276,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(defaultValue != null){
                 attributeValue = defaultValue;
             } else {
-                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set ${attributeName} with empty value or null.");
+                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set " + attributeName + " with empty value or null.");
             }
         }
         try {
             value = Integer.parseInt(attributeValue);
         } catch (Exception ignored) {
-            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute ${attributeName}=${attributeValue} configured. Can't convert ${attributeValue} to integer.");
+            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. Can't convert " + attributeValue + " to integer.");
         }
         cacheProvider.set(contextId, attributeName, attributeValue);
         return value;
@@ -1303,13 +1304,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(defaultValue != null){
                 attributeValue = defaultValue;
             } else {
-                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set ${attributeName} with empty value or null.");
+                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set " + attributeName + " with empty value or null.");
             }
         }
         try {
             value = Float.parseFloat(attributeValue);
         } catch (Exception ignored) {
-            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute ${attributeName}=${attributeValue} configured. Can't convert ${attributeValue} to float value.");
+            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. Can't convert " + attributeValue + " to float value.");
         }
         cacheProvider.set(contextId, attributeName, attributeValue);
         return value;
@@ -1360,12 +1361,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param displayEntity The EntityID of the entity responsible for displaying the sign message to the signer.
      * @return SignMessageType element based on given parameters
      */
-    private SignMessageType generateSignMessage(ContextMessageSecurityProvider.Context context, String message, String displayEntity, SupportAPIProfile config) throws UnsupportedEncodingException, MessageProcessingException {
+    protected SignMessageType generateSignMessage(ContextMessageSecurityProvider.Context context, String message, String displayEntity, SupportAPIProfile config) throws UnsupportedEncodingException, MessageProcessingException {
         SignMessageType signMessage;
         SignMessageMimeType mimeType;
 
-        if(EnumUtils.isValidEnum(SignMessageMimeType.class, config.getSignMessageMimeType())){
-            mimeType = SignMessageMimeType.valueOf(config.getSignMessageMimeType());
+        String configuredMimeType = config.getSignMessageMimeType();
+        if(configuredMimeType != null && EnumUtils.isValidEnum(SignMessageMimeType.class, configuredMimeType.toUpperCase())){
+            mimeType = SignMessageMimeType.valueOf(configuredMimeType.toUpperCase());
         } else {
             log.error("Invalid mimetype for sign messages specified in configuration: " + config.getSignMessageMimeType() + ". Using 'text' as fallback.");
             mimeType = SignMessageMimeType.TEXT;
@@ -1400,10 +1402,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             for(Map.Entry<String,Map<String,Object>> entry : config.getSignerAttributes().entrySet()){
 
                 Attribute userAttribute = null;
-                for(Attribute attribute : user.getUserAttributes()){
-                    if(attribute.getKey().equals(entry.getValue().get("userAttributeMapping"))){
-                        userAttribute = attribute;
-                        break;
+                if(user.getUserAttributes() != null) {
+                    for (Attribute attribute : user.getUserAttributes()) {
+                        if (attribute.getKey().equals(entry.getValue().get("userAttributeMapping"))) {
+                            userAttribute = attribute;
+                            break;
+                        }
                     }
                 }
 
