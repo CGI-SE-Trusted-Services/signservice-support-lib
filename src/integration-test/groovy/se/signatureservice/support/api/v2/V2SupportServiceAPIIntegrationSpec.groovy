@@ -17,7 +17,7 @@ import spock.lang.Specification
  *  - signservice-backend
  */
 @Ignore
-class V2SupportServiceAPISpec extends Specification  {
+class V2SupportServiceAPIIntegrationSpec extends Specification  {
     static MessageSecurityProvider messageSecurityProvider
     static SupportServiceAPI supportServiceAPI
     static SupportAPIProfile profileConfig

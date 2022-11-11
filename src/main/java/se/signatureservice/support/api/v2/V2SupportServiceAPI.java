@@ -451,7 +451,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Configuration to use when generating request
      * @return Marshalled SignRequest XML-document based on given parameters
      */
-    private synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
+    protected synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
                                                     String signMessage, User user, String authenticationServiceId, String consumerURL,
                                                     SupportAPIProfile config, List<Attribute> signatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
 
@@ -1060,6 +1060,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             throw ErrorCode.SIGN_REQUEST_FAILED.toException(e, messageSource);
         }
     }
+
     /**
      * Store transaction state in cache service with TTL from configuration or default.
      *
@@ -1209,88 +1210,108 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return parameters;
     }
 
-    private SignatureImageParameters getImageParameters(String transactionId, List<Attribute> signatureAttributes) throws ClientErrorException {
+    private SignatureImageParameters getImageParameters(String transactionId, List<Attribute> signatureAttributes) throws BaseAPIException {
         SignatureImageParameters imageParameters = new SignatureImageParameters();
         try {
-            if(signatureAttributes == null){
-                imageParameters.setxAxis(getSignAttributeFloatValue(transactionId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X)));
-                imageParameters.setyAxis(getSignAttributeFloatValue(transactionId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y)));
-                imageParameters.setWidth(getSignAttributeIntegerValue(transactionId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH)));
-                imageParameters.setHeight(getSignAttributeIntegerValue(transactionId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT)));
-                imageParameters.setPage(getSignAttributeIntegerValue(transactionId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_PAGE)));
-            } else if (signatureAttributes.size() != 0) {
-                for(Attribute attr : signatureAttributes){
-                    if (attr.getKey().equals(VISIBLE_SIGNATURE_POSITION_X)) {
-                        imageParameters.setxAxis(getSignAttributeFloatValue(transactionId, attr.getKey(), attr.getValue()));
-                    } else if (attr.getKey().equals(VISIBLE_SIGNATURE_POSITION_Y)) {
-                        imageParameters.setyAxis(getSignAttributeFloatValue(transactionId, attr.getKey(), attr.getValue()));
-                    } else if (attr.getKey().equals(VISIBLE_SIGNATURE_WIDTH)) {
-                        imageParameters.setWidth(getSignAttributeIntegerValue(transactionId, attr.getKey(), attr.getValue()));
-                    } else if (attr.getKey().equals(VISIBLE_SIGNATURE_HEIGHT)) {
-                        imageParameters.setHeight(getSignAttributeIntegerValue(transactionId, attr.getKey(), attr.getValue()));
-                    } else if (attr.getKey().equals(VISIBLE_SIGNATURE_PAGE)) {
-                        imageParameters.setPage(getSignAttributeIntegerValue(transactionId, attr.getKey(), attr.getValue()));
+            // First priority is to use parameters from cache if available, if not we setup default
+            // values that then can be overridden by any given signature attributes.
+            imageParameters.setxAxis(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X), DEFAULT_VISIBLE_SIGNATURE_POSITION_X));
+            imageParameters.setyAxis(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y), DEFAULT_VISIBLE_SIGNATURE_POSITION_Y));
+            imageParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH), DEFAULT_VISIBLE_SIGNATURE_WIDTH));
+            imageParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT), DEFAULT_VISIBLE_SIGNATURE_HEIGHT));
+            imageParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_PAGE), DEFAULT_VISIBLE_SIGNATURE_PAGE));
+
+            if(signatureAttributes != null){
+                for(Attribute it : signatureAttributes) {
+                    if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_X)) {
+                        imageParameters.setxAxis(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                    } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_Y)) {
+                        imageParameters.setyAxis(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(),null));
+                    } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_WIDTH)) {
+                        imageParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                    } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_HEIGHT)) {
+                        imageParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                    } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_PAGE)) {
+                        imageParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
                     } else {
-                        log.info("Ignore attribute: " + attr.getKey() + " for visible signature image settings.");
+                        log.info("Ignore attribute: " + it.getKey() + " for visible signature image settings.");
                     }
                 }
 
-                if (imageParameters.getxAxis() == 0) {
-                    throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_X} is configured with a value larger than 0.");
-                } else if (imageParameters.getyAxis() == 0) {
-                    throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_Y} is configured with a value larger than 0.");
-                } else if (imageParameters.getWidth() < 180) {
-                    throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_WIDTH} is configured with a value larger than 180. The minimum image size is: 180*40.");
-                } else if (imageParameters.getHeight() < 40) {
-                    throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_HEIGHT} is configured with a value larger than 40. The minimum image size is: 180*40.");
+                // Perform some basic validation on the attributes to fail early.
+                if (imageParameters.getxAxis() <= 0) {
+                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_X} is configured with a value equal or larger than 0.");
+                } else if (imageParameters.getyAxis() <= 0) {
+                    throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_POSITION_Y} is configured with a value equal or larger than 0.");
+                } else if (imageParameters.getWidth() != 0 && imageParameters.getHeight() != 0) {
+                    if (imageParameters.getWidth() < 180) {
+                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_WIDTH} is configured with a value larger than 180. The minimum image size is: 180*40.");
+                    } else if (imageParameters.getHeight() < 40) {
+                        throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: ${VISIBLE_SIGNATURE_HEIGHT} is configured with a value larger than 40. The minimum image size is: 180*40.");
+                    }
                 }
-            } else {
-                throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("No visible signature attribute configured.");
             }
+
             return imageParameters;
         } catch(Exception e){
             log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: " + e.getMessage());
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException(e, messageSource);
+            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException(e, messageSource);
         }
     }
 
     /**
-     * Method to get the float value for the image x/y coordinate parameters
+     * Parse string attribute value as integer and store attribute in cache.
+     *
+     * @param contextId Cache context ID to use when storing attribute.
+     * @param attributeName Name of the attribute.
+     * @param attributeValue Value of the attribute as string.
+     * @param defaultValue Default value to use if attribute value is empty or null.
+     * @return Attribute value as an integer.
+     * @throws InvalidParameterException If attribute value could not be parsed as an integer and default value is null.
      */
-    private float getSignAttributeFloatValue(String transactionId, String attributeName, String attributeValue) throws InvalidParameterException, ClientErrorException, InvalidArgumentException, IOException, InternalErrorException {
-        float value;
+    private int getAttributeAsIntAndStoreInCache(String contextId, String attributeName, String attributeValue, String defaultValue) throws InvalidParameterException, BaseAPIException, InvalidArgumentException, IOException, InternalErrorException {
+        int value;
         if(attributeValue == null || attributeValue.isEmpty()){
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set " + attributeName + " with empty value or null.");
+            if(defaultValue != null){
+                attributeValue = defaultValue;
+            } else {
+                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set ${attributeName} with empty value or null.");
+            }
         }
         try {
-            value = Float.parseFloat(attributeValue);
-        } catch (Exception e) {
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. Can't convert " + attributeValue + " to float value.");
+            value = Integer.parseInt(attributeValue);
+        } catch (Exception ignored) {
+            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute ${attributeName}=${attributeValue} configured. Can't convert ${attributeValue} to integer.");
         }
-        if (value < 0) {
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. " + attributeName + " should be larger than 0.");
-        }
-        cacheProvider.set(transactionId, attributeName, attributeValue);
+        cacheProvider.set(contextId, attributeName, attributeValue);
         return value;
     }
 
     /**
-     * Method to get the integer value for the image page/width/height parameters
+     * Parse string attribute value as float and store attribute in cache.
+     *
+     * @param contextId Cache context ID to use when storing attribute.
+     * @param attributeName Name of the attribute.
+     * @param attributeValue Value of the attribute as string.
+     * @param defaultValue Default value to use if attribute value is empty or null.
+     * @return Attribute value as a float.
+     * @throws InvalidParameterException If attribute value could not be parsed as a float and default value is null.
      */
-    private int getSignAttributeIntegerValue(String transactionId, String attributeName, String attributeValue) throws InvalidParameterException, ClientErrorException, InvalidArgumentException, IOException, InternalErrorException {
-        int value;
+    private float getAttributeAsFloatAndStoreInCache(String contextId, String attributeName, String attributeValue, String defaultValue) throws InvalidParameterException, BaseAPIException, InvalidArgumentException, IOException, InternalErrorException {
+        float value;
         if(attributeValue == null || attributeValue.isEmpty()){
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set " + attributeName + " with empty value or null.");
+            if(defaultValue != null){
+                attributeValue = defaultValue;
+            } else {
+                throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute configured. Can't set ${attributeName} with empty value or null.");
+            }
         }
         try {
-            value = Integer.parseInt(attributeValue);
-        } catch (Exception e) {
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. Can't convert " + attributeValue + " to integer.");
+            value = Float.parseFloat(attributeValue);
+        } catch (Exception ignored) {
+            throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute ${attributeName}=${attributeValue} configured. Can't convert ${attributeValue} to float value.");
         }
-        if (value < 1) {
-            throw (ClientErrorException)ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Invalid sign attribute " + attributeName + "=" + attributeValue + " configured. " + attributeName + " should be equal to or larger than 1.");
-        }
-        cacheProvider.set(transactionId, attributeName, attributeValue);
+        cacheProvider.set(contextId, attributeName, attributeValue);
         return value;
     }
 
