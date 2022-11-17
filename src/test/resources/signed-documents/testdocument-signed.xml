@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><catalog>
+   <book id="bk101">
+      <author>Gambardella, Matthew</author>
+      <title>XML Developer's Guide</title>
+      <genre>Computer</genre>
+      <price>44.95</price>
+      <publish_date>2000-10-01</publish_date>
+      <description>An in-depth look at creating applications 
+      with XML.</description>
+   </book>
+   <book id="bk102">
+      <author>Ralls, Kim</author>
+      <title>Midnight Rain</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-12-16</publish_date>
+      <description>A former architect battles corporate zombies, 
+      an evil sorceress, and her own childhood to become queen 
+      of the world.</description>
+   </book>
+   <book id="bk103">
+      <author>Corets, Eva</author>
+      <title>Maeve Ascendant</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-11-17</publish_date>
+      <description>After the collapse of a nanotechnology 
+      society in England, the young survivors lay the 
+      foundation for a new society.</description>
+   </book>
+   <book id="bk104">
+      <author>Corets, Eva</author>
+      <title>Oberon's Legacy</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-03-10</publish_date>
+      <description>In post-apocalypse England, the mysterious 
+      agent known only as Oberon helps to create a new life 
+      for the inhabitants of London. Sequel to Maeve 
+      Ascendant.</description>
+   </book>
+   <book id="bk105">
+      <author>Corets, Eva</author>
+      <title>The Sundered Grail</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-09-10</publish_date>
+      <description>The two daughters of Maeve, half-sisters, 
+      battle one another for control of England. Sequel to 
+      Oberon's Legacy.</description>
+   </book>
+   <book id="bk106">
+      <author>Randall, Cynthia</author>
+      <title>Lover Birds</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-09-02</publish_date>
+      <description>When Carla meets Paul at an ornithology 
+      conference, tempers fly as feathers get ruffled.</description>
+   </book>
+   <book id="bk107">
+      <author>Thurman, Paula</author>
+      <title>Splish Splash</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>A deep sea diver finds true love twenty 
+      thousand leagues beneath the sea.</description>
+   </book>
+   <book id="bk108">
+      <author>Knorr, Stefan</author>
+      <title>Creepy Crawlies</title>
+      <genre>Horror</genre>
+      <price>4.95</price>
+      <publish_date>2000-12-06</publish_date>
+      <description>An anthology of horror stories about roaches,
+      centipedes, scorpions  and other insects.</description>
+   </book>
+   <book id="bk109">
+      <author>Kress, Peter</author>
+      <title>Paradox Lost</title>
+      <genre>Science Fiction</genre>
+      <price>6.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>After an inadvertant trip through a Heisenberg
+      Uncertainty Device, James Salway discovers the problems 
+      of being quantum.</description>
+   </book>
+   <book id="bk110">
+      <author>O'Brien, Tim</author>
+      <title>Microsoft .NET: The Programming Bible</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-09</publish_date>
+      <description>Microsoft's .NET initiative is explored in 
+      detail in this deep programmer's reference.</description>
+   </book>
+   <book id="bk111">
+      <author>O'Brien, Tim</author>
+      <title>MSXML3: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-01</publish_date>
+      <description>The Microsoft MSXML3 parser is covered in 
+      detail, with attention to XML DOM interfaces, XSLT processing, 
+      SAX and more.</description>
+   </book>
+   <book id="bk112">
+      <author>Galos, Mike</author>
+      <title>Visual Studio 7: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>49.95</price>
+      <publish_date>2001-04-16</publish_date>
+      <description>Microsoft Visual Studio 7 is explored in depth,
+      looking at how Visual Basic, Visual C++, C#, and ASP+ are 
+      integrated into a comprehensive development 
+      environment.</description>
+   </book>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="id-54b3c37bf908bed9a4d013099f9fdbe7"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="r-id-3d46b1ed26cf46025d1d2a65cd5da0f0-1" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2002/06/xmldsig-filter2"><dsig-filter2:XPath xmlns:dsig-filter2="http://www.w3.org/2002/06/xmldsig-filter2" Filter="subtract">/descendant::ds:Signature</dsig-filter2:XPath></ds:Transform><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>zolcPXUMCIref0InS0KhgpYS6u7J6SgrAEpj//MjClU=</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#xades-id-54b3c37bf908bed9a4d013099f9fdbe7"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>tgC169ejhqPspm3a123Boqu/W29+/GZEbUHnxczIMbc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue Id="value-id-54b3c37bf908bed9a4d013099f9fdbe7">JVW8+BUewfEX/ua4gb6O/GapKDkTE5MJXQr0XS6dpt5t/BjwQOzKVR1ejL5Wmx9s329BdhrOjc1zEFEOTmnXNfVgBYVMXlTSNL1CjimSegQ55qLCkTh5LCLeTAUsZP5wQaz7ZYjQPW5FIGFaOlemRnS9YLraRANN56wVl/NpSS8RMQG5xXOgJu7aV7Y510E1i5cjQodulbuPOC8daEYRSQ+k2O5WqowmhmAQimR50EGuaw9F6Wo2nIzh9sBObnwSdX2vSrjK0NVwJp1b0N8c8hUwNPHgkcpfXJZTl7on369j6E9DZZPol4geN2dCQJuNce8gTi5EmfzxSp2K/oVMSA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIK8jCCCdqgAwIBAgIIXpM1bvGnnR8wDQYJKoZIhvcNAQELBQAwJDEiMCAGA1UEAwwZc3ViIE5ldHdvcmsgLSBEZXZlbG9wbWVudDAgFw0yMjExMTQxMzMxMjFaGA8yMDUyMTExMzE5NTkyMFowTzEPMA0GA1UEKgwGR2VyYWxkMQ4wDAYDVQQEDAVCcm93bjEVMBMGA1UEBRMMMTk1MjA3MDkyMDcyMRUwEwYDVQQDDAxHZXJhbGQgQnJvd24wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkoEsnpLWW3gYvuQamXXQ+jQ3MkqunqE/9ipJM7BzJYDBwe0DrBRJBNrTU/D7dSI7myddw6+ZQj0eyFwpWgp86Of/0bMOERzfXyrE7SVuANMFyzHrerQEk2aCyplvNKrFt0QKUFgHdMN0Wku/FCkJ4bkINTjkVrWszjihNefm/AuKdmeSLZAywaDRPjzPDXjsSLdGkiX6kdeYbOrhkRUwqdQk7zzvG6PjEdV6BrRme1sMsxGyxIW/L7JHj1gGcTxUwW6zRZXqiG1n/MqC1N1DVWDuGTqVSBLNUpjs1gJXlGxvO8YrRjShjgRIQy+sfhv6B1Ov+O7wPtRCaWleEctVZAgMBAAGjggf5MIIH9TAMBgNVHRMBAf8EAjAAMEsGA1UdHwREMEIwQKA+oDyGOmh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zaWduc2VydmljZS1mcm9udGVuZC9jcmwvc29mdGNhMS5jcmwwHQYDVR0OBBYEFA1RmniJGrPbFeTp6L2+RZsghByJMB8GA1UdIwQYMBaAFJjtHYsUif3/XArjqpR856/kNQvQMBgGA1UdIAQRMA8wDQYLKwYBBAGB9X4DCAIwDgYDVR0PAQH/BAQDAgZAMIIHLAYHKoVwgUkFAQSCBx8wggcbMIIHFwwraHR0cDovL2lkLmVsZWduYW1uZGVuLnNlL2F1dGgtY29udC8xLjAvc2FjaQyCBuY8c2FjaTpTQU1MQXV0aENvbnRleHQgeG1sbnM6c2FjaT0iaHR0cDovL2lkLmVsZWduYW1uZGVuLnNlL2F1dGgtY29udC8xLjAvc2FjaSIgeG1sbnM6ZHM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyMiIHhtbG5zOnhlbmM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jIyIgeG1sbnM6c2FtbD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFzc2VydGlvbiI+PHNhY2k6QXV0aENvbnRleHRJbmZvIElkZW50aXR5UHJvdmlkZXI9Imh0dHA6Ly9sb2NhbGhvc3Q6NjA2MC9laWQyLWR1bW15LWlkcC9zYW1sdjIvaWRwL21ldGFkYXRhIiBBdXRoZW50aWNhdGlvbkluc3RhbnQ9IjIwMjItMTEtMTRUMTM6MzY6MjAuMzgzWiIgQXV0aG5Db250ZXh0Q2xhc3NSZWY9Imh0dHA6Ly9pZC5lbGVnbmFtbmRlbi5zZS9sb2EvMS4wL2xvYTMiIEFzc2VydGlvblJlZj0iX2VlM2U0NzY4ZjkyMGQxYjc4MjE5MjBkMjQ0MjlhNzlhIi8+PHNhY2k6SWRBdHRyaWJ1dGVzPjxzYWNpOkF0dHJpYnV0ZU1hcHBpbmcgVHlwZT0icmRuIiBSZWY9IjIuNS40LjQyIj48c2FtbDpBdHRyaWJ1dGUgTmFtZT0idXJuOm9pZDoyLjUuNC40MiI+PHNhbWw6QXR0cmlidXRlVmFsdWUgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSIgeG1sbnM6eHM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hIiB4c2k6dHlwZT0ieHM6c3RyaW5nIj5HZXJhbGQ8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48L3NhY2k6QXR0cmlidXRlTWFwcGluZz48c2FjaTpBdHRyaWJ1dGVNYXBwaW5nIFR5cGU9InJkbiIgUmVmPSIyLjUuNC40Ij48c2FtbDpBdHRyaWJ1dGUgTmFtZT0idXJuOm9pZDoyLjUuNC40Ij48c2FtbDpBdHRyaWJ1dGVWYWx1ZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4bWxuczp4cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhzaTp0eXBlPSJ4czpzdHJpbmciPkJyb3duPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PC9zYWNpOkF0dHJpYnV0ZU1hcHBpbmc+PHNhY2k6QXR0cmlidXRlTWFwcGluZyBUeXBlPSJyZG4iIFJlZj0iMi41LjQuNSI+PHNhbWw6QXR0cmlidXRlIE5hbWU9InVybjpvaWQ6MS4yLjc1Mi4yOS40LjEzIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4bWxuczp4cz0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhzaTp0eXBlPSJ4czpzdHJpbmciPjE5NTIwNzA5MjA3Mjwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjwvc2FjaTpBdHRyaWJ1dGVNYXBwaW5nPjxzYWNpOkF0dHJpYnV0ZU1hcHBpbmcgVHlwZT0icmRuIiBSZWY9IjIuNS40LjMiPjxzYW1sOkF0dHJpYnV0ZSBOYW1lPSJ1cm46b2lkOjIuMTYuODQwLjEuMTEzNzMwLjMuMS4yNDEiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeHNpOnR5cGU9InhzOnN0cmluZyI+R2VyYWxkIEJyb3duPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PC9zYWNpOkF0dHJpYnV0ZU1hcHBpbmc+PC9zYWNpOklkQXR0cmlidXRlcz48L3NhY2k6U0FNTEF1dGhDb250ZXh0PjANBgkqhkiG9w0BAQsFAAOCAQEAhJc2LG3SEtPDcn5xON4P/0qTm/+3EnakG7FXykUoWuYygAog7SEatOVikBoHyjP+7ODk4K988DZJn/iAMD0DJISuiAFmj88DpE6ge4WSvlp6v7AEw7TLFY0ItrJbrBLdi1fbt+i1m7S6mgIyfin1R85bNg5ruFkFfxeZqjZ50Cvd03UhS87rXuTb6rAbnqQTWo4J9oLiJ4qCYgpaNtY2nH70ZEBAvik0pCG8+HvvdJJJ6Px/g2c7P7wHhOphnb8V+AkFfSTJXtPOLAcZAXIH8ol1/IwBHPn0Hg1dexKDbxRmLgd0uqw+iFmu8vofs6FIQQkmJTJ4afXVSobmQUSXSA==</ds:X509Certificate><ds:X509Certificate>MIIDKzCCAhOgAwIBAgIEJYXjXjANBgkqhkiG9w0BAQsFADAlMSMwIQYDVQQDExpyb290IE5ldHdvcmsgLSBEZXZlbG9wbWVudDAeFw0yMTEwMjExNDM3MzBaFw0yMjAxMTkxNDM3MzBaMCQxIjAgBgNVBAMTGXN1YiBOZXR3b3JrIC0gRGV2ZWxvcG1lbnQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCQHamkqwcKJwHcQwuOOBcU8fuWxh9OTp99m5lJpVeUMI/adxCJAAoCYkdy5gAbAY/FaWiuuw6KuZtThVjYYxGxeQwtx87H+usIFz4NOdgb2C45LCB7MQOVmwaMNGvWZ9KEac1HGyCOTXKstY899QYG1f0NyDsatncBlEK7MBxizWZUYinXV2tqr4tjTEKcBvD1ddZvSTrjMh7yOuW+xf04Wwc+BQGzH0zMlwur2x8rUztUWX8zKAK6FmKIJcvEp7gF3PtgSzW6Ycxe5ZflnPF+QqsJzBtks6T1N1SFOxiWcgovi8XHsgr54lbaR4k+L1kDTGSu4qlp7vY8Tr5VzhZJAgMBAAGjZDBiMB8GA1UdIwQYMBaAFP/ByVIjc9kCTjOZqADVdNoH9/eEMA8GA1UdEwQIMAYBAf8CAQAwDwYDVR0RBAgwBoIEaGlnaDAdBgNVHQ4EFgQUmO0dixSJ/f9cCuOqlHznr+Q1C9AwDQYJKoZIhvcNAQELBQADggEBABZEuLx7CgMv1TBE3yZwrQbDM8mNERuqIGp9HoclAkoxKBrwvBmKOIJLiJ/eIq4yHcFX8fNR6y5h/nn67ifz4N+/lx5LDRV2hs7nkm/G0pSWK/VdQ454mJUCVi++xHF2H4WXPdtWpuBX/ZWBzxIQ+nByh1ASK6HWodbbCxs2+2A+8EovWju+Mfc/TwRmlUZMP1YGVZQ5kwzDnCCBBKPB2wk4IgFtH1ZJV/FgK1Bj5BhEIWuSeIcc0fPW7rhIxgCTiYOREhzy27X6Tv+Cvf0v6pNS0d1RRFeE95Gmy2SfBMU8meKOhb+Y/n5iITnzhU/gxeWKuMqoeO16raPMY0r9qSo=</ds:X509Certificate><ds:X509Certificate>MIIC+jCCAeKgAwIBAgIEAahq3zANBgkqhkiG9w0BAQsFADAlMSMwIQYDVQQDExpyb290IE5ldHdvcmsgLSBEZXZlbG9wbWVudDAeFw0yMTEwMjExNDM3MjdaFw00OTAzMDgxNDM3MjdaMCUxIzAhBgNVBAMTGnJvb3QgTmV0d29yayAtIERldmVsb3BtZW50MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt5bwDetkFU3zS9rXCanpfM+GhhSOB5edDLpFGeyGVagCVyT7EOfy/evdPXnExfm440GnAVojovpZ2+X+vrU6W8sGXC9BOmZlKhkJEYf0L4Kf5D9m1yp2NsX+Wzq1eE+f0IkpGsoIolMPqGmjZLPoZ08AozGlgKnIWtybsPSgmhqnyCGRwJ7nwsGnikliR64RGOQ/XZgXZ6f71iJm/oFctxqEGzNGfEs0lK2i3Y3isz92C0JNVdYWgoM+YlyfLUjLYK2VtYJbU0Z6GYGI9VagmtMixXI1RPqvOxe1WhwAzbEf3VIclqRDwSmJ0RVMMt+N+JECQMUytlmtI0nsJ70kCwIDAQABozIwMDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBT/wclSI3PZAk4zmagA1XTaB/f3hDANBgkqhkiG9w0BAQsFAAOCAQEABhvOXeyjKs28WQDV6/U/4DseJXsLue1/SZN1mV1gpzYakiF2bcQ1bAI0ZFpPCTl5bf9y13cvzj6cndiGAk6BjskcBtXTUOIndqIeExRe4aF7xGMn9P/4xgr1mJMuMJYVGsugKv5IIpwHEz6tQcfLg+MCv1FUSX2dPcmuDWGEpEwmJR5XdAWC6y/8aQ4so1qZy8L0YQKcvo16zt+NCS0Tecja0IkyaAL6CSkijz4OxFPRp00U5UQMTNSPV6G8e3nrbnsLctY5aKdk2njC4r15ULpxxRtCzhDsEm6F7bPoQ4QCbHCCbsDvjiBqJ84EDaD6md2dPF6AIYnGz3QzL5qgvw==</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object><xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Target="#id-54b3c37bf908bed9a4d013099f9fdbe7"><xades:SignedProperties Id="xades-id-54b3c37bf908bed9a4d013099f9fdbe7"><xades:SignedSignatureProperties><xades:SigningTime>2022-11-14T13:36:20Z</xades:SigningTime><xades:SigningCertificateV2><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>kDBgmIiCPpcFiw+PapGnNPNNkYonRnucuOOpItOgSPM=</ds:DigestValue></xades:CertDigest><xades:IssuerSerialV2>MDQwKKQmMCQxIjAgBgNVBAMMGXN1YiBOZXR3b3JrIC0gRGV2ZWxvcG1lbnQCCF6TNW7xp50f</xades:IssuerSerialV2></xades:Cert></xades:SigningCertificateV2></xades:SignedSignatureProperties><xades:SignedDataObjectProperties><xades:DataObjectFormat ObjectReference="#r-id-1"><xades:MimeType>text/xml</xades:MimeType></xades:DataObjectFormat></xades:SignedDataObjectProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></catalog>

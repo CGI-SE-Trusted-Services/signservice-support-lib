@@ -2,6 +2,13 @@ package se.signatureservice.support.api.v2
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import eu.europa.esig.dss.pades.PAdESSignatureParameters
+import eu.europa.esig.dss.service.crl.OnlineCRLSource
+import eu.europa.esig.dss.service.http.commons.CommonsDataLoader
+import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader
+import eu.europa.esig.dss.service.http.commons.OCSPDataLoader
+import eu.europa.esig.dss.service.http.proxy.ProxyConfig
+import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
@@ -17,7 +24,6 @@ import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
-import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -26,9 +32,8 @@ import java.security.cert.X509Certificate
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
 
 class V2SupportServiceAPISpec extends Specification {
-    @Shared V2SupportServiceAPI supportServiceAPI
-    @Shared List<Object> testDocuments = []
-
+    static V2SupportServiceAPI supportServiceAPI
+    static List<Object> testDocuments = []
     static YamlSlurper yamlSlurper = new YamlSlurper()
 
     static SupportAPIProfile testProfile1 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
@@ -44,6 +49,14 @@ class V2SupportServiceAPISpec extends Specification {
 
     static X509Certificate testRecipientCert
 
+    static Document testSignedPDFDocument
+    static Document testSignedXMLDocument
+    static Document testSignedCMSDocument
+    static Document testSignedXMLNonETSIDocument
+    static Document testUnsignedPDFDocument
+    static Document testUnsignedXMLDocument
+    static Document testUnsignedCMSDocument
+
     void setupSpec(){
         CertUtils.installBCProvider()
         testRecipientCert = CertUtils.getCertfromByteArray(new File("src/test/resources/testrecipient.cer").bytes)
@@ -58,11 +71,21 @@ class V2SupportServiceAPISpec extends Specification {
             ))
             .cacheProvider(new SimpleCacheProvider())
             .addSignMessageRecipient("https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7", testRecipientCert)
+            .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123"))
             .build() as V2SupportServiceAPI
 
         testDocuments.add(new DocumentSigningRequest(referenceId: "123456", type: "application/pdf", name: "testdocument.pdf", data: new File("src/test/resources/testdocument.pdf").bytes))
         testDocuments.add(new DocumentSigningRequest(referenceId: "234567", type: "text/xml", name: "testdocument.xml", data: new File("src/test/resources/testdocument.xml").bytes))
         testDocuments.add(new DocumentSigningRequest(referenceId: "345678", type: "application/octet-stream", name: "testdocument.doc", data: new File("src/test/resources/testdocument.doc").bytes))
+
+        testSignedPDFDocument = new Document(referenceId: "123456", type: "application/pdf", name: "testdocument-signed.pdf", data: new File("src/test/resources/signed-documents/testdocument-signed.pdf").bytes)
+        testSignedXMLDocument = new Document(referenceId: "234567", type: "text/xml", name: "testdocument-signed.xml", data: new File("src/test/resources/signed-documents/testdocument-signed.xml").bytes)
+        testSignedCMSDocument = new Document(referenceId: "345678", type: "application/msword", name: "testdocument-signed.doc", data: new File("src/test/resources/signed-documents/testdocument-signed.doc").bytes)
+        testSignedXMLNonETSIDocument = new Document(referenceId: "456789", type: "text/xml", name: "testdocument_NonETSI.xml", data: new File("src/test/resources/signed-documents/testdocument_NonETSI.xml").bytes)
+        testUnsignedPDFDocument = new Document(referenceId: "123456", type: "application/pdf", name: "testdocument.pdf", data: new File("src/test/resources/testdocument.pdf").bytes)
+        testUnsignedXMLDocument = new Document(referenceId: "234567", type: "text/xml", name: "testdocument.xml", data: new File("src/test/resources/testdocument.xml").bytes)
+        testUnsignedCMSDocument = new Document(referenceId: "345678", type: "application/msword", name: "testdocument.doc", data: new File("src/test/resources/testdocument.doc").bytes)
+
     }
 
     @Unroll
@@ -569,7 +592,6 @@ class V2SupportServiceAPISpec extends Specification {
         e6.message == "Make sure attribute: visible_signature_width is configured with a value larger than 180. The minimum image size is: 180*40."
     }
 
-    // TODO: CONTINUE HERE <------------------------------------------
     def "test setVisibleSignature with valid attributes input"(){
         setup:
         PAdESSignatureParameters parameters = new PAdESSignatureParameters()
@@ -588,6 +610,178 @@ class V2SupportServiceAPISpec extends Specification {
         parameters.imageParameters.width == 200
         parameters.imageParameters.height == 50
         parameters.imageParameters.image != null
+    }
+
+    def "test setVisibleSignature with valid attributes from caches"(){
+        setup:
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+
+        when:
+        supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_PAGE, "1")
+        supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_POSITION_X, "20")
+        supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_POSITION_Y, "30")
+        supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_WIDTH, "40")
+        supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_HEIGHT, "50")
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", null)
+        then:
+        parameters.imageParameters.page == 1
+        parameters.imageParameters.xAxis == 20
+        parameters.imageParameters.yAxis == 30
+        parameters.imageParameters.width == 40
+        parameters.imageParameters.height == 50
+    }
+
+    def "test setVisibleSignature with valid attributes input but invalid image resource"(){
+        setup:
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+
+        when:
+        def attributes = [new Attribute(key: VISIBLE_SIGNATURE_PAGE, value: "1"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "20"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "30"),
+                          new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200"),
+                          new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
+        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
+        then:
+        parameters.imageParameters.page == 1
+        parameters.imageParameters.xAxis == 20
+        parameters.imageParameters.yAxis == 30
+        parameters.imageParameters.width == 200
+        parameters.imageParameters.height == 50
+        parameters.imageParameters.image != null
+    }
+
+    @Unroll
+    def "Test verifyDocument on #documentType document"() {
+        when:
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testDocument)
+        println new String(response.reportData)
+        def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
+        X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
+
+        then:
+        response.verifies
+        xmlReport.Signature[0].@SignatureFormat == expectedSignatureFormat
+        response.reportData != null
+        response.reportMimeType == "text/xml"
+        response.referenceId == testDocument.referenceId
+        response.signatures != null
+        response.signatures.signer != null
+        response.signatures.signer.size() == 1
+        response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
+        response.signatures.signer.get(0).signerId == "195207092072"
+        response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
+        response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+        response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
+        response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
+        response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
+        response.signatures.signer.get(0).validTo == signingCertificate.notAfter
+
+        where:
+        testDocument            | documentType | expectedSignatureFormat
+        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"
+        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"
+        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"
+    }
+
+    @Unroll
+    def "Test verifyDocument on unsigned #documentType document"() {
+        when:
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testDocument)
+
+        then:
+        !response.verifies
+        response.signatures.signer.size() == 0
+        response.reportData == null
+        response.referenceId == testDocument.referenceId
+
+        where:
+        testDocument            | documentType
+        testUnsignedXMLDocument | "XML"
+        testUnsignedPDFDocument | "PDF"
+        testUnsignedCMSDocument | "CMS"
+    }
+
+    def "Test verifyDocument signed with XML DSig"() {
+        when:
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testSignedXMLNonETSIDocument)
+        println new String(response.reportData)
+        def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
+        X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
+
+        then:
+        response.verifies
+        xmlReport.Signature[0].@SignatureFormat == "XML-NOT-ETSI"
+        response.reportMimeType == "text/xml"
+        signingCertificate != null
+        response.referenceId == testSignedXMLNonETSIDocument.referenceId
+        response.signatures.signer.get(0).issuerId == "CN=RSA Signer,O=Certificate Services,L=Kista,ST=Stockholm,C=SE"
+        response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+        response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
+        response.signatures.signer.get(0).validTo == signingCertificate.notAfter
+        response.signatures.signer.get(0).levelOfAssurance == null
+        response.signatures.signer.get(0).signerId == null
+        response.signatures.signer.get(0).signerDisplayName == null
+        response.signatures.signer.get(0).signingDate == null
+    }
+
+    def "Test verifyDocument modified XML"() {
+        setup:
+        byte[] originalData = testSignedXMLDocument.data
+
+        when:
+        testSignedXMLDocument.data = new String (originalData, "UTF-8").replaceAll("Heisenberg", "Heisenburg").getBytes("UTF-8")
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testSignedXMLDocument)
+        println new String(response.reportData)
+
+        then:
+        !response.verifies
+
+        cleanup:
+        testSignedXMLDocument.data = originalData
+    }
+
+    def "test that proxy settings are not used if not specified"(){
+        when:
+        ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)supportServiceAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
+        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)supportServiceAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
+
+        then:
+        crlProxyConfig == null
+        ocspProxyConfig == null
+    }
+
+    def "test that proxy settings are used if specified"(){
+        when:
+        V2SupportServiceAPI proxyAPI = new V2SupportServiceAPI.Builder()
+                .validationProxy("proxy.test.com", 1234, "user", "pass", "google.com,ikea.se")
+                .build() as V2SupportServiceAPI
+        ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)proxyAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
+        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)proxyAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
+
+        then:
+        crlProxyConfig != null
+        crlProxyConfig.httpsProperties.host == "proxy.test.com"
+        crlProxyConfig.httpsProperties.port == 1234
+        crlProxyConfig.httpsProperties.user == "user"
+        crlProxyConfig.httpsProperties.password == "pass"
+        crlProxyConfig.httpsProperties.excludedHosts == "google.com,ikea.se"
+        crlProxyConfig.httpProperties.host == "proxy.test.com"
+        crlProxyConfig.httpProperties.port == 1234
+        crlProxyConfig.httpProperties.user == "user"
+        crlProxyConfig.httpProperties.password == "pass"
+        crlProxyConfig.httpProperties.excludedHosts == "google.com,ikea.se"
+        ocspProxyConfig != null
+        ocspProxyConfig.httpsProperties.host == "proxy.test.com"
+        ocspProxyConfig.httpsProperties.port == 1234
+        ocspProxyConfig.httpsProperties.user == "user"
+        ocspProxyConfig.httpsProperties.password == "pass"
+        ocspProxyConfig.httpsProperties.excludedHosts == "google.com,ikea.se"
+        ocspProxyConfig.httpProperties.host == "proxy.test.com"
+        ocspProxyConfig.httpProperties.port == 1234
+        ocspProxyConfig.httpProperties.user == "user"
+        ocspProxyConfig.httpProperties.password == "pass"
+        ocspProxyConfig.httpProperties.excludedHosts == "google.com,ikea.se"
     }
 
     static int getMinutesBetween(String a, String b) {

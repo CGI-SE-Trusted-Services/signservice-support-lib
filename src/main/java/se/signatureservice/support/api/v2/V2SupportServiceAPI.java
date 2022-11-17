@@ -39,6 +39,7 @@ import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
@@ -94,6 +95,8 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -115,16 +118,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private XAdESService xAdESService;
     private PAdESService pAdESService;
     private CAdESService cAdESService;
-    private Map<String, OnlineTSPSource> onlineTSPSources;
-    private CommonCertificateVerifier certificateVerifier;
+    private Map<String, TSPSource> onlineTSPSources;
+    private CertificateVerifier certificateVerifier;
     private CRLSource crlSource;
     private OCSPSource ocspSource;
-    private boolean useSimpleReport;
 
     private final SupportAPIConfiguration apiConfig;
     private final MessageSource messageSource;
     private final CacheProvider cacheProvider;
-    private final Integer transactionTimeToLive = Constants.DEFAULT_TRANSACTION_TTL;
 
     private SweEID2DSSExtensionsMessageParser sweEID2DSSExtensionsMessageParser;
     private AuthContSaciMessageParser authContSaciMessageParser;
@@ -161,12 +162,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             log.error("Failed to initialize message security provider", e);
         }
 
-        xAdESService = new XAdESService(new CommonCertificateVerifier());
-        pAdESService = new PAdESService(new CommonCertificateVerifier());
-        cAdESService = new CAdESService(new CommonCertificateVerifier());
+        xAdESService = new XAdESService(getCertificateVerifier());
+        pAdESService = new PAdESService(getCertificateVerifier());
+        cAdESService = new CAdESService(getCertificateVerifier());
 
         onlineTSPSources = new HashMap<>();
-        useSimpleReport = apiConfig.isUseSimpleValidationReport();
     }
 
     /**
@@ -277,9 +277,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             List<SignTaskDataType> signTasks = synchronizedGetSignTasks(response);
             signatureCertificateChain = SignTaskHelper.getSignatureCertificateChain(response).toArray(new X509Certificate[0]);
 
+            // Process list of sign tasks and create signed documents.
+            // TODO: Support document handling by reference.
             List<Document> signedDocuments = new ArrayList<>();
             for(SignTaskDataType signTask : signTasks){
-                // TODO: handle references
                 DocumentSigningRequest relatedDocument = null;
                 for(Object object : transactionState.getDocuments().getDocuments()){
                     if(object instanceof DocumentSigningRequest){
@@ -290,7 +291,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     }
                 }
                 if (relatedDocument != null) {
-                    // TODO: handle returnReference
                     signedDocuments.add(signDocument(relatedDocument, signTask, signatureCertificateChain, transactionState, profileConfig));
                 }
             }
@@ -353,10 +353,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             response = new VerifyDocumentResponse();
             response.setReferenceId(signedDocument.referenceId);
 
-            List<Signature> signatures = new ArrayList<Signature>();
+            List<Signature> signatures = new ArrayList<>();
             if(validator != null){
                 if(signedDocument.isHasDetachedSignature()){
-                    List<DSSDocument> detachedContentsList = new ArrayList<DSSDocument>();
+                    List<DSSDocument> detachedContentsList = new ArrayList<>();
                     InMemoryDocument inMemoryDocument = new InMemoryDocument();
                     inMemoryDocument.setBytes(signedDocument.getDetachedSignatureData());
                     detachedContentsList.add(inMemoryDocument);
@@ -373,7 +373,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 // set tokenExtractionStategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStategy is NONE
                 validator.setTokenExtractionStategy(TokenExtractionStategy.EXTRACT_CERTIFICATES_ONLY);
-                reports = validator.validateDocument(profileConfig.getValidationPolicy());
+                reports = validator.validateDocument(getValidationPolicy(profileConfig));
 
                 for(String signatureId : reports.getSimpleReport().getSignatureIdList()){
                     String certId = reports.getDiagnosticData().getSigningCertificateId(signatureId);
@@ -407,7 +407,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 response.setVerifies((validSignatures == reports.getSimpleReport().getSignaturesCount() && validSignatures > 0));
 
                 if(reports.getSimpleReport().getSignaturesCount() > 0){
-                    if(useSimpleReport){
+                    if(apiConfig.isUseSimpleValidationReport()){
                         response.setReportData(reports.getXmlSimpleReport().getBytes("UTF-8"));
                     } else {
                         response.setReportData(reports.getXmlDetailedReport().getBytes("UTF-8"));
@@ -654,23 +654,70 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
+     * Get validation policy path to use based on a given
+     * profile and the API configuration.
+     *
+     * @param profile API Profile
+     * @return Path to validation policy to use.
+     */
+    InputStream getValidationPolicy(SupportAPIProfile profile) throws FileNotFoundException {
+        InputStream policy = null;
+        Path policyPath;
+        String policyBasePath = apiConfig.getValidationPolicyDirectory();
+
+        String profilePolicyPath = profile.getValidationPolicy();
+        if(!profilePolicyPath.endsWith(".xml")){
+            profilePolicyPath += ".xml";
+        }
+
+        if(policyBasePath != null){
+            policyPath = Paths.get(policyBasePath, profilePolicyPath);
+        } else {
+            policyPath = Paths.get(profilePolicyPath);
+        }
+
+        try {
+            String policyClassPath = policyPath.toString();
+            if(!policyClassPath.startsWith("/")){
+                policyClassPath = String.format("/%s", policyClassPath);
+            }
+
+            policy = this.getClass().getResourceAsStream(policyClassPath);
+            if (policy == null) {
+                policy = new FileInputStream(policyPath.toFile());
+            }
+        } catch(Exception e){
+            log.error("Error while reading policy file: " + e.getMessage());
+        }
+
+        if(policy == null){
+            log.error("Could not load validation policy from path: " + policyPath);
+        }
+
+        return policy;
+    }
+
+    /**
      * Get certificate verifier instance used during document validation.
      *
      * @return CertificateVerifier to use during validation.
-     * @throws IOException If certificate verifier instance could not be created.
      */
-    private CertificateVerifier getCertificateVerifier() throws IOException {
+    private CertificateVerifier getCertificateVerifier() {
         if(certificateVerifier == null){
-            certificateVerifier = new CommonCertificateVerifier();
-            certificateVerifier.setCrlSource(getCRLSource());
-            certificateVerifier.setOcspSource(getOCSPSource());
+            if(apiConfig.getCertificateVerifier() == null){
+                certificateVerifier = new CommonCertificateVerifier();
+                certificateVerifier.setCrlSource(getCRLSource());
+                certificateVerifier.setOcspSource(getOCSPSource());
 
-            if(apiConfig.getTrustedCertificateSource() == null){
-                log.warn("Verification of documents will not work properly as trusted certificate source is not specified");
+                if(apiConfig.getTrustedCertificateSource() == null){
+                    log.warn("Verification of documents will not work properly as trusted certificate source is not specified");
+                } else {
+                    CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+                    certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
+                    certificateVerifier.setTrustedCertSources(certificateSource);
+                }
             } else {
-                CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
-                certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
-                certificateVerifier.setTrustedCertSources(certificateSource);
+                certificateVerifier = apiConfig.getCertificateVerifier();
             }
         }
 
@@ -901,11 +948,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param timeStampServer Timestamp server
      * @return TSP source for given timestamp server.
      */
-    private OnlineTSPSource getTspSource(String timeStampServer) {
-        OnlineTSPSource tspSource = onlineTSPSources.get(timeStampServer);
+    private TSPSource getTspSource(String timeStampServer) {
+        TSPSource tspSource = apiConfig.getTspSource();
         if(tspSource == null){
-            tspSource = new OnlineTSPSource(timeStampServer);
-            onlineTSPSources.put(timeStampServer, tspSource);
+            tspSource = onlineTSPSources.get(timeStampServer);
+            if(tspSource == null){
+                tspSource = new OnlineTSPSource(timeStampServer);
+                onlineTSPSources.put(timeStampServer, tspSource);
+            }
         }
         return tspSource;
     }
@@ -928,13 +978,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         switch(sigType) {
             case XML:
-                if(!config.getXadesSignatureLevel().equals(SignatureLevel.XAdES_BASELINE_B.toString()) && config.getTimeStampServer() != null){
-                    xAdESService.setTspSource(onlineTSPSources.get(config.getTimeStampServer()));
+                if(!config.getXadesSignatureLevel().equals(SignatureLevel.XAdES_BASELINE_B.toString())){
+                    xAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
                 }
                 signTask.setToBeSignedBytes(xAdESService.getDataToSign(dssDocument, (XAdESSignatureParameters)dssParameters).getBytes());
                 break;
             case PDF:
-                if(!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString()) && config.getTimeStampServer() != null){
+                if(!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())){
                     pAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
                 }
                 PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters)dssParameters;
@@ -948,8 +998,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 signTask.setToBeSignedBytes(pAdESService.getDataToSign(dssDocument, pAdESParameters).getBytes());
                 break;
             case CMS:
-                if(!config.getCadesSignatureLevel().equals(SignatureLevel.CAdES_BASELINE_B.toString()) && config.getTimeStampServer() != null){
-                    cAdESService.setTspSource(onlineTSPSources.get(config.getTimeStampServer()));
+                if(!config.getCadesSignatureLevel().equals(SignatureLevel.CAdES_BASELINE_B.toString())){
+                    cAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
                 }
                 signTask.setToBeSignedBytes(cAdESService.getDataToSign(dssDocument, (CAdESSignatureParameters)dssParameters).getBytes());
                 break;
@@ -1074,7 +1124,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(state);
         MetaData metaData = new MetaData();
-        metaData.setTimeToLive(transactionTimeToLive);
+        metaData.setTimeToLive(Constants.DEFAULT_TRANSACTION_TTL);
         cacheProvider.set(transactionId, baos.toByteArray(), metaData);
 
         return state;
@@ -1176,6 +1226,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Signature parameters to use when creating request
      */
     protected AbstractSignatureParameters getSignatureParameters(SigType sigType, SupportAPIProfile config) throws ClientErrorException {
+        if(config.getSignatureAlgorithm() == null){
+            throw (ClientErrorException) ErrorCode.INVALID_CONFIGURATION.toException("Signature algorithm is not set in profile " + config.getRelatedProfile());
+        }
+
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.bLevel().setSigningDate(DateUtils.round(new Date(), Calendar.SECOND));
@@ -1206,6 +1260,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             parameters.bLevel().setSigningDate(SignTaskHelper.getXadesSigningTime(signTask));
         } else {
             parameters.bLevel().setSigningDate(relatedTransaction.getSigningTime().get(relatedDocument.referenceId));
+        }
+
+        parameters.setSignWithExpiredCertificate(config.isAllowSignWithExpiredCertificate());
+        if(parameters.isSignWithExpiredCertificate()){
+            log.warn("Signing with expired certificate is enabled in profile. Make sure this is a conscious choice.");
         }
 
         return parameters;
@@ -1710,6 +1769,29 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         /**
+         * Specify timestamp source to use.
+         *
+         * @param tspSource Timestamp source.
+         * @return Updated builder.
+         */
+        public Builder timeStampSource(TSPSource tspSource){
+            config.setTspSource(tspSource);
+            return this;
+        }
+
+        /**
+         * Specify certificate verifier to use when verifying certificates.
+         * If not specified the default verifier will be used.
+         *
+         * @param certificateVerifier Certificate verifier to use.
+         * @return Updated builder.
+         */
+        public Builder certificateVerifier(CertificateVerifier certificateVerifier){
+            config.setCertificateVerifier(certificateVerifier);
+            return this;
+        }
+
+        /**
          * Specify proxy settings to use during document validation when fetching
          * revocation data.
          *
@@ -1780,6 +1862,20 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             proxyConfig.setHttpsProperties(proxyProperties);
             config.setValidationProxyConfig(proxyConfig);
 
+            return this;
+        }
+
+        /**
+         * Path to directory containing validation policy files.
+         * This can a path on the file system of the classpath. If this
+         * is not specified the profile validation policy setting needs to
+         * contain the full path to the policy file.
+         *
+         * @param validationPolicyDirectory Path to directory containing validation policy files.
+         * @return Updated builder.
+         */
+        public Builder validationPolicyDirectory(String validationPolicyDirectory){
+            config.setValidationPolicyDirectory(validationPolicyDirectory);
             return this;
         }
 
@@ -1862,9 +1958,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         /**
-         * Build the transaction signer.
+         * Build the Support Service API.
          *
-         * @return TransactionSigner instance based on builder settings.
+         * @return V2SupportServiceAPI instance based on builder settings.
          */
         public SupportServiceAPI build() {
             if(config.getAuthContextMappings() == null){

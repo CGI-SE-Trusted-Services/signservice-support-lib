@@ -167,4 +167,29 @@ class SupportAPIProfileSpec extends Specification {
         profile.xadesSignatureLevel == "XAdES-BASELINE-B"
         profile.xadesCanonicalizationAlgorithmURI == "http://www.w3.org/2001/10/xml-exc-c14n#"
     }
+
+    def "verify default Support API profile settings"() {
+        when:
+        SupportAPIProfile profile = new SupportAPIProfile.Builder().build()
+
+        then:
+        profile.xadesSignatureLevel == "XAdES-BASELINE-B"
+        profile.xadesSignaturePacking == "ENVELOPED"
+        profile.xadesCanonicalizationAlgorithmURI == "http://www.w3.org/2001/10/xml-exc-c14n#"
+        profile.xadesXPathLocationString == "node()[not(self::Signature)]"
+        profile.padesSignatureLevel == "PAdES-BASELINE-B"
+        profile.padesSignaturePacking == "ENVELOPED"
+        profile.cadesSignatureLevel == "CAdES-BASELINE-B"
+        profile.cadesSignaturePacking == "ENVELOPING"
+        profile.signatureValidityOverlapMinutes == 0
+        profile.signatureValidityMinutes == 5
+        profile.signatureAlgorithm == "SHA256withRSA"
+        profile.encryptionAlgorithmScheme == "RSA_PKCS1_5_WITH_AES256"
+        !profile.useEncryptedSignMessage
+        !profile.signMessageMustShow
+        profile.signMessageMimeType == "TEXT"
+        profile.defaultUserIdAttributeMapping == "urn:oid:1.2.752.29.4.13"
+        profile.signRequestExtensionVersion == "1.5"
+        profile.validationPolicy == "/policy/basicpolicy.xml"
+    }
 }

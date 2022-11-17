@@ -12,22 +12,12 @@
  *************************************************************************/
 package se.signatureservice.support.system;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.TextNode;
 import se.signatureservice.configuration.common.InternalErrorException;
 import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.SupportProfile;
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 
-import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -284,12 +274,11 @@ public class SupportAPIProfile implements SupportProfile {
     private List<String> authorizedConsumerURLs;
 
     /**
-     * Validation policy to use when verifying signed documents. Policy file must be specified
-     * using filename (with or without .xml extension) of policy file which must be present
+     * Validation policy to use when verifying signed documents. Policy file must be present
      * in the class path.
-     * Default value: /defaultpolicy.xml
+     * Default value: /basicpolicy.xml
      */
-    private String validationPolicy = "/defaultpolicy.xml";
+    private String validationPolicy = "/policy/basicpolicy.xml";
 
     /**
      * Flag indicating if enhanced logging should be enabled or not. If enhanced logging is
@@ -320,6 +309,13 @@ public class SupportAPIProfile implements SupportProfile {
      * from completeSignature API call.
      */
     private boolean enableAutomaticValidation = false;
+
+    /**
+     * Flag indicating if it should be possible to create a signed document using
+     * an expired certificate.
+     * Default value: false
+     */
+    private boolean allowSignWithExpiredCertificate = false;
 
     /**
      * Setting indicating the version that should be set in the SignRequestExtension. Default is "1.5" that
@@ -618,6 +614,14 @@ public class SupportAPIProfile implements SupportProfile {
 
     public void setEnableAutomaticValidation(boolean enableAutomaticValidation) {
         this.enableAutomaticValidation = enableAutomaticValidation;
+    }
+
+    public boolean isAllowSignWithExpiredCertificate(){
+        return allowSignWithExpiredCertificate;
+    }
+
+    public void setAllowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate){
+        this.allowSignWithExpiredCertificate = allowSignWithExpiredCertificate;
     }
 
     public String getSignRequestExtensionVersion() {
@@ -934,6 +938,11 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder enableAutomaticValidation(boolean enableAutomaticValidation) {
             config.setEnableAutomaticValidation(enableAutomaticValidation);
+            return this;
+        }
+
+        public Builder allowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate){
+            config.setAllowSignWithExpiredCertificate(allowSignWithExpiredCertificate);
             return this;
         }
 

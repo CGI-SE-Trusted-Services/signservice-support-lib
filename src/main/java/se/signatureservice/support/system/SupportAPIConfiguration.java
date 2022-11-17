@@ -14,6 +14,8 @@ package se.signatureservice.support.system;
 
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
+import eu.europa.esig.dss.validation.CertificateVerifier;
 import org.certificateservices.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
 import se.signatureservice.configuration.common.cache.CacheProvider;
@@ -50,6 +52,18 @@ public class SupportAPIConfiguration {
     private CertificateSource trustedCertificateSource;
 
     /**
+     * Certificate verifier to use, or null to use default.
+     * Default value: null
+     */
+    private CertificateVerifier certificateVerifier = null;
+
+    /**
+     * Timestamp source to use, or null to use default.
+     * Default value: null
+     */
+    private TSPSource tspSource = null;
+
+    /**
      * If simple report should be generated during validation.
      * Default value: true
      */
@@ -61,6 +75,15 @@ public class SupportAPIConfiguration {
      * Default value: null
      */
     private ProxyConfig validationProxyConfig = null;
+
+    /**
+     * Optional path to directory containing validation policy files.
+     * This can a path on the file system of the classpath. If this
+     * is not specified the profile validation policy setting needs to
+     * contain the full path to the policy file.
+     * Default value: null
+     */
+    private String validationPolicyDirectory = null;
 
     /**
      * How long in milliseconds that the revocation data cache is valid before
@@ -111,12 +134,36 @@ public class SupportAPIConfiguration {
         this.trustedCertificateSource = certificateSource;
     }
 
+    public CertificateVerifier getCertificateVerifier() {
+        return this.certificateVerifier;
+    }
+
+    public void setCertificateVerifier(CertificateVerifier certificateVerifier){
+        this.certificateVerifier = certificateVerifier;
+    }
+
+    public TSPSource getTspSource() {
+        return this.tspSource;
+    }
+
+    public void setTspSource(TSPSource tspSource){
+        this.tspSource = tspSource;
+    }
+
     public boolean isUseSimpleValidationReport() {
         return useSimpleValidationReport;
     }
 
     public void setUseSimpleValidationReport(boolean useSimpleValidationReport) {
         this.useSimpleValidationReport = useSimpleValidationReport;
+    }
+
+    public void setValidationPolicyDirectory(String validationPolicyDirectory){
+        this.validationPolicyDirectory = validationPolicyDirectory;
+    }
+
+    public String getValidationPolicyDirectory(){
+        return validationPolicyDirectory;
     }
 
     public long getValidationCacheExpirationTimeMS() {
