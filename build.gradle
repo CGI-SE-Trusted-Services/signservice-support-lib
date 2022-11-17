@@ -10,9 +10,6 @@ certserviceSettings {
 
 }
 
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
-
 repositories {
     maven {
         url "https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss/"
