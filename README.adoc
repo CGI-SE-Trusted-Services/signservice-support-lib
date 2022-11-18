@@ -4,26 +4,4 @@ The purpose of the signature support API is to help with creating signature requ
 signature responses, according to the technical framework specified by Sweden Connect
 (https://docs.swedenconnect.se/technical-framework/).
 
-== API Documentation
-
-Please refer to `signservice-doc/main/en/integration/support_api.adoc`.
-
-== Customer specific publishing
-Custom gradle tasks have been implemented in order to publish the library to customers, that does not have access to our internal repositories. The following section describes how publishing is performed. Configuration requirements described below should be inserted into the `~/.gradle/gradle.properties` file prior to publishing.
-
-=== GDC
-==== Configuration
-
-|===
-|Property | Description
-
-|repository.gdc.username
-|Username to use when authenticating to GDC repository.
-
-|repository.gdc.password
-|Password to use when authenticating to GDC repository.
-|===
-
-==== Publish
-
-    ./gradlew :signservice-support-lib:uploadGdc
+Library documentation is available in the *Integration Guide* in subfolder `docs`.
