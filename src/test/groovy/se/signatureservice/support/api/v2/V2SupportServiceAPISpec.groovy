@@ -26,7 +26,6 @@ import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Specification
 import spock.lang.Unroll
-
 import java.security.cert.X509Certificate
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
@@ -604,11 +603,11 @@ class V2SupportServiceAPISpec extends Specification {
                           new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
         supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
         then:
-        parameters.imageParameters.page == 1
-        parameters.imageParameters.xAxis == 20
-        parameters.imageParameters.yAxis == 30
-        parameters.imageParameters.width == 200
-        parameters.imageParameters.height == 50
+        parameters.imageParameters.fieldParameters.page == 1
+        parameters.imageParameters.fieldParameters.originX == 20
+        parameters.imageParameters.fieldParameters.originY == 30
+        parameters.imageParameters.fieldParameters.width == 200
+        parameters.imageParameters.fieldParameters.height == 50
         parameters.imageParameters.image != null
     }
 
@@ -624,11 +623,11 @@ class V2SupportServiceAPISpec extends Specification {
         supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_HEIGHT, "50")
         supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", null)
         then:
-        parameters.imageParameters.page == 1
-        parameters.imageParameters.xAxis == 20
-        parameters.imageParameters.yAxis == 30
-        parameters.imageParameters.width == 40
-        parameters.imageParameters.height == 50
+        parameters.imageParameters.fieldParameters.page == 1
+        parameters.imageParameters.fieldParameters.originX == 20
+        parameters.imageParameters.fieldParameters.originY == 30
+        parameters.imageParameters.fieldParameters.width == 40
+        parameters.imageParameters.fieldParameters.height == 50
     }
 
     def "test setVisibleSignature with valid attributes input but invalid image resource"(){
@@ -643,11 +642,11 @@ class V2SupportServiceAPISpec extends Specification {
                           new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
         supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
         then:
-        parameters.imageParameters.page == 1
-        parameters.imageParameters.xAxis == 20
-        parameters.imageParameters.yAxis == 30
-        parameters.imageParameters.width == 200
-        parameters.imageParameters.height == 50
+        parameters.imageParameters.fieldParameters.page == 1
+        parameters.imageParameters.fieldParameters.originX == 20
+        parameters.imageParameters.fieldParameters.originY == 30
+        parameters.imageParameters.fieldParameters.width == 200
+        parameters.imageParameters.fieldParameters.height == 50
         parameters.imageParameters.image != null
     }
 
@@ -679,7 +678,7 @@ class V2SupportServiceAPISpec extends Specification {
 
         where:
         testDocument            | documentType | expectedSignatureFormat
-        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"
+        testSignedXMLDocument   | "XML"        | "XAdES-BES"
         testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"
         testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"
     }
@@ -754,7 +753,7 @@ class V2SupportServiceAPISpec extends Specification {
     def "test that proxy settings are used if specified"(){
         when:
         V2SupportServiceAPI proxyAPI = new V2SupportServiceAPI.Builder()
-                .validationProxy("proxy.test.com", 1234, "user", "pass", "google.com,ikea.se")
+                .validationProxy("proxy.test.com", 1234, "user", "pass", ["google.com", "ikea.se"])
                 .build() as V2SupportServiceAPI
         ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)proxyAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
         ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)proxyAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
@@ -765,23 +764,23 @@ class V2SupportServiceAPISpec extends Specification {
         crlProxyConfig.httpsProperties.port == 1234
         crlProxyConfig.httpsProperties.user == "user"
         crlProxyConfig.httpsProperties.password == "pass"
-        crlProxyConfig.httpsProperties.excludedHosts == "google.com,ikea.se"
+        crlProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         crlProxyConfig.httpProperties.host == "proxy.test.com"
         crlProxyConfig.httpProperties.port == 1234
         crlProxyConfig.httpProperties.user == "user"
         crlProxyConfig.httpProperties.password == "pass"
-        crlProxyConfig.httpProperties.excludedHosts == "google.com,ikea.se"
+        crlProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig != null
         ocspProxyConfig.httpsProperties.host == "proxy.test.com"
         ocspProxyConfig.httpsProperties.port == 1234
         ocspProxyConfig.httpsProperties.user == "user"
         ocspProxyConfig.httpsProperties.password == "pass"
-        ocspProxyConfig.httpsProperties.excludedHosts == "google.com,ikea.se"
+        ocspProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig.httpProperties.host == "proxy.test.com"
         ocspProxyConfig.httpProperties.port == 1234
         ocspProxyConfig.httpProperties.user == "user"
         ocspProxyConfig.httpProperties.password == "pass"
-        ocspProxyConfig.httpProperties.excludedHosts == "google.com,ikea.se"
+        ocspProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
     }
 
     static int getMinutesBetween(String a, String b) {

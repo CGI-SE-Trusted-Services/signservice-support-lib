@@ -34,8 +34,9 @@
                 <NotExpired Level="FAIL" />
                 <RevocationInfoAccessPresent Level="WARN" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <KeyUsage Level="INFORM">
                     <Id>nonRepudiation</Id>
                 </KeyUsage>
@@ -72,8 +73,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="FAIL">
@@ -147,8 +149,9 @@
                 <NotExpired Level="FAIL" />
                 <RevocationInfoAccessPresent Level="WARN" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <KeyUsage Level="WARN">
                     <Id>nonRepudiation</Id>
                 </KeyUsage>
@@ -185,8 +188,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="FAIL">
@@ -261,8 +265,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="FAIL">
@@ -294,8 +299,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="FAIL">
@@ -350,7 +356,6 @@
         </BasicSignatureConstraints>
     </Timestamp>
     <Revocation>
-        <RevocationFreshness Level="FAIL" Unit="DAYS" Value="0" />
         <BasicSignatureConstraints>
             <ReferenceDataExistence Level="WARN" />
             <ReferenceDataIntact Level="WARN" />
@@ -361,8 +366,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="WARN">
@@ -394,8 +400,9 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <RevocationDataAvailable Level="WARN" />
-                <RevocationDataNextUpdatePresent Level="WARN" />
-                <RevocationDataFreshness Level="WARN" />
+                <CRLNextUpdatePresent Level="WARN"/>
+                <OCSPNextUpdatePresent Level="WARN"/>
+                <RevocationFreshness Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
                 <Cryptographic Level="FAIL">

@@ -10,12 +10,6 @@ certserviceSettings {
 
 }
 
-repositories {
-    maven {
-        url "https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss/"
-    }
-}
-
 sourceSets {
     main {
         resources {
@@ -29,6 +23,10 @@ configurations {
     integrationTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
+configurations.all {
+    exclude group: 'xerces'
+}
+
 dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-xades:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-cades:$dssVersion"
@@ -38,8 +36,8 @@ dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-utils:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:$dssVersion"
-    api "org.apache.pdfbox:pdfbox:2.0.26"
-    api "org.apache.santuario:xmlsec:2.1.7"
+    api "org.apache.pdfbox:pdfbox:2.0.27"
+    api "org.apache.santuario:xmlsec:2.3.1"
     api "org.slf4j:slf4j-api:1.7.36"
     api "org.slf4j:slf4j-simple:1.7.36"
     api "org.json:json:20220320"

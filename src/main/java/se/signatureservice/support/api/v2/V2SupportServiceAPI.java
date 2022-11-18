@@ -17,14 +17,11 @@ import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.enumerations.*;
-import eu.europa.esig.dss.jaxb.SchemaFactoryBuilder;
-import eu.europa.esig.dss.jaxb.XmlDefinerUtils;
+import eu.europa.esig.dss.jaxb.common.SchemaFactoryBuilder;
+import eu.europa.esig.dss.jaxb.common.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.pades.DSSFileFont;
-import eu.europa.esig.dss.pades.PAdESSignatureParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.SignatureImageTextParameters;
+import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
 import eu.europa.esig.dss.service.crl.OnlineCRLSource;
@@ -80,6 +77,7 @@ import se.signatureservice.configuration.common.cache.MetaData;
 import se.signatureservice.configuration.common.utils.ColorParser;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
 import se.signatureservice.support.system.*;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
@@ -340,18 +338,20 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         VerifyDocumentResponse response;
         Reports reports;
         int validSignatures = 0;
+        response = new VerifyDocumentResponse();
+        response.setReferenceId(signedDocument.referenceId);
 
         try {
             DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(signedDocument);
             SignedDocumentValidator validator = null;
             try {
                 validator = SignedDocumentValidator.fromDocument(dssDocument);
-            } catch(DSSException e){
+            } catch(Exception e){
                 log.error("Failed to create signed document validator: " + e.getMessage());
+                response.setVerifies(false);
+                response.setSignatures(new Signatures());
+                return response;
             }
-
-            response = new VerifyDocumentResponse();
-            response.setReferenceId(signedDocument.referenceId);
 
             List<Signature> signatures = new ArrayList<>();
             if(validator != null){
@@ -372,7 +372,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 XmlDefinerUtils.getInstance().setSchemaFactoryBuilder(schemaFactoryBuilder);
 
                 // set tokenExtractionStategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStategy is NONE
-                validator.setTokenExtractionStategy(TokenExtractionStategy.EXTRACT_CERTIFICATES_ONLY);
+                validator.setTokenExtractionStrategy(TokenExtractionStrategy.EXTRACT_CERTIFICATES_ONLY);
                 reports = validator.validateDocument(getValidationPolicy(profileConfig));
 
                 for(String signatureId : reports.getSimpleReport().getSignatureIdList()){
@@ -400,7 +400,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                         validSignatures++;
                     } else if(response.getVerificationErrorCode() == null || response.getVerificationErrorCode() < indication.ordinal()){
                         response.setVerificationErrorCode(indication.ordinal());
-                        response.setVerificationErrorMessages(getMessagesFromList(reports.getSimpleReport().getErrors(signatureId), "en"));
+                        response.setVerificationErrorMessages(getMessagesFromList(reports.getSimpleReport().getQualificationErrors(signatureId), "en"));
                     }
                 }
 
@@ -640,12 +640,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param language Language to use.
      * @return Messages instance.
      */
-    private Messages getMessagesFromList(List<String> messageList, String language){
+    private Messages getMessagesFromList(List<eu.europa.esig.dss.jaxb.object.Message> messageList, String language){
         Messages messages = new Messages();
         messages.message = new ArrayList<Message>();
-        for(String messageText : messageList){
+        for(eu.europa.esig.dss.jaxb.object.Message errorMessage : messageList){
             Message message = new Message();
-            message.setText(messageText);
+            message.setText(String.format("%s: %s", errorMessage.getKey(), errorMessage.getValue()));
             message.setLang(language);
             messages.message.add(message);
         }
@@ -994,7 +994,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     setVisibleSignature(config, pAdESParameters, signingId, transactionId, signatureAttributes);
                 }
 
-                pAdESService.setPdfObjFactory(new PdfBoxDefaultObjectFactory());
+                pAdESService.setPdfObjFactory(new PdfBoxSupportObjectFactory());
                 signTask.setToBeSignedBytes(pAdESService.getDataToSign(dssDocument, pAdESParameters).getBytes());
                 break;
             case CMS:
@@ -1275,41 +1275,45 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         try {
             // First priority is to use parameters from cache if available, if not we setup default
             // values that then can be overridden by any given signature attributes.
-            imageParameters.setxAxis(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X), DEFAULT_VISIBLE_SIGNATURE_POSITION_X));
-            imageParameters.setyAxis(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y), DEFAULT_VISIBLE_SIGNATURE_POSITION_Y));
-            imageParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH), DEFAULT_VISIBLE_SIGNATURE_WIDTH));
-            imageParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT), DEFAULT_VISIBLE_SIGNATURE_HEIGHT));
-            imageParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_PAGE), DEFAULT_VISIBLE_SIGNATURE_PAGE));
+            SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
+            fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X), DEFAULT_VISIBLE_SIGNATURE_POSITION_X));
+            fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y), DEFAULT_VISIBLE_SIGNATURE_POSITION_Y));
+            fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH), DEFAULT_VISIBLE_SIGNATURE_WIDTH));
+            fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT), DEFAULT_VISIBLE_SIGNATURE_HEIGHT));
+            fieldParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_PAGE), DEFAULT_VISIBLE_SIGNATURE_PAGE));
+            imageParameters.setFieldParameters(fieldParameters);
 
             if(signatureAttributes != null){
                 for(Attribute it : signatureAttributes) {
                     if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_X)) {
-                        imageParameters.setxAxis(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_Y)) {
-                        imageParameters.setyAxis(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(),null));
+                        fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(),null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_WIDTH)) {
-                        imageParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_HEIGHT)) {
-                        imageParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_PAGE)) {
-                        imageParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
                     } else {
                         log.info("Ignore attribute: " + it.getKey() + " for visible signature image settings.");
                     }
                 }
 
                 // Perform some basic validation on the attributes to fail early.
-                if (imageParameters.getxAxis() <= 0) {
+                if (fieldParameters.getOriginX() <= 0) {
                     throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_POSITION_X + " is configured with a value equal or larger than 0.");
-                } else if (imageParameters.getyAxis() <= 0) {
+                } else if (fieldParameters.getOriginY() <= 0) {
                     throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_POSITION_Y + " is configured with a value equal or larger than 0.");
-                } else if (imageParameters.getWidth() != 0 && imageParameters.getHeight() != 0) {
-                    if (imageParameters.getWidth() < 180) {
+                } else if (fieldParameters.getWidth() != 0 && fieldParameters.getHeight() != 0) {
+                    if (fieldParameters.getWidth() < 180) {
                         throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_WIDTH + " is configured with a value larger than 180. The minimum image size is: 180*40.");
-                    } else if (imageParameters.getHeight() < 40) {
+                    } else if (fieldParameters.getHeight() < 40) {
                         throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException("Make sure attribute: " + VISIBLE_SIGNATURE_HEIGHT + " is configured with a value larger than 40. The minimum image size is: 180*40.");
                     }
                 }
+
+                imageParameters.setFieldParameters(fieldParameters);
             }
 
             return imageParameters;
@@ -1809,10 +1813,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          *
          * @param host Proxy host
          * @param port Proxy port
-         * @param excludedHosts Excluded hosts. Multiple hosts can be seperated by ',', ';' or ' '.
+         * @param excludedHosts List of excluded hosts.
          * @return Updated builder.
          */
-        public Builder validationProxy(String host, int port, String excludedHosts){
+        public Builder validationProxy(String host, int port, List<String> excludedHosts){
             return validationProxy(host, port, null, null, excludedHosts);
         }
 
@@ -1838,10 +1842,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param port Proxy port
          * @param user Proxy username
          * @param password Proxy Password
-         * @param excludedHosts Excluded hosts. Multiple hosts can be seperated by ',', ';' or ' '.
+         * @param excludedHosts List of excluded hosts.
          * @return Updated builder.
          */
-        public Builder validationProxy(String host, int port, String user, String password, String excludedHosts){
+        public Builder validationProxy(String host, int port, String user, String password, List<String> excludedHosts){
             ProxyConfig proxyConfig = new ProxyConfig();
             ProxyProperties proxyProperties = new ProxyProperties();
             proxyProperties.setHost(host);

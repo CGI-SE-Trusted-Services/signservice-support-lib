@@ -200,7 +200,9 @@ public class SignTaskHelper {
 
         // Canonicalize and update sign task
         Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-        signTask.setToBeSignedBytes(c14n.canonicalizeSubtree(signedInfo));
+        ByteArrayOutputStream signedInfoStream = new ByteArrayOutputStream();
+        c14n.canonicalizeSubtree(signedInfo, signedInfoStream);
+        signTask.setToBeSignedBytes(signedInfoStream.toByteArray());
 
         if(signTask.getAdESObject() == null){
             signTask.setAdESObject(new AdESObjectType());
@@ -381,9 +383,10 @@ public class SignTaskHelper {
         byte[] digestValue = null;
         try {
             Canonicalizer c14n = Canonicalizer.getInstance(canonicalizationMethod);
-            byte[] canonicalized = c14n.canonicalizeSubtree(signedProperties);
+            ByteArrayOutputStream signedPropertiesStream = new ByteArrayOutputStream();
+            c14n.canonicalizeSubtree(signedProperties, signedPropertiesStream);
             MessageDigest messageDigest = MessageDigest.getInstance(digestAlgorithm);
-            digestValue = messageDigest.digest(canonicalized);
+            digestValue = messageDigest.digest(signedPropertiesStream.toByteArray());
         } catch(Exception e){
             e.printStackTrace();
         }

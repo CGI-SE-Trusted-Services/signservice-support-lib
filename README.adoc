@@ -4,4 +4,4 @@ The purpose of the signature support API is to help with creating signature requ
 signature responses, according to the technical framework specified by Sweden Connect
 (https://docs.swedenconnect.se/technical-framework/).
 
-Library documentation is available in the *Integration Guide* in subfolder `docs`.
+Library documentation and example code is available in the *Integration Guide* in subfolder `docs`.
