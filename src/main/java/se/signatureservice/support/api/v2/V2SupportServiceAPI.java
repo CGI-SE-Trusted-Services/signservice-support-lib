@@ -205,6 +205,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             validateDocuments(documents);
             validateAuthenticationServiceId(authenticationServiceId, profileConfig);
+            validateProfile(profileConfig);
 
             ContextMessageSecurityProvider.Context context  = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, profileConfig.getRelatedProfile());
             preparedSignature = new PreparedSignatureResponse();
@@ -1643,6 +1644,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * Ensures that there are no obvious errors within a set of documents
      *
      * @param documents Documents to validate
+     * @throws ClientErrorException If error is found within the given documents.
      */
     private void validateDocuments(DocumentRequests documents) throws ClientErrorException {
         if(documents == null){
@@ -1674,6 +1676,26 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             } else if(object instanceof DocumentRef) {
                 throw (ClientErrorException)ErrorCode.UNSUPPORTED_OPERATION.toException("Document references are not supported", messageSource);
             }
+        }
+    }
+
+    /**
+     * Ensures that there are no obvious errors in a profile.
+     *
+     * @param profile Profile to validate.
+     * @throws ClientErrorException If errors are found within the given profile.
+     */
+    private void validateProfile(SupportAPIProfile profile) throws ClientErrorException {
+        if(profile == null){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Profile missing (null)");
+        }
+
+        if(profile.getRequestedCertAttributes() == null || profile.getRequestedCertAttributes().isEmpty()){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Profile must contain at least one requested cert attribute");
+        }
+
+        if(profile.getRelatedProfile() == null || profile.getRelatedProfile().isEmpty()){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Related profile name in profile is empty");
         }
     }
 
