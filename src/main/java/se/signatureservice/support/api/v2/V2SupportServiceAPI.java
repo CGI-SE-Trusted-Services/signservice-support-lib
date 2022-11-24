@@ -189,7 +189,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     @Override
     public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
-        long operationStart = System.currentTimeMillis();
+        long currentTime, operationStart = System.currentTimeMillis();
+        int operationTime;
         PreparedSignatureResponse preparedSignature = null;
         try {
             if (transactionId == null) {
@@ -240,6 +241,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to generate sign request: " + e.getMessage());
             }
         }
+
+        currentTime = System.currentTimeMillis();
+        operationTime = (int)(currentTime - operationStart);
+        log.info("Sign request successfully generated (" + operationTime + " ms)");
 
         return preparedSignature;
     }
@@ -321,16 +326,16 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
         }
 
-        currentTime = System.currentTimeMillis();
-        operationTime = (int)(currentTime - operationStart);
-        log.info("Sign response successfully processed (" + operationTime + " ms)");
-
         try {
             transactionState.setCompleted(true);
             storeTransactionState(transactionId, transactionState);
         } catch(Exception e){
             throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to store transaction state: " + e.getMessage());
         }
+
+        currentTime = System.currentTimeMillis();
+        operationTime = (int)(currentTime - operationStart);
+        log.info("Sign response successfully processed (" + operationTime + " ms)");
 
         return signatureResponse;
     }
