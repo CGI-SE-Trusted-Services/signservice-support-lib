@@ -703,6 +703,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return CertificateVerifier to use during validation.
      */
     private CertificateVerifier getCertificateVerifier() {
+        // TODO LOTR: Här skall den känna av om det är truststore som skall läsas in eller LOTR listan
+        //
+
+
         if(certificateVerifier == null){
             if(apiConfig.getCertificateVerifier() == null){
                 certificateVerifier = new CommonCertificateVerifier();

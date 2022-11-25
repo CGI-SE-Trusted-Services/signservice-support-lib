@@ -87,6 +87,8 @@ class V2SupportServiceAPISpec extends Specification {
 
     }
 
+    // TODO LOTR: Här lägg till tests för LOTR
+    // .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123"))
     @Unroll
     void "test generateSignRequest with RSA"() {
         setup:
