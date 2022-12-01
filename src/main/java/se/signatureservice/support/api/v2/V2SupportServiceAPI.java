@@ -21,9 +21,9 @@ import eu.europa.esig.dss.jaxb.common.SchemaFactoryBuilder;
 import eu.europa.esig.dss.jaxb.common.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
 import eu.europa.esig.dss.service.crl.OnlineCRLSource;
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
 import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader;
@@ -32,11 +32,14 @@ import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
@@ -83,6 +86,7 @@ import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.signer.SignTaskHelper;
+import se.signatureservice.support.trustlist.TrustedListsCertificateSourceBuilder;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
@@ -102,8 +106,13 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
+
+
 
 /**
  * Implementation of Support Service API version 2.
@@ -703,28 +712,29 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return CertificateVerifier to use during validation.
      */
     private CertificateVerifier getCertificateVerifier() {
-        // TODO LOTR: Här skall den känna av om det är truststore som skall läsas in eller LOTR listan
-        //
-
-
-        if(certificateVerifier == null){
-            if(apiConfig.getCertificateVerifier() == null){
+        if(certificateVerifier == null) {
+            if(apiConfig.getCertificateVerifier() == null) {
                 certificateVerifier = new CommonCertificateVerifier();
                 certificateVerifier.setCrlSource(getCRLSource());
                 certificateVerifier.setOcspSource(getOCSPSource());
 
-                if(apiConfig.getTrustedCertificateSource() == null){
+                if(apiConfig.getTrustedCertificateSource() == null) {
                     log.warn("Verification of documents will not work properly as trusted certificate source is not specified");
                 } else {
-                    CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
-                    certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
-                    certificateVerifier.setTrustedCertSources(certificateSource);
+                    if(apiConfig.getTrustedCertificateSource() instanceof TrustedListsCertificateSource) {
+                        certificateVerifier.setTrustedCertSources(apiConfig.getTrustedCertificateSource());
+                        certificateVerifier.setAIASource(new DefaultAIASource());
+                    }
+                    if(apiConfig.getTrustedCertificateSource() instanceof KeyStoreCertificateSource) {
+                        CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+                        certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
+                        certificateVerifier.setTrustedCertSources(certificateSource);
+                    }
                 }
             } else {
                 certificateVerifier = apiConfig.getCertificateVerifier();
             }
         }
-
         return certificateVerifier;
     }
 
