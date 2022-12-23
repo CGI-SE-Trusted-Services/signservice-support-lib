@@ -112,8 +112,6 @@ import java.util.Arrays;
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
 
-
-
 /**
  * Implementation of Support Service API version 2.
  *

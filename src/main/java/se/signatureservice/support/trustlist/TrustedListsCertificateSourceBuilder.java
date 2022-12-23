@@ -118,6 +118,17 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
      *
      * @param lotlURL  URL to the LOTL to be parsed.
      */
+    public TrustedListsCertificateSourceBuilder(final String lotlURL, final String ojURL) {
+        this(lotlURL, ojURL, false, false, false, null, 0,
+                -1, null, null, null);
+    }
+
+    /**
+     * Implementation constructor of the TrustedListsCertificateSourceBuilder.
+     * Creates an instance of the TrustedListsCertificateSourceBuilder.
+     *
+     * @param lotlURL  URL to the LOTL to be parsed.
+     */
     public TrustedListsCertificateSourceBuilder(final String lotlURL) {
         this(lotlURL, null, false, false, false, null, 0,
                 -1, null, null, null);

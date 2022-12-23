@@ -9,7 +9,6 @@ import eu.europa.esig.dss.service.http.commons.OCSPDataLoader
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
-import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
@@ -27,7 +26,6 @@ import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Specification
 import spock.lang.Unroll
-
 import java.security.cert.X509Certificate
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
