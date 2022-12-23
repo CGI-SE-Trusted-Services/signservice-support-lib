@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><catalog>
+   <book id="bk101">
+      <author>Gambardella, Matthew</author>
+      <title>XML Developer's Guide</title>
+      <genre>Computer</genre>
+      <price>44.95</price>
+      <publish_date>2000-10-01</publish_date>
+      <description>An in-depth look at creating applications 
+      with XML.</description>
+   </book>
+   <book id="bk102">
+      <author>Ralls, Kim</author>
+      <title>Midnight Rain</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-12-16</publish_date>
+      <description>A former architect battles corporate zombies, 
+      an evil sorceress, and her own childhood to become queen 
+      of the world.</description>
+   </book>
+   <book id="bk103">
+      <author>Corets, Eva</author>
+      <title>Maeve Ascendant</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2000-11-17</publish_date>
+      <description>After the collapse of a nanotechnology 
+      society in England, the young survivors lay the 
+      foundation for a new society.</description>
+   </book>
+   <book id="bk104">
+      <author>Corets, Eva</author>
+      <title>Oberon's Legacy</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-03-10</publish_date>
+      <description>In post-apocalypse England, the mysterious 
+      agent known only as Oberon helps to create a new life 
+      for the inhabitants of London. Sequel to Maeve 
+      Ascendant.</description>
+   </book>
+   <book id="bk105">
+      <author>Corets, Eva</author>
+      <title>The Sundered Grail</title>
+      <genre>Fantasy</genre>
+      <price>5.95</price>
+      <publish_date>2001-09-10</publish_date>
+      <description>The two daughters of Maeve, half-sisters, 
+      battle one another for control of England. Sequel to 
+      Oberon's Legacy.</description>
+   </book>
+   <book id="bk106">
+      <author>Randall, Cynthia</author>
+      <title>Lover Birds</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-09-02</publish_date>
+      <description>When Carla meets Paul at an ornithology 
+      conference, tempers fly as feathers get ruffled.</description>
+   </book>
+   <book id="bk107">
+      <author>Thurman, Paula</author>
+      <title>Splish Splash</title>
+      <genre>Romance</genre>
+      <price>4.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>A deep sea diver finds true love twenty 
+      thousand leagues beneath the sea.</description>
+   </book>
+   <book id="bk108">
+      <author>Knorr, Stefan</author>
+      <title>Creepy Crawlies</title>
+      <genre>Horror</genre>
+      <price>4.95</price>
+      <publish_date>2000-12-06</publish_date>
+      <description>An anthology of horror stories about roaches,
+      centipedes, scorpions  and other insects.</description>
+   </book>
+   <book id="bk109">
+      <author>Kress, Peter</author>
+      <title>Paradox Lost</title>
+      <genre>Science Fiction</genre>
+      <price>6.95</price>
+      <publish_date>2000-11-02</publish_date>
+      <description>After an inadvertant trip through a Heisenberg
+      Uncertainty Device, James Salway discovers the problems 
+      of being quantum.</description>
+   </book>
+   <book id="bk110">
+      <author>O'Brien, Tim</author>
+      <title>Microsoft .NET: The Programming Bible</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-09</publish_date>
+      <description>Microsoft's .NET initiative is explored in 
+      detail in this deep programmer's reference.</description>
+   </book>
+   <book id="bk111">
+      <author>O'Brien, Tim</author>
+      <title>MSXML3: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>36.95</price>
+      <publish_date>2000-12-01</publish_date>
+      <description>The Microsoft MSXML3 parser is covered in 
+      detail, with attention to XML DOM interfaces, XSLT processing, 
+      SAX and more.</description>
+   </book>
+   <book id="bk112">
+      <author>Galos, Mike</author>
+      <title>Visual Studio 7: A Comprehensive Guide</title>
+      <genre>Computer</genre>
+      <price>49.95</price>
+      <publish_date>2001-04-16</publish_date>
+      <description>Microsoft Visual Studio 7 is explored in depth,
+      looking at how Visual Basic, Visual C++, C#, and ASP+ are 
+      integrated into a comprehensive development 
+      environment.</description>
+   </book>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="id-a6f99f36cca95c7d16e3c69fca1ad986"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference Id="r-id-a6f99f36cca95c7d16e3c69fca1ad986-1" URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2002/06/xmldsig-filter2"><dsig-filter2:XPath xmlns:dsig-filter2="http://www.w3.org/2002/06/xmldsig-filter2" Filter="subtract">/descendant::ds:Signature</dsig-filter2:XPath></ds:Transform><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>zolcPXUMCIref0InS0KhgpYS6u7J6SgrAEpj//MjClU=</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#xades-id-a6f99f36cca95c7d16e3c69fca1ad986"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>HRmMW1BiHv8dRy+2Z9X3qNPqfhnmtfNOTSzmdx2PwZg=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue Id="value-id-a6f99f36cca95c7d16e3c69fca1ad986">IWEUMJ7hoJTS6Xf90AXrYrLYuDNY2BzCeSTV/m0Al2ZVGZ0t5e05Trsn+ecDWicAEOvRk5zJu5HLq1KzDUwvxaFjkd6UfjCfkj8Ujuu/uvVFUr460JOnInuGgGL+jTE+68i/LWYnTaJ6e8QIt8VX3iqC1sYLHlnbp28zcJwP2HIyv9AX/P1StivIG5gpgSNDAck4DN0YkUlMPs27IZJ0t06LXBn+WIKjgxeriBG+N/CZD91bePRanTrLa0yZF8GpZAT7q0+NdjuLmEKwG2T2XLcjRsc4uaeCBklIGx+Kmn8vQ1LlDVrgAgAZ7qfDzdcyq2UkuuObNIOM+TJaalh0HQ==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDwjCCAqqgAwIBAgIICK926ujhogEwDQYJKoZIhvcNAQELBQAwPzEYMBYGA1UEAwwPTW9jayBJc3N1aW5nIENBMRYwFAYDVQQKDA1Nb2NrYXNpbmVyIEFCMQswCQYDVQQGEwJTRTAeFw0yMDEwMjcxMDMxMTlaFw0zNTEwMjgwMTQyNDlaME0xJjAkBgNVBAMMHVNpZ25hdHVyZSBTdXBwb3J0IFNlcnZpY2UgRGV2MRYwFAYDVQQKDA1Nb2NrYXNpbmVyIEFCMQswCQYDVQQGEwJTRTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJaE8jZ7DAS13R87IIXrA5+qOaqDgbsJYfMvfvbx8anruiyojIhbDj3ygCndLy5LKbNRwpYSqckIOhCNSd8rAryGUvYMmKKcYce7J823qKNPzenMFD3070FV8kHF5fsbtsoFtBCzylf0BpAfzFWKx4F7hfQZb9mDA6veyGYQwRjxipzw0Z29Wyoh2w3mXAOg98nKFUDYYd6xDM5uAcvhwQf3H7XTIEsOOAJ3O84QHXShakawDIScFVBAqAUIhp9ItlEbtID9TwcsIacYhXQeGhH4vf//NTwzQG0FsGEW/EDcWND/CZYzxoRd33XowlSkRaAXuh/eRbECnoD2pbeo+fMCAwEAAaOBszCBsDAMBgNVHRMBAf8EAjAAMDsGA1UdHwQ0MDIwMKAuoCyGKmh0dHA6Ly9jcmwubW9ja2FzaW5lci5zZS9tb2NraXNzdWluZ2NhLmNybDAdBgNVHQ4EFgQUWQY7fTIDLJTRRoajsmklLifHktowHwYDVR0jBBgwFoAU54+HFmB5I1HaQngDQnb0pIhb96owDgYDVR0PAQH/BAQDAgWgMBMGA1UdJQQMMAoGCCsGAQUFBwMBMA0GCSqGSIb3DQEBCwUAA4IBAQAl3D9OvZyTNEwrxlcI3DdfxvzoM1KWSHfZtwCYnw6DH+NKk9E95KwPoHReghzehJ2XmNHVntt9feJ9azmu97kX6SpUim8QBIswxmvpxiyilYCBb77R2UPZR11e73sA1C0bRSgdrDlDR2xb4qGWv5n+J5bOoX+psAN+81gRvaxKR439F2NdOIxRGbfscezKjg0IwWYcUB9llr+dEePl4Q2DOHuoFyteNv2G4WTavvZTB+LEkTyyfbQ+b9BdWDbezbBwQhiECi5jAA/N4xxIH0EyS5e2T/A8mhQ061VN7f2d/47U9JardEkMk8/DITd+/QBSkUzXMqeaKT4CoxNkcbUi</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object><xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Target="#id-a6f99f36cca95c7d16e3c69fca1ad986"><xades:SignedProperties Id="xades-id-a6f99f36cca95c7d16e3c69fca1ad986"><xades:SignedSignatureProperties><xades:SigningTime>2022-12-19T10:35:13Z</xades:SigningTime><xades:SigningCertificateV2><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/><ds:DigestValue>V78O6/kqIYxQ84569XtmF3D9oRZcmL4uK6jBgbCj0Z/hZYK0UrfEGbXJbJsezCUDc/GkZ2pEjFI3VcY2xZZbCA==</ds:DigestValue></xades:CertDigest><xades:IssuerSerialV2>ME8wQ6RBMD8xGDAWBgNVBAMMD01vY2sgSXNzdWluZyBDQTEWMBQGA1UECgwNTW9ja2FzaW5lciBBQjELMAkGA1UEBhMCU0UCCAivduro4aIB</xades:IssuerSerialV2></xades:Cert></xades:SigningCertificateV2></xades:SignedSignatureProperties><xades:SignedDataObjectProperties><xades:DataObjectFormat ObjectReference="#r-id-a6f99f36cca95c7d16e3c69fca1ad986-1"><xades:MimeType>text/xml</xades:MimeType></xades:DataObjectFormat></xades:SignedDataObjectProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></catalog>

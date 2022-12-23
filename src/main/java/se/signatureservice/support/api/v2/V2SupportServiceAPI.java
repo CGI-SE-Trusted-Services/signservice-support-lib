@@ -32,6 +32,7 @@ import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.spi.client.http.DataLoader;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
@@ -86,7 +87,6 @@ import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.signer.SignTaskHelper;
-import se.signatureservice.support.trustlist.TrustedListsCertificateSourceBuilder;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
@@ -127,6 +127,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private CAdESService cAdESService;
     private Map<String, TSPSource> onlineTSPSources;
     private CertificateVerifier certificateVerifier;
+    private DefaultAIASource aiaSource;
     private CRLSource crlSource;
     private OCSPSource ocspSource;
 
@@ -723,7 +724,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 } else {
                     if(apiConfig.getTrustedCertificateSource() instanceof TrustedListsCertificateSource) {
                         certificateVerifier.setTrustedCertSources(apiConfig.getTrustedCertificateSource());
-                        certificateVerifier.setAIASource(new DefaultAIASource());
+                        certificateVerifier.setAIASource(getAIASource());
                     }
                     if(apiConfig.getTrustedCertificateSource() instanceof KeyStoreCertificateSource) {
                         CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
@@ -739,6 +740,43 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
+     * Get File Cache Data Loader.
+     * Using FileCacheDataLoader with CommonsDataLoader and creates a File cache directory.
+     *
+     * @return DataLoader
+     */
+    private DataLoader getFileCacheDataLoader() {
+        FileCacheDataLoader cacheDataLoader = new FileCacheDataLoader();
+        CommonsDataLoader dataLoader = new CommonsDataLoader();
+
+        if(apiConfig.getValidationProxyConfig() != null){
+            dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
+        }
+
+        cacheDataLoader.setDataLoader(dataLoader);
+        cacheDataLoader.setFileCacheDirectory(new File(System.getProperty("java.io.tmpdir")));
+
+        Long cacheExpirationTime = apiConfig.getValidationCacheExpirationTimeMS();
+        log.info("Setting validation cache expiration time to " + cacheExpirationTime + " ms");
+        cacheDataLoader.setCacheExpirationTime(cacheExpirationTime);
+        return cacheDataLoader;
+    }
+
+    /**
+     * Get AIA source to use during document validation.
+     *
+     * @return Default AIA source
+     */
+    private DefaultAIASource getAIASource() {
+        if(aiaSource == null){
+            log.debug("Initializing AIA loader");
+            aiaSource = new DefaultAIASource(getFileCacheDataLoader());
+        }
+
+        return aiaSource;
+    }
+
+    /**
      * Get CRL source to use during document validation.
      *
      * @return CRL source
@@ -746,20 +784,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private CRLSource getCRLSource() {
         if(crlSource == null){
             log.debug("Initializing CRL loader");
-            FileCacheDataLoader cacheDataLoader = new FileCacheDataLoader();
-            CommonsDataLoader dataLoader = new CommonsDataLoader();
-
-            if(apiConfig.getValidationProxyConfig() != null){
-                dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
-            }
-
-            cacheDataLoader.setDataLoader(dataLoader);
-            cacheDataLoader.setFileCacheDirectory(new File(System.getProperty("java.io.tmpdir")));
-
-            Long cacheExpirationTime = apiConfig.getValidationCacheExpirationTimeMS();
-            log.info("Setting validation cache expiration time to " + cacheExpirationTime + " ms");
-            cacheDataLoader.setCacheExpirationTime(cacheExpirationTime);
-            crlSource = new OnlineCRLSource(cacheDataLoader);
+            crlSource = new OnlineCRLSource(getFileCacheDataLoader());
         }
 
         return crlSource;
