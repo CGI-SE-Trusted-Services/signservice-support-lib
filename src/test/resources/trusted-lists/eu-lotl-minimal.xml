@@ -1,13 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<TrustServiceStatusList xmlns="http://uri.etsi.org/02231/v2#" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#"
-                        xmlns:ns3="http://uri.etsi.org/02231/v2/additionaltypes#"
-                        xmlns:ns4="http://uri.etsi.org/01903/v1.3.2#"
-                        xmlns:ns5="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#"
-                        xmlns:ns6="http://uri.etsi.org/01903/v1.4.1#" Id="ID0001"
-                        TSLTag="http://uri.etsi.org/19612/TSLTag">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><TrustServiceStatusList xmlns="http://uri.etsi.org/02231/v2#" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns:ns4="http://uri.etsi.org/01903/v1.3.2#" xmlns:ns5="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" xmlns:ns6="http://uri.etsi.org/01903/v1.4.1#" Id="ID0001" TSLTag="http://uri.etsi.org/19612/TSLTag">
     <SchemeInformation>
         <TSLVersionIdentifier>5</TSLVersionIdentifier>
-        <TSLSequenceNumber>314</TSLSequenceNumber>
+        <TSLSequenceNumber>316</TSLSequenceNumber>
         <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists</TSLType>
         <SchemeOperatorName>
             <Name xml:lang="en">European Commission</Name>
@@ -97,9 +91,9 @@
                 </AdditionalInformation>
             </OtherTSLPointer>
         </PointersToOtherTSL>
-        <ListIssueDateTime>2022-10-25T07:55:56Z</ListIssueDateTime>
+        <ListIssueDateTime>2022-12-09T11:00:30Z</ListIssueDateTime>
         <NextUpdate>
-            <dateTime>2023-04-25T07:55:56Z</dateTime>
+            <dateTime>2023-06-08T10:00:30Z</dateTime>
         </NextUpdate>
         <DistributionPoints>
             <URI>https://ec.europa.eu/tools/lotl/eu-lotl.xml</URI>

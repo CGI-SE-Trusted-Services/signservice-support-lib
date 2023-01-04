@@ -21,7 +21,6 @@ import eu.europa.esig.dss.jaxb.common.SchemaFactoryBuilder;
 import eu.europa.esig.dss.jaxb.common.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.crl.OnlineCRLSource;
@@ -33,14 +32,13 @@ import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.spi.client.http.DataLoader;
-import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
-import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.validation.CertificateVerifier;
 import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
@@ -81,12 +79,15 @@ import se.signatureservice.configuration.common.cache.MetaData;
 import se.signatureservice.configuration.common.utils.ColorParser;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.configuration.support.system.Constants;
-import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
-import se.signatureservice.support.system.*;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
+import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
 import se.signatureservice.support.signer.SignTaskHelper;
+import se.signatureservice.support.system.SupportAPIConfiguration;
+import se.signatureservice.support.system.SupportAPIProfile;
+import se.signatureservice.support.system.TransactionState;
+import se.signatureservice.support.trustlist.TrustedListsCertificateSourceBuilder;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
@@ -97,6 +98,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
@@ -104,11 +106,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.*;
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
 
@@ -271,7 +269,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             ContextMessageSecurityProvider.Context context = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, transactionState.getProfile());
-            SignResponse response = (SignResponse)synchronizedParseMessage(context, Base64.decode(signResponse.getBytes("UTF-8")), true);
+            SignResponse response = (SignResponse)synchronizedParseMessage(context, Base64.decode(signResponse.getBytes(StandardCharsets.UTF_8)), true);
 
             if(!response.getResult().getResultMajor().contains("Success")){
                 throw (ServerErrorException)ErrorCode.SIGN_RESPONSE_FAILED.toException("Sign response failed with error message: " + response.getResult().getResultMessage().getValue());
@@ -416,9 +414,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 if(reports.getSimpleReport().getSignaturesCount() > 0){
                     if(apiConfig.isUseSimpleValidationReport()){
-                        response.setReportData(reports.getXmlSimpleReport().getBytes("UTF-8"));
+                        response.setReportData(reports.getXmlSimpleReport().getBytes(StandardCharsets.UTF_8));
                     } else {
-                        response.setReportData(reports.getXmlDetailedReport().getBytes("UTF-8"));
+                        response.setReportData(reports.getXmlDetailedReport().getBytes(StandardCharsets.UTF_8));
                     }
                     response.setReportMimeType(MimeType.XML.getMimeTypeString());
                 } else {
@@ -513,7 +511,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         JAXBElement<SignTasksType> signTasks = sweEid2ObjectFactory.createSignTasks(signTasksType);
         byte[] signRequest = sweEID2DSSExtensionsMessageParser.genSignRequest(context, transactionId, Constants.SWE_EID_DSS_PROFILE, signRequestExtension, signTasks, true);
-        return new String(Base64.encode(signRequest), "UTF-8");
+        return new String(Base64.encode(signRequest), StandardCharsets.UTF_8);
     }
 
     /**
@@ -720,11 +718,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if(apiConfig.getTrustedCertificateSource() == null) {
                     log.warn("Verification of documents will not work properly as trusted certificate source is not specified");
                 } else {
-                    if(apiConfig.getTrustedCertificateSource() instanceof TrustedListsCertificateSource) {
-                        certificateVerifier.setTrustedCertSources(apiConfig.getTrustedCertificateSource());
+                    if(apiConfig.getTrustedCertificateSource() instanceof TrustedListsCertificateSourceBuilder) {
                         certificateVerifier.setAIASource(getAIASource());
-                    }
-                    if(apiConfig.getTrustedCertificateSource() instanceof KeyStoreCertificateSource) {
+                        certificateVerifier.setTrustedCertSources(((TrustedListsCertificateSourceBuilder) apiConfig.getTrustedCertificateSource()).getTrustedListsCertificateSource());
+                        if(((TrustedListsCertificateSourceBuilder) apiConfig.getTrustedCertificateSource()).getKeyStoreCertificateSource() != null) {
+                            CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+                            certificateSource.importAsTrusted(((TrustedListsCertificateSourceBuilder) apiConfig.getTrustedCertificateSource()).getKeyStoreCertificateSource());
+                            certificateVerifier.addTrustedCertSources(certificateSource);
+                        }
+                    } else if(apiConfig.getTrustedCertificateSource() instanceof KeyStoreCertificateSource) {
                         CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
                         certificateSource.importAsTrusted(apiConfig.getTrustedCertificateSource());
                         certificateVerifier.setTrustedCertSources(certificateSource);
@@ -909,13 +911,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * Method to valida the cached signatureAttributes that contains all required attributes
      */
     protected boolean validateVisibleSignatureAttributesFromCache(String transactionId) throws InvalidArgumentException, IOException, InternalErrorException {
-        if (cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X) != null &&
+        return cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X) != null &&
                 cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y) != null &&
                 cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH) != null &&
-                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT) != null) {
-            return true;
-        }
-        return false;
+                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT) != null;
     }
 
     /**
@@ -1475,9 +1474,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         if(config.isUseEncryptedSignMessage()){
             List<X509Certificate> signMessageRecipients = apiConfig.getEncryptedSignMessageRecipients().get(displayEntity);
-            signMessage = sweEID2DSSExtensionsMessageParser.genSignEncryptedMessage(context, config.isSignMessageMustShow(), displayEntity, mimeType, message.getBytes("UTF-8"), null, signMessageRecipients);
+            signMessage = sweEID2DSSExtensionsMessageParser.genSignEncryptedMessage(context, config.isSignMessageMustShow(), displayEntity, mimeType, message.getBytes(StandardCharsets.UTF_8), null, signMessageRecipients);
         } else {
-            signMessage = sweEID2DSSExtensionsMessageParser.genSignMessage(config.isSignMessageMustShow(), displayEntity, mimeType, message.getBytes("UTF-8"), null);
+            signMessage = sweEID2DSSExtensionsMessageParser.genSignMessage(config.isSignMessageMustShow(), displayEntity, mimeType, message.getBytes(StandardCharsets.UTF_8), null);
         }
 
         return signMessage;

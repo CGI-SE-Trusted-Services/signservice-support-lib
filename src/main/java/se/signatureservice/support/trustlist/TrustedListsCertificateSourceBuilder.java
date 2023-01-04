@@ -8,7 +8,6 @@ import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonCertificateSource;
-import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.tsl.alerts.LOTLAlert;
 import eu.europa.esig.dss.tsl.alerts.TLAlert;
@@ -37,7 +36,7 @@ import java.util.Arrays;
  *
  * @author Filip Wessman 2022-12-01
  */
-public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertificateSource {
+public class TrustedListsCertificateSourceBuilder extends CommonCertificateSource {
     private static final Logger log = LoggerFactory.getLogger(TrustedListsCertificateSourceBuilder.class);
 
     private final String lotlURL;
@@ -55,25 +54,29 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
     private final TrustedListsCertificateSource trustedListsCertificateSource;
     private final TLValidationJob job;
 
+    private final KeyStoreCertificateSource keyStoreCertificateSource;
+
     /**
      * Implementation constructor of the TrustedListsCertificateSourceBuilder.
-     * Creates an instance of the TrustedListsCertificateSourceBuilder.
+     * Creates an instance of the TrustedListsCertificateSourceBuilder and sets up
+     * the TL/LOTL download / parsing / validation tasks.
      *
-     * @param lotlURL URL to the LOTL to be parsed.
-     * @param ojURL URL to the Official Journal Scheme.
-     * @param useOfflineLoader Specify how all data will be updated and parsed, online or offline.
-     * @param acceptExpiredTrustedList If expired list of trusted lists and their TLs are supported.
-     * @param acceptInvalidTrustedList If invalid list of trusted lists and their TLs are supported.
-     * @param cacheDirectoryPath Custom directory path to were LOTL and TL validation files will be cached.
-     * @param expirationTimeOnlineLoader Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to true.
-     * @param expirationTimeOfflineLoader Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to true.
-     * @param certificateSourceKeyStore Path to Keystore containing certificate used for custom LOTL/TL signature validation.
-     * @param certificateSourceKeyStoreType Type of the Keystore certificate source.
+     * @param lotlURL                           URL to the LOTL to be parsed.
+     * @param ojURL                             URL to the Official Journal Scheme.
+     * @param useOfflineLoader                  Specify how all data will be updated and parsed, online or offline.
+     * @param acceptExpiredTrustedList          If expired list of trusted lists and their TLs are supported.
+     * @param acceptInvalidTrustedList          If invalid list of trusted lists and their TLs are supported.
+     * @param cacheDirectoryPath                Custom directory path to were LOTL and TL validation files will be cached.
+     * @param expirationTimeOnlineLoader        Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to false.
+     * @param expirationTimeOfflineLoader       Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to true.
+     * @param certificateSourceKeyStore         Path to Keystore containing certificate used for custom LOTL/TL signature validation.
+     * @param certificateSourceKeyStoreType     Type of the Keystore certificate source.
      * @param certificateSourceKeyStorePassword Password of the Keystore certificate source.
+     * @param keyStoreCertificateSource         KeyStoreCertificateSource used as a Trusted Certificate Source.
      */
     public TrustedListsCertificateSourceBuilder(final String lotlURL, final String ojURL, final Boolean useOfflineLoader, final Boolean acceptExpiredTrustedList, final Boolean acceptInvalidTrustedList,
                                                 final String cacheDirectoryPath, final long expirationTimeOnlineLoader, final long expirationTimeOfflineLoader, final String certificateSourceKeyStore,
-                                                final String certificateSourceKeyStoreType, final String certificateSourceKeyStorePassword) {
+                                                final String certificateSourceKeyStoreType, final String certificateSourceKeyStorePassword, final KeyStoreCertificateSource keyStoreCertificateSource) {
         this.lotlURL = lotlURL;
         this.ojURL = ojURL;
         this.useOfflineLoader = useOfflineLoader;
@@ -85,9 +88,10 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
         this.certificateSourceKeyStore = certificateSourceKeyStore;
         this.certificateSourceKeyStoreType = certificateSourceKeyStoreType;
         this.certificateSourceKeyStorePassword = certificateSourceKeyStorePassword;
+        this.keyStoreCertificateSource = keyStoreCertificateSource;
 
-        this.trustedListsCertificateSource = new TrustedListsCertificateSource();
         this.job = validationJob();
+        this.trustedListsCertificateSource = new TrustedListsCertificateSource();
         job.setTrustedListCertificateSource(trustedListsCertificateSource);
         log.info("Using " + (useOfflineLoader ? "OfflineLoader." : "OnlineLoader."));
         if (this.useOfflineLoader) {
@@ -99,51 +103,42 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
 
     /**
      * Implementation constructor of the TrustedListsCertificateSourceBuilder.
-     * Creates an instance of the TrustedListsCertificateSourceBuilder.
+     * Creates an instance of the TrustedListsCertificateSourceBuilder and sets up
+     * the TL/LOTL download / parsing / validation tasks.
      *
-     * @param lotlURL URL to the LOTL to be parsed.
-     * @param ojURL URL to the Official Journal Scheme.
-     * @param certificateSourceKeyStore Path to Keystore containing certificate used for custom LOTL/TL signature validation.
-     * @param certificateSourceKeyStoreType Type of the Keystore certificate source.
-     * @param certificateSourceKeyStorePassword Password of the Keystore certificate source.
+     * @param lotlURL                     URL to the LOTL to be parsed.
+     * @param ojURL                       URL to the Official Journal Scheme.
+     * @param useOfflineLoader            Specify how all data will be updated and parsed, online or offline.
+     * @param cacheDirectoryPath          Custom directory path to were LOTL and TL validation files will be cached.
+     * @param expirationTimeOnlineLoader  Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to false.
+     * @param expirationTimeOfflineLoader Expiration time for the cached validation files in *minutes*, used when 'useOfflineLoader' is set to true.
      */
-    public TrustedListsCertificateSourceBuilder(final String lotlURL, final String ojURL, final String certificateSourceKeyStore, final String certificateSourceKeyStoreType, final String certificateSourceKeyStorePassword) {
-        this(lotlURL, ojURL, false, false, false, null,
-                0, -1, certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
-    }
-
-    /**
-     * Implementation constructor of the TrustedListsCertificateSourceBuilder.
-     * Creates an instance of the TrustedListsCertificateSourceBuilder.
-     *
-     * @param lotlURL  URL to the LOTL to be parsed.
-     */
-    public TrustedListsCertificateSourceBuilder(final String lotlURL, final String ojURL) {
-        this(lotlURL, ojURL, false, false, false, null, 0,
-                -1, null, null, null);
-    }
-
-    /**
-     * Implementation constructor of the TrustedListsCertificateSourceBuilder.
-     * Creates an instance of the TrustedListsCertificateSourceBuilder.
-     *
-     * @param lotlURL  URL to the LOTL to be parsed.
-     */
-    public TrustedListsCertificateSourceBuilder(final String lotlURL) {
-        this(lotlURL, null, false, false, false, null, 0,
-                -1, null, null, null);
+    public TrustedListsCertificateSourceBuilder(final String lotlURL, final String ojURL, final boolean useOfflineLoader, final String cacheDirectoryPath, final long expirationTimeOnlineLoader, final long expirationTimeOfflineLoader) {
+        this(lotlURL, ojURL, useOfflineLoader, false, false, cacheDirectoryPath, expirationTimeOnlineLoader,
+                expirationTimeOfflineLoader, null, null, null, null);
     }
 
     /**
      * Method to get the instance of this class TrustedListsCertificateSource.
+     *
      * @return TrustedListsCertificateSource.
      */
-    public TrustedListsCertificateSource getTrustedCertificateSource() {
+    public TrustedListsCertificateSource getTrustedListsCertificateSource() {
         return this.trustedListsCertificateSource;
     }
 
     /**
+     * Method to get the instance of this class KeyStoreCertificateSource.
+     *
+     * @return KeyStoreCertificateSource.
+     */
+    public KeyStoreCertificateSource getKeyStoreCertificateSource() {
+        return this.keyStoreCertificateSource;
+    }
+
+    /**
      * Get a new TrustedListsCertificateSource.
+     *
      * @return TrustedListsCertificateSource.
      */
     private TrustedListsCertificateSource trustedCertificateSource() {
@@ -152,6 +147,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
 
     /**
      * Method to get the instance of this class TLValidationJob.
+     *
      * @return TLValidationJob.
      */
     public TLValidationJob getTLValidationJob() {
@@ -159,7 +155,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
     }
 
     /**
-     * Method for performing the TL/LOTL download / parsing / validation tasks.
+     * Method for performing the LOTL/TL download / parsing / validation tasks.
      *
      * @return TLValidationJob.
      */
@@ -199,18 +195,30 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
         if (certificateSourceKeyStore != null && certificateSourceKeyStoreType != null && certificateSourceKeyStorePassword != null) {
             lotlSource.setCertificateSource(certificateSourceKeyStore());
         } else {
-            log.info("Using Default CommonCertificateSource for TL validation.");
-            lotlSource.setCertificateSource(new CommonCertificateSource());
+            log.info("Using Default Official Journal Keystore for TL validation.");
+            lotlSource.setCertificateSource(officialJournalContentKeyStore());
         }
-
-        lotlSource.setPivotSupport(true);
 
         if (ojURL != null) {
             log.info("Setting CertificatesAnnouncementPredicate with: " + ojURL);
             lotlSource.setSigningCertificatesAnnouncementPredicate(new OfficialJournalSchemeInformationURI(ojURL));
         }
+        lotlSource.setPivotSupport(true);
 
         return lotlSource;
+    }
+
+    /**
+     * EU DSS Official Journal Keystore CertificateSource which contains certificate used for LOTL/TL signature validation.
+     *
+     * @return KeyStoreCertificateSource used for LOTL/TL validation.
+     */
+    public CertificateSource officialJournalContentKeyStore() {
+        try {
+            return new KeyStoreCertificateSource(new File("../signservice-support-lib/src/main/resources/lotl/oj-keystore.p12"), "PKCS12", "dss-password");
+        } catch (IOException e) {
+            throw new DSSException("Unable to load the keystore", e);
+        }
     }
 
     /**
@@ -222,7 +230,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonTrustedCertifica
         try {
             log.info("Using KeyStoreCertificateSource for LOTL/TL validation. Keystore: " + certificateSourceKeyStore +
                     ", KeyStoreType: " + certificateSourceKeyStoreType + ", KeyStorePassword: " + certificateSourceKeyStorePassword);
-            return new KeyStoreCertificateSource(certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
+            return new KeyStoreCertificateSource(new File(certificateSourceKeyStore), certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
         } catch (IOException e) {
             throw new DSSException("Unable to load the keystore", e);
         }
