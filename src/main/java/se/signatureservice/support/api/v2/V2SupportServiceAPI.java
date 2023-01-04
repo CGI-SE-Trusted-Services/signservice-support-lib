@@ -143,34 +143,38 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @param apiConfig API configuration.
      */
-    private V2SupportServiceAPI(SupportAPIConfiguration apiConfig){
-        this.apiConfig = apiConfig;
-        this.messageSource = apiConfig.getMessageSource();
-        this.cacheProvider = apiConfig.getCacheProvider();
-
+    private V2SupportServiceAPI(SupportAPIConfiguration apiConfig) throws SupportServiceLibraryException {
         try {
-            datatypeFactory = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException e) {
-            log.error("Failed to create instance of data type factory", e);
+            this.apiConfig = apiConfig;
+            this.messageSource = apiConfig.getMessageSource();
+            this.cacheProvider = apiConfig.getCacheProvider();
+
+            try {
+                datatypeFactory = DatatypeFactory.newInstance();
+            } catch (DatatypeConfigurationException e) {
+                log.error("Failed to create instance of data type factory", e);
+            }
+
+            try {
+                Init.init();
+                MessageSecurityProviderManager.initMessageSecurityProvider(apiConfig.getMessageSecurityProvider());
+                sweEid2ObjectFactory = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
+                saml2ObjectFactory = new org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory();
+                sweEID2DSSExtensionsMessageParser = new SweEID2DSSExtensionsMessageParser();
+                authContSaciMessageParser = new AuthContSaciMessageParser();
+                sweEID2DSSExtensionsMessageParser.init(apiConfig.getMessageSecurityProvider(), null);
+            } catch (MessageProcessingException e) {
+                log.error("Failed to initialize message security provider", e);
+            }
+
+            xAdESService = new XAdESService(getCertificateVerifier());
+            pAdESService = new PAdESService(getCertificateVerifier());
+            cAdESService = new CAdESService(getCertificateVerifier());
+
+            onlineTSPSources = new HashMap<>();
+        } catch(Exception e){
+            throw new SupportServiceLibraryException("Error while creating Support Service API: " + e.getMessage());
         }
-
-        try {
-            Init.init();
-            MessageSecurityProviderManager.initMessageSecurityProvider(apiConfig.getMessageSecurityProvider());
-            sweEid2ObjectFactory = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
-            saml2ObjectFactory = new org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory();
-            sweEID2DSSExtensionsMessageParser = new SweEID2DSSExtensionsMessageParser();
-            authContSaciMessageParser = new AuthContSaciMessageParser();
-            sweEID2DSSExtensionsMessageParser.init(apiConfig.getMessageSecurityProvider(), null);
-        } catch(MessageProcessingException e){
-            log.error("Failed to initialize message security provider", e);
-        }
-
-        xAdESService = new XAdESService(getCertificateVerifier());
-        pAdESService = new PAdESService(getCertificateVerifier());
-        cAdESService = new CAdESService(getCertificateVerifier());
-
-        onlineTSPSources = new HashMap<>();
     }
 
     /**
@@ -191,7 +195,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     @Override
     public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
-        long operationStart = System.currentTimeMillis();
+        long currentTime, operationStart = System.currentTimeMillis();
+        int operationTime;
         PreparedSignatureResponse preparedSignature = null;
         try {
             if (transactionId == null) {
@@ -207,6 +212,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             validateDocuments(documents);
             validateAuthenticationServiceId(authenticationServiceId, profileConfig);
+            validateProfile(profileConfig);
 
             ContextMessageSecurityProvider.Context context  = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, profileConfig.getRelatedProfile());
             preparedSignature = new PreparedSignatureResponse();
@@ -215,7 +221,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             preparedSignature.setTransactionId(transactionId);
             preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes));
 
+            // Fetch transaction state that is created and stored together with to-be-signed data (TBS).
+            // If no transaction state can be read it indicates a problem with generating TBS.
             TransactionState transactionState = fetchTransactionState(transactionId);
+            if(transactionState == null){
+                throw ErrorCode.INTERNAL_ERROR.toException("Failed to generate signature request based on given input documents.");
+            }
+
             transactionState.setProfile(profileConfig.getRelatedProfile());
             transactionState.setTransactionId(transactionId);
             transactionState.setSignMessage(signMessage);
@@ -235,6 +247,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to generate sign request: " + e.getMessage());
             }
         }
+
+        currentTime = System.currentTimeMillis();
+        operationTime = (int)(currentTime - operationStart);
+        log.info("Sign request successfully generated (" + operationTime + " ms)");
 
         return preparedSignature;
     }
@@ -316,16 +332,16 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
         }
 
-        currentTime = System.currentTimeMillis();
-        operationTime = (int)(currentTime - operationStart);
-        log.info("Sign response successfully processed (" + operationTime + " ms)");
-
         try {
             transactionState.setCompleted(true);
             storeTransactionState(transactionId, transactionState);
         } catch(Exception e){
             throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to store transaction state: " + e.getMessage());
         }
+
+        currentTime = System.currentTimeMillis();
+        operationTime = (int)(currentTime - operationStart);
+        log.info("Sign response successfully processed (" + operationTime + " ms)");
 
         return signatureResponse;
     }
@@ -468,7 +484,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signRequestExtensionType.setSignMessage(generateSignMessage(context, signMessage, authenticationServiceId, config));
         }
 
-
         signRequestExtensionType.setVersion(config.getSignRequestExtensionVersion());
         signRequestExtensionType.setConditions(generateConditions(requestTime, consumerURL, config));
         signRequestExtensionType.setSigner(generateSigner(user, authenticationServiceId, config));
@@ -506,6 +521,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 signTasksType.getSignTaskData().add(generateSignTask(documentSigningRequest, transactionId, getSigningId(user, config), config, signatureAttributes));
             } else if(object instanceof DocumentRef) {
                 // TODO: Implement support for signing document by reference
+                throw ErrorCode.UNSUPPORTED_OPERATION.toException("Document references not supported");
+            } else {
+                throw ErrorCode.UNSUPPORTED_OPERATION.toException("Input document type not supported: " + object.getClass().getName());
             }
         }
 
@@ -1667,6 +1685,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * Ensures that there are no obvious errors within a set of documents
      *
      * @param documents Documents to validate
+     * @throws ClientErrorException If error is found within the given documents.
      */
     private void validateDocuments(DocumentRequests documents) throws ClientErrorException {
         if(documents == null){
@@ -1698,6 +1717,26 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             } else if(object instanceof DocumentRef) {
                 throw (ClientErrorException)ErrorCode.UNSUPPORTED_OPERATION.toException("Document references are not supported", messageSource);
             }
+        }
+    }
+
+    /**
+     * Ensures that there are no obvious errors in a profile.
+     *
+     * @param profile Profile to validate.
+     * @throws ClientErrorException If errors are found within the given profile.
+     */
+    private void validateProfile(SupportAPIProfile profile) throws ClientErrorException {
+        if(profile == null){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Profile missing (null)");
+        }
+
+        if(profile.getRequestedCertAttributes() == null || profile.getRequestedCertAttributes().isEmpty()){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Profile must contain at least one requested cert attribute");
+        }
+
+        if(profile.getRelatedProfile() == null || profile.getRelatedProfile().isEmpty()){
+            throw (ClientErrorException)ErrorCode.INVALID_PROFILE.toException("Related profile name in profile is empty");
         }
     }
 
@@ -2002,7 +2041,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          *
          * @return V2SupportServiceAPI instance based on builder settings.
          */
-        public SupportServiceAPI build() {
+        public SupportServiceAPI build() throws SupportServiceLibraryException {
             if(config.getAuthContextMappings() == null){
                 log.info("Using default authentication context mappings.");
                 addAuthContextMapping("passwordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "http://id.elegnamnden.se/loa/1.0/loa2");
