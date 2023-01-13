@@ -476,7 +476,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             testSignedXMLDocument       | "XAdES-BES"                | "CN=sub Network - Development"           | "XML"
             testSignedPDFDocument       | "PAdES-BASELINE-B"         | "CN=sub Network - Development"           | "PDF"
             testSignedCMSDocument       | "CAdES-BASELINE-B"         | "CN=sub Network - Development"           | "CMS"
-            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"
+            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-T"         | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"
     }
 
     def "Test that getCertificateVerifier returns correct class instance"() {
