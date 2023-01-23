@@ -1088,7 +1088,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             StringBuilder signatureText = new StringBuilder();
             if(config.getVisibleSignature().isShowHeadline()){
-                signatureText.append(config.getVisibleSignature()).append("\n");
+                signatureText.append(config.getVisibleSignature().getHeadlineText()).append("\n");
             }
             signatureText
                 .append(config.getVisibleSignature().getSignerLabel()).append(": ").append(signerName).append("\n")
