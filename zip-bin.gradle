@@ -1,4 +1,4 @@
-task zipBin(type: Zip) {
+tasks.register('zipBin', Zip) {
     dependsOn(":signservice-doc:docGen_integration-guide")
     dependsOn("generateAssemblePOM")
 
@@ -20,7 +20,7 @@ task zipBin(type: Zip) {
         rename { "signservice-support-lib-${project.ext.get('shortVersionNumber')}.pom" }
         into(baseDir)
     }
-    from("${project.rootDir}/signservice-doc/build/docs/integration-guide/en"){
+    from("${project.rootDir}/signservice-doc/build/docs/integration-guide/en") {
         include("/**")
         into(baseDir + 'docs/')
     }
