@@ -23,7 +23,7 @@ configurations {
     integrationTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
-configurations.all {
+configurations.configureEach {
     exclude group: 'xerces'
 }
 
@@ -44,10 +44,10 @@ dependencies {
     api "org.slf4j:slf4j-simple:1.7.36"
     api "org.apache.httpcomponents:httpclient:4.5.13"
     api "org.bouncycastle:bcprov-jdk15on:1.70"
-    api ("org.springframework:spring-context:5.3.23") {
+    api("org.springframework:spring-context:5.3.23") {
         exclude module: "spring-beans"
     }
-    api ("org.certificateservices.messages:certservice-messages:2203.1"){
+    api("org.certificateservices.messages:certservice-messages:2203.1") {
         // certservice-messages is using a newer version of xmlsec and bouncy castle
         // which is not compatible with the current version of DSS library.
         exclude module: "xmlsec"
@@ -91,17 +91,17 @@ task uploadGdc(type: Upload) {
 
 uploadGdc.dependsOn(build)
 
-def getGdcRepoUsername(){
+def getGdcRepoUsername() {
     def gdcRepoUsername = ext.has('repository.gdc.username') ? ext['repository.gdc.username'] : ""
-    if(gdcRepoUsername == null || gdcRepoUsername.trim() == ""){
+    if (gdcRepoUsername == null || gdcRepoUsername.trim() == "") {
         println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
     }
     return gdcRepoUsername
 }
 
-def getGdcRepoPassword(){
+def getGdcRepoPassword() {
     def gdcRepoPassword = ext.has('repository.gdc.password') ? ext['repository.gdc.password'] : ""
-    if(gdcRepoPassword == null || gdcRepoPassword.trim() == ""){
+    if (gdcRepoPassword == null || gdcRepoPassword.trim() == "") {
         println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
     }
     return gdcRepoPassword
