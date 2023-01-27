@@ -1126,9 +1126,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(config.getVisibleSignature().isShowHeadline()){
                 signatureText.append(config.getVisibleSignature().getHeadlineText()).append("\n");
             }
-            signatureText
-                .append(config.getVisibleSignature().getSignerLabel()).append(": ").append(signerName).append("\n")
-                .append(config.getVisibleSignature().getTimeStampLabel()).append(": ").append(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
+
+            String signerLabel = config.getVisibleSignature().getSignerLabel().trim();
+            if(signerLabel.length() > 0){
+                signatureText.append(signerLabel).append(": ");
+            }
+            signatureText.append(signerName).append("\n");
+
+            String timeStampLabel = config.getVisibleSignature().getTimeStampLabel().trim();
+            if(timeStampLabel.length() > 0){
+                signatureText.append(timeStampLabel).append(": ");
+            }
+            signatureText.append(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
 
             SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
             textParameters.setText(signatureText.toString());
