@@ -1,5 +1,6 @@
 group "se.signatureservice.support"
 
+apply plugin: "groovy"
 apply plugin: "java-library"
 
 sourceSets {
