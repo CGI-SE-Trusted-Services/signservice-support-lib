@@ -1,11 +1,12 @@
 /************************************************************************
  *                                                                       *
- *  Certificate Service - TestUtils                                      *
+ *  Signservice Support Lib                                              *
  *                                                                       *
  *  This software is free software; you can redistribute it and/or       *
- *  modify it under the terms of the GNU Affero General Public License   *
+ *  modify it under the terms of the GNU Lesser General Public License   *
+ *  (LGPL-3.0-or-later)                                                  *
  *  License as published by the Free Software Foundation; either         *
- *  version 3   of the License, or any later version.                    *
+ *  version 3 of the License, or any later version.                      *
  *                                                                       *
  *  See terms of license at gnu.org.                                     *
  *                                                                       *
@@ -16,7 +17,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.IOUtils;
-import org.certificateservice.testutils.ConnectionUtils;
+
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
