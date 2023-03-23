@@ -10,6 +10,9 @@ sourceSets {
     }
 }
 
+repositories {
+    mavenCentral()
+}
 
 
 configurations {
