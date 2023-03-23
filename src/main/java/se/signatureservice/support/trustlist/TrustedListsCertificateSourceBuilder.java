@@ -228,8 +228,8 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      */
     public CertificateSource officialJournalContentKeyStore() {
         try {
-            return new KeyStoreCertificateSource(new File("../signservice-support-lib/src/main/resources/lotl/oj-keystore.p12"), "PKCS12", "dss-password");
-        } catch (IOException e) {
+            return new KeyStoreCertificateSource(TrustedListsCertificateSourceBuilder.class.getResourceAsStream("lotl/oj-keystore.p12"), "PKCS12", "dss-password");
+        } catch (NullPointerException e) {
             throw new DSSException("Unable to load the keystore", e);
         }
     }
