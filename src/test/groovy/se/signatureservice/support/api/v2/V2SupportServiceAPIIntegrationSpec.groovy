@@ -11,6 +11,8 @@ import spock.lang.Ignore
 import spock.lang.Specification
 
 /**
+ * Special test that should be run manually with a dummy-idp and related systems up and running.
+ *
  * Test used in order to verify the API. Requires that the following services are started
  *  - eid2-dummy-idp
  *  - signservice-frontend
@@ -76,7 +78,7 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
 
         // Create document requests to include in the transaction.
         DocumentRequests documentRequests = new DocumentRequests.Builder()
-                .addXMLDocument("/home/agerbergt/git/signservice/signservice-support/src/test/resources/testdocument.xml")
+                .addXMLDocument("../signservice-support/src/test/resources/testdocument.xml")
                 .build()
 
         // Generate the prepared signature request using the support service API.
