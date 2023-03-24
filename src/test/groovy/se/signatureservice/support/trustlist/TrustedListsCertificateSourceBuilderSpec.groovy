@@ -1,3 +1,16 @@
+/************************************************************************
+ *                                                                       *
+ *  Signservice Support Lib                                              *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Lesser General Public License   *
+ *  (LGPL-3.0-or-later)                                                  *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3 of the License, or any later version.                      *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package se.signatureservice.support.trustlist
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -19,7 +32,6 @@ import eu.europa.esig.trustedlist.jaxb.tsl.*
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservice.testutils.TestHTTPServer
 import org.certificateservices.messages.utils.CertUtils
 import se.signatureservice.support.api.v2.Document
 import se.signatureservice.support.api.v2.DocumentSigningRequest
@@ -28,6 +40,7 @@ import se.signatureservice.support.api.v2.VerifyDocumentResponse
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.utils.SupportLibraryUtils
+import se.signatureservice.support.utils.TestHTTPServer
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll

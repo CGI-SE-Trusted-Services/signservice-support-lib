@@ -11,11 +11,26 @@
  *  See terms of license at gnu.org.                                     *
  *                                                                       *
  *************************************************************************/
-package se.signatureservice.support.common.system;
+package se.signatureservice.support.utils;
+
+import java.io.IOException;
+import java.net.ServerSocket;
 
 /**
- * Created by vendilph on 2017-03-18.
+ * Class containing connection help methods for testing.
+ *
+ * @author Cristoffer 2019-06-11
  */
-public class Configuration {
-
+public class ConnectionUtils {
+    /**
+     * Method that creates a ServerSocket with an automatically selected free port
+     * @return port number
+     */
+    public static int getUnusedPort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            int localPort = socket.getLocalPort();
+            socket.close();
+            return localPort;
+        }
+    }
 }

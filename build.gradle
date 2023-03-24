@@ -1,14 +1,7 @@
 group "se.signatureservice.support"
 
+apply plugin: "groovy"
 apply plugin: "java-library"
-
-certserviceSettings {
-    useGroovyInMain = false
-    useMavenCentral = true
-    licenseName = "GNU Lesser General Public License v3.0 or later"
-    licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
-
-}
 
 sourceSets {
     main {
@@ -17,6 +10,11 @@ sourceSets {
         }
     }
 }
+
+repositories {
+    mavenCentral()
+}
+
 
 configurations {
     integrationTestCompileClasspath.extendsFrom testCompileClasspath
@@ -55,8 +53,12 @@ dependencies {
         exclude module: "xmlsec"
         exclude group: "org.bouncycastle"
     }
-    api project(":signservice-java-configuration")
+    if(project.rootProject.name == "signservice") {
+        api project(":signservice-java-configuration")
+    }else {
+        api("se.signatureservice.configuration:signservice-java-configuration:2203.1")
 
+    }
     implementation "joda-time:joda-time:2.10.6"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.14.0"
     implementation 'com.fasterxml.woodstox:woodstox-core:6.4.0'
@@ -69,42 +71,10 @@ dependencies {
     testImplementation "org.codehaus.groovy:groovy-xml:3.0.12"
     testImplementation "org.codehaus.groovy:groovy-yaml:3.0.12"
 
-    integrationTestImplementation platform("org.spockframework:spock-bom:2.2-groovy-3.0")
-    integrationTestImplementation "org.spockframework:spock-core"
+    testImplementation platform("org.spockframework:spock-bom:2.2-groovy-3.0")
+    testImplementation "org.spockframework:spock-core"
 }
 
 test {
     useJUnitPlatform()
-}
-
-tasks.register('uploadGdc', Upload) {
-    configuration = configurations.archives
-    uploadDescriptor = true
-
-    repositories {
-        mavenDeployer {
-            repository(url: "https://nexus2.dk.cgi.com/repository/Inera-maven-releases.repository") {
-                authentication(userName: getGdcRepoUsername(), password: getGdcRepoPassword())
-            }
-            pom.version = version
-        }
-    }
-}
-
-uploadGdc.dependsOn(build)
-
-def getGdcRepoUsername() {
-    def gdcRepoUsername = ext.has('repository.gdc.username') ? ext['repository.gdc.username'] : ""
-    if (gdcRepoUsername == null || gdcRepoUsername.trim() == "") {
-        println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
-    }
-    return gdcRepoUsername
-}
-
-def getGdcRepoPassword() {
-    def gdcRepoPassword = ext.has('repository.gdc.password') ? ext['repository.gdc.password'] : ""
-    if (gdcRepoPassword == null || gdcRepoPassword.trim() == "") {
-        println("Warning: no GDC Repository Credentials set in gradle.properties. Set values 'repository.gdc.username' and 'repository.gdc.password'.")
-    }
-    return gdcRepoPassword
 }
