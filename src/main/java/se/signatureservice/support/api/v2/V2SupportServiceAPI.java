@@ -83,7 +83,7 @@ import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
-import se.signatureservice.support.signer.SignTaskHelper;
+import se.signatureservice.support.signer.*;
 import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.system.SupportAPIProfile;
 import se.signatureservice.support.system.TransactionState;
@@ -126,6 +126,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private DefaultAIASource aiaSource;
     private CRLSource crlSource;
     private OCSPSource ocspSource;
+    private Map<SigType, SignatureAttributePreProcessor> signatureAttributePreProcessors = new HashMap<>();
 
     private final SupportAPIConfiguration apiConfig;
     private final MessageSource messageSource;
@@ -518,7 +519,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if(documentSigningRequest.referenceId == null){
                     documentSigningRequest.referenceId = SupportLibraryUtils.generateReferenceId();
                 }
-                signTasksType.getSignTaskData().add(generateSignTask(documentSigningRequest, transactionId, getSigningId(user, config), config, signatureAttributes));
+                List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(documentSigningRequest).preProcess(signatureAttributes, documentSigningRequest);
+                signTasksType.getSignTaskData().add(generateSignTask(documentSigningRequest, transactionId, getSigningId(user, config), config, preProcessedSignatureAttributes));
             } else if(object instanceof DocumentRef) {
                 // TODO: Implement support for signing document by reference
                 throw ErrorCode.UNSUPPORTED_OPERATION.toException("Document references not supported");
@@ -1080,6 +1082,34 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         log.debug("Generated ToBeSignedBytes (" + sigType.name() + ") = " + new String(Base64.encode(signTask.getToBeSignedBytes())));
         return signTask.getToBeSignedBytes();
+    }
+
+    /**
+     * Get signature attribute preprocessor to use for a document.
+     *
+     * @param document Document to get signature attribute pre processor for.
+     * @return Signature attribute pre processor to use for given document.
+     * @throws ClientErrorException If an error occurred while retrieving signature attribute pre processor.
+     */
+    protected SignatureAttributePreProcessor getSignatureAttributePreProcessor(DocumentSigningRequest document) throws ClientErrorException {
+        SigType sigType = SigType.valueOf(getSigTypeFromMimeType(document.getType()));
+
+        if(signatureAttributePreProcessors.get(sigType) == null){
+            switch(sigType) {
+                case XML:
+                    signatureAttributePreProcessors.put(sigType, new XAdESSignatureAttributePreProcessor());
+                    break;
+                case PDF:
+                    signatureAttributePreProcessors.put(sigType, new PAdESSignatureAttributePreProcessor());
+                    break;
+                case CMS:
+                    signatureAttributePreProcessors.put(sigType, new CAdESSignatureAttributePreProcessor());
+                    break;
+                default:
+                    throw (ClientErrorException)ErrorCode.INVALID_MIMETYPE.toException("Invalid mimetype in document signing request");
+            }
+        }
+        return signatureAttributePreProcessors.get(sigType);
     }
 
     /**

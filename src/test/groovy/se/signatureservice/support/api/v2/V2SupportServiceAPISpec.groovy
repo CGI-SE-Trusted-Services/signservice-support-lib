@@ -26,6 +26,7 @@ import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.ContextMessageSecurityProvider
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType
 import org.certificateservices.messages.utils.CertUtils
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
@@ -34,6 +35,7 @@ import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
 import se.signatureservice.configuration.support.system.Constants
 import se.signatureservice.support.common.cache.SimpleCacheProvider
+import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
@@ -660,6 +662,44 @@ class V2SupportServiceAPISpec extends Specification {
         parameters.imageParameters.fieldParameters.width == 200
         parameters.imageParameters.fieldParameters.height == 50
         parameters.imageParameters.image != null
+    }
+
+    def "test that signature attribute pre-processor is called for all documents"(){
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+        List<Attribute> signatureAttributes = [
+                new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "50"),
+                new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "50"),
+                new Attribute(key: VISIBLE_SIGNATURE_PAGE, value: "1")
+        ]
+        def signatureAttributePreProcessorMock = Mock(SignatureAttributePreProcessor)
+        supportServiceAPI.signatureAttributePreProcessors[SigType.XML] = signatureAttributePreProcessorMock
+        supportServiceAPI.signatureAttributePreProcessors[SigType.PDF] = signatureAttributePreProcessorMock
+        supportServiceAPI.signatureAttributePreProcessors[SigType.CMS] = signatureAttributePreProcessorMock
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+                context,
+                "28717ddd-4166-4f52-b8ea-f9f50bcf46e0",
+                documents,
+                "You want to sign?",
+                user,
+                "https://idp.cgi.com/v2/metadata",
+                "https://localhost:8080/response",
+                testProfile1,
+                signatureAttributes
+        )
+
+        then:
+        response != null
+        3 * signatureAttributePreProcessorMock.preProcess(_, _) >> {List<Attribute> attributes, DocumentSigningRequest document ->
+            assert attributes.containsAll(signatureAttributes)
+            assert document != null
+            assert testDocuments.contains(document)
+        }
     }
 
     @Unroll
