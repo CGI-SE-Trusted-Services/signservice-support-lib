@@ -38,7 +38,7 @@ dependencies {
     api "org.apache.pdfbox:pdfbox:2.0.27"
     api "org.apache.santuario:xmlsec:2.3.1"
     api "org.slf4j:slf4j-api:1.7.36"
-    api("org.json:json:20220924") {
+    api("org.json:json:20230227") {
         exclude group: 'cn.hutool', module: 'hutool-json'
     }
     api "org.slf4j:slf4j-simple:1.7.36"
@@ -66,10 +66,10 @@ dependencies {
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:$dssVersion"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:$dssVersion"
     testImplementation 'com.squareup.okhttp3:okhttp:4.10.0'
-    testImplementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.69'
+    testImplementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.73'
     testImplementation "org.codehaus.groovy.modules.http-builder:http-builder:0.7.1"
-    testImplementation "org.codehaus.groovy:groovy-xml:3.0.12"
-    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.12"
+    testImplementation "org.codehaus.groovy:groovy-xml:3.0.16"
+    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.16"
 
     testImplementation platform("org.spockframework:spock-bom:2.2-groovy-3.0")
     testImplementation "org.spockframework:spock-core"
