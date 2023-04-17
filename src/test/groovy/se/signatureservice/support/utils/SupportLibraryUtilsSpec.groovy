@@ -45,4 +45,21 @@ class SupportLibraryUtilsSpec extends Specification {
             assert referenceIds.findAll { it == ri }.size() == 1
         }
     }
+
+    def "test generateStrongReferenceId"(){
+        when:
+        List<String> strongReferenceIds = []
+        for(int i=0;i<1000;i++){
+            String transactionId = SupportLibraryUtils.generateTransactionId()
+            String referenceId = SupportLibraryUtils.generateReferenceId()
+            strongReferenceIds.add(SupportLibraryUtils.generateStrongReferenceId(transactionId, referenceId))
+        }
+
+        then:
+        strongReferenceIds.each { String sri ->
+            assert sri != null
+            assert sri.length() >= 32
+            assert strongReferenceIds.findAll { it == sri }.size() == 1
+        }
+    }
 }
