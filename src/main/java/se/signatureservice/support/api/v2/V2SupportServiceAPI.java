@@ -578,8 +578,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             SigType sigType = SigType.valueOf(getSigTypeFromMimeType(document.getType()));
             AbstractSignatureParameters signatureParameters = getSignatureParameters(signTask, sigType, signatureToken, signatureTokenChain, document, relatedTransaction, config);
             SignatureValue signatureValue = new SignatureValue(SignatureAlgorithm.forXML(signTask.getBase64Signature().getType()), signTask.getBase64Signature().getValue());
-
+            String strongReferenceId = SupportLibraryUtils.generateStrongReferenceId(relatedTransaction.getTransactionId(), document.getReferenceId());
             DSSDocument dssSignedDocument = null;
+
             switch(sigType) {
                 case XML:
                     XAdESSignatureParameters xAdESParameters = (XAdESSignatureParameters)signatureParameters;
@@ -588,11 +589,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     break;
                 case PDF:
                     PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters)signatureParameters;
-                    boolean validAttributes = validateVisibleSignatureAttributesFromCache(relatedTransaction.getTransactionId());
+                    boolean validAttributes = validateVisibleSignatureAttributesFromCache(strongReferenceId);
                     pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
                     if (config.getVisibleSignature().isEnable()) {
                         if (validAttributes) {
-                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), relatedTransaction.getTransactionId(), null);
+                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), strongReferenceId, null);
                         } else {
                             log.warn("Visible signatures are enabled in configuration (enableVisibleSignature) but required signature attributes are missing. The following attributes are required: " +
                                     AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_X + ", " +
@@ -928,13 +929,16 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Method to valida the cached signatureAttributes that contains all required attributes
+     * Method to validate the cache contains all required signatureAttributes for a given context ID.
+     *
+     * @param contextId Context ID in cache to validate.
+     * @return true if all required attributes exists in cache, otherwise false.
      */
-    protected boolean validateVisibleSignatureAttributesFromCache(String transactionId) throws InvalidArgumentException, IOException, InternalErrorException {
-        return cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X) != null &&
-                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y) != null &&
-                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH) != null &&
-                cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT) != null;
+    protected boolean validateVisibleSignatureAttributesFromCache(String contextId) throws InvalidArgumentException, IOException, InternalErrorException {
+        return cacheProvider.get(contextId, VISIBLE_SIGNATURE_POSITION_X) != null &&
+                cacheProvider.get(contextId, VISIBLE_SIGNATURE_POSITION_Y) != null &&
+                cacheProvider.get(contextId, VISIBLE_SIGNATURE_WIDTH) != null &&
+                cacheProvider.get(contextId, VISIBLE_SIGNATURE_HEIGHT) != null;
     }
 
     /**
@@ -1047,7 +1051,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 pAdESParameters.setSignerName(signingId);
 
                 if (config.getVisibleSignature().isEnable()) {
-                    setVisibleSignature(config, pAdESParameters, signingId, transactionId, signatureAttributes);
+                    setVisibleSignature(config, pAdESParameters, signingId, SupportLibraryUtils.generateStrongReferenceId(transactionId, document.getReferenceId()), signatureAttributes);
                 }
 
                 pAdESService.setPdfObjFactory(new PdfBoxSupportObjectFactory());
@@ -1118,13 +1122,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Profile configuration.
      * @param parameters Signature parameters to update with parameters for visible signature.
      * @param signerName Name of signatory.
-     * @param transactionId Related transaction ID.
+     * @param contextId Context ID in cache to use for the visible signature attributes.
      * @param signatureAttributes Related signature attributes.
      */
     protected void setVisibleSignature(SupportAPIProfile config, PAdESSignatureParameters parameters, String signerName,
-                                       String transactionId, List<Attribute> signatureAttributes) throws BaseAPIException {
+                                       String contextId, List<Attribute> signatureAttributes) throws BaseAPIException {
         try {
-            SignatureImageParameters imageParameters = getImageParameters(transactionId, signatureAttributes);
+            SignatureImageParameters imageParameters = getImageParameters(contextId, signatureAttributes);
 
             if(config.getVisibleSignature().isShowLogo()){
                 DSSDocument logoDocument = null;
@@ -1147,9 +1151,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
 
-            if(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
+            if(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-                cacheProvider.set(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
+                cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
             }
 
             StringBuilder signatureText = new StringBuilder();
@@ -1167,7 +1171,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(timeStampLabel.length() > 0){
                 signatureText.append(timeStampLabel).append(": ");
             }
-            signatureText.append(cacheProvider.get(transactionId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
+            signatureText.append(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
 
             SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
             textParameters.setText(signatureText.toString());
@@ -1363,31 +1367,31 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return parameters;
     }
 
-    private SignatureImageParameters getImageParameters(String transactionId, List<Attribute> signatureAttributes) throws BaseAPIException {
+    private SignatureImageParameters getImageParameters(String contextId, List<Attribute> signatureAttributes) throws BaseAPIException {
         SignatureImageParameters imageParameters = new SignatureImageParameters();
         try {
             // First priority is to use parameters from cache if available, if not we setup default
             // values that then can be overridden by any given signature attributes.
             SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
-            fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_X), DEFAULT_VISIBLE_SIGNATURE_POSITION_X));
-            fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(transactionId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_POSITION_Y), DEFAULT_VISIBLE_SIGNATURE_POSITION_Y));
-            fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_WIDTH), DEFAULT_VISIBLE_SIGNATURE_WIDTH));
-            fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_HEIGHT), DEFAULT_VISIBLE_SIGNATURE_HEIGHT));
-            fieldParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(transactionId, VISIBLE_SIGNATURE_PAGE), DEFAULT_VISIBLE_SIGNATURE_PAGE));
+            fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(contextId, VISIBLE_SIGNATURE_POSITION_X, cacheProvider.get(contextId, VISIBLE_SIGNATURE_POSITION_X), DEFAULT_VISIBLE_SIGNATURE_POSITION_X));
+            fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(contextId, VISIBLE_SIGNATURE_POSITION_Y, cacheProvider.get(contextId, VISIBLE_SIGNATURE_POSITION_Y), DEFAULT_VISIBLE_SIGNATURE_POSITION_Y));
+            fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(contextId, VISIBLE_SIGNATURE_WIDTH, cacheProvider.get(contextId, VISIBLE_SIGNATURE_WIDTH), DEFAULT_VISIBLE_SIGNATURE_WIDTH));
+            fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(contextId, VISIBLE_SIGNATURE_HEIGHT, cacheProvider.get(contextId, VISIBLE_SIGNATURE_HEIGHT), DEFAULT_VISIBLE_SIGNATURE_HEIGHT));
+            fieldParameters.setPage(getAttributeAsIntAndStoreInCache(contextId, VISIBLE_SIGNATURE_PAGE, cacheProvider.get(contextId, VISIBLE_SIGNATURE_PAGE), DEFAULT_VISIBLE_SIGNATURE_PAGE));
             imageParameters.setFieldParameters(fieldParameters);
 
             if(signatureAttributes != null){
                 for(Attribute it : signatureAttributes) {
                     if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_X)) {
-                        fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setOriginX(getAttributeAsFloatAndStoreInCache(contextId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_POSITION_Y)) {
-                        fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(transactionId, it.getKey(), it.getValue(),null));
+                        fieldParameters.setOriginY(getAttributeAsFloatAndStoreInCache(contextId, it.getKey(), it.getValue(),null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_WIDTH)) {
-                        fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setWidth(getAttributeAsIntAndStoreInCache(contextId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_HEIGHT)) {
-                        fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setHeight(getAttributeAsIntAndStoreInCache(contextId, it.getKey(), it.getValue(), null));
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_PAGE)) {
-                        fieldParameters.setPage(getAttributeAsIntAndStoreInCache(transactionId, it.getKey(), it.getValue(), null));
+                        fieldParameters.setPage(getAttributeAsIntAndStoreInCache(contextId, it.getKey(), it.getValue(), null));
                     } else {
                         log.info("Ignore attribute: " + it.getKey() + " for visible signature image settings.");
                     }

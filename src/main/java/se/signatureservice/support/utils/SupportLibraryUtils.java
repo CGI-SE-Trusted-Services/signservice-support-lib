@@ -16,6 +16,7 @@ package se.signatureservice.support.utils;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.messages.MessageContentException;
 import org.certificateservices.messages.MessageProcessingException;
 import org.certificateservices.messages.MessageSecurityProvider;
@@ -33,6 +34,9 @@ import se.signatureservice.support.system.SupportAPIProfile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +93,32 @@ public class SupportLibraryUtils {
      */
     public static String generateReferenceId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Generate a document reference ID strongly mapped to a particular transaction ID
+     * to get a globally unique document reference ID for a particular transaction.
+     * The strong reference ID is defined as SHA256(transactionId + referenceId)
+     * represented as a lowercase hex-encoded string.
+     *
+     * @param transactionId Transaction ID in which the document is processed.
+     * @param referenceId Reference ID of document.
+     * @return Globally unique reference ID of a given document in a given transaction.
+     * @throws ServerErrorException if an error occurred when calculating the strong reference ID.
+     */
+    public static String generateStrongReferenceId(String transactionId, String referenceId) throws ServerErrorException {
+        if(transactionId == null || transactionId.isEmpty() || referenceId == null || referenceId.isEmpty()){
+            throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Transaction ID and/or reference ID is empty or null. Cannot calculate strong reference ID.");
+        }
+
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            messageDigest.update(transactionId.getBytes(StandardCharsets.UTF_8));
+            messageDigest.update(referenceId.getBytes(StandardCharsets.UTF_8));
+            return Hex.toHexString(messageDigest.digest()).toLowerCase();
+        } catch(NoSuchAlgorithmException e) {
+            throw (ServerErrorException)ErrorCode.INTERNAL_ERROR.toException("Failed to calculate strong reference ID: " + e.getMessage());
+        }
     }
 
     /**
@@ -234,13 +264,5 @@ public class SupportLibraryUtils {
 		sb.append("</body>\n");
 		sb.append("</html>\n");
         return sb.toString();
-    }
-
-    public static void asdf(){
-        CompleteSignatureResponse completeSignature = new CompleteSignatureResponse();
-        Document signedDocument = (Document)completeSignature.getDocuments().getDocuments().get(0);
-        signedDocument.getName();
-        signedDocument.getData();
-
     }
 }
