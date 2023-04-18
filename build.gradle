@@ -44,7 +44,7 @@ dependencies {
     api "org.slf4j:slf4j-simple:1.7.36"
     api "org.apache.httpcomponents:httpclient:4.5.13"
     api "org.bouncycastle:bcprov-jdk15on:1.70"
-    api("org.springframework:spring-context:5.3.26") {
+    api("org.springframework:spring-context:5.3.27") {
         exclude module: "spring-beans"
     }
     api("org.certificateservices.messages:certservice-messages:2203.1") {
