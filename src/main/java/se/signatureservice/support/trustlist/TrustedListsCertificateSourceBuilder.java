@@ -243,7 +243,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         try {
             log.info("Using KeyStoreCertificateSource for LOTL/TL validation. Keystore: " + certificateSourceKeyStore +
                     ", KeyStoreType: " + certificateSourceKeyStoreType + ", KeyStorePassword: " + certificateSourceKeyStorePassword);
-            return new KeyStoreCertificateSource(new File(certificateSourceKeyStore), certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
+            return new KeyStoreCertificateSource(certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
         } catch (IOException e) {
             throw new DSSException("Unable to load the keystore", e);
         }
