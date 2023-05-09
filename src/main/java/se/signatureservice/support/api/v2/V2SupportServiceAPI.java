@@ -1152,9 +1152,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
 
-            if (cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-                cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
+            if(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat(config.getVisibleSignature().getTimeStampFormat());
+                    cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
+                } catch(Exception e) {
+                    throw ErrorCode.INVALID_CONFIGURATION.toException("Invalid configuration value for timeStampFormat: " + config.getVisibleSignature().getTimeStampFormat() + " (" + e.getMessage() + ")");
+                }
             }
 
             StringBuilder signatureText = new StringBuilder();
