@@ -1152,7 +1152,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             if(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                SimpleDateFormat sdf = new SimpleDateFormat(config.getVisibleSignature().getTimeStampFormat());
                 cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
             }
 
