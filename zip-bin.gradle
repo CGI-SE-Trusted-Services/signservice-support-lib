@@ -1,6 +1,5 @@
 tasks.register('zipBin', Zip) {
     dependsOn(":signservice-doc:docGen_integration-guide")
-    dependsOn("generateAssemblePOM")
 
     String projectBaseName = project.name + "-${project.ext.get('shortVersionNumber')}"
     archiveFileName = projectBaseName + '-bin.zip'
@@ -13,11 +12,6 @@ tasks.register('zipBin', Zip) {
     from('build/libs/') {
         include("signservice-support-lib-${project.ext.get('shortVersionNumber')}.jar")
         fileMode = 0644
-        into(baseDir)
-    }
-    from('build/assemblepom') {
-        include('external_repository_pom.xml')
-        rename { "signservice-support-lib-${project.ext.get('shortVersionNumber')}.pom" }
         into(baseDir)
     }
     from("${project.rootDir}/signservice-doc/build/docs/integration-guide/en") {

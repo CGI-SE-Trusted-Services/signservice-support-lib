@@ -3,14 +3,6 @@ group "se.signatureservice.support"
 apply plugin: "groovy"
 apply plugin: "java-library"
 
-sourceSets {
-    main {
-        resources {
-            srcDirs "src/main/resources"
-        }
-    }
-}
-
 repositories {
     mavenCentral()
 }
