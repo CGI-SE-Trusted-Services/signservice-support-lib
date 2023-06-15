@@ -93,7 +93,7 @@
         </PointersToOtherTSL>
         <ListIssueDateTime>2022-12-09T11:00:30Z</ListIssueDateTime>
         <NextUpdate>
-            <dateTime>2023-06-08T10:00:30Z</dateTime>
+            <dateTime>2048-06-08T10:00:30Z</dateTime>
         </NextUpdate>
         <DistributionPoints>
             <URI>https://ec.europa.eu/tools/lotl/eu-lotl.xml</URI>

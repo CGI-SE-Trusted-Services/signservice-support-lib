@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Builder for when using List of Trusted Lists.
@@ -203,7 +204,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      */
     private LOTLSource europeanLOTL() {
         LOTLSource lotlSource = new LOTLSource();
-        lotlSource.setUrl(lotlURL);
+        lotlSource.setUrl(Objects.requireNonNull(lotlURL));
 
         if (certificateSourceKeyStore != null && certificateSourceKeyStoreType != null && certificateSourceKeyStorePassword != null) {
             lotlSource.setCertificateSource(certificateSourceKeyStore());
@@ -213,7 +214,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         }
 
         if (ojURL != null) {
-            log.info("Setting CertificatesAnnouncementPredicate with: " + ojURL);
+            log.info("Setting CertificatesAnnouncementPredicate with: {}", ojURL);
             lotlSource.setSigningCertificatesAnnouncementPredicate(new OfficialJournalSchemeInformationURI(ojURL));
         }
         lotlSource.setPivotSupport(true);
