@@ -214,7 +214,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         }
 
         if (ojURL != null) {
-            log.info("Setting CertificatesAnnouncementPredicate with: {}", ojURL);
+            log.info("Setting CertificatesAnnouncementPredicate with: " + ojURL);
             lotlSource.setSigningCertificatesAnnouncementPredicate(new OfficialJournalSchemeInformationURI(ojURL));
         }
         lotlSource.setPivotSupport(true);
