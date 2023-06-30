@@ -502,6 +502,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signRequestExtensionType.setAuthnProfile(config.getRelatedProfile());
         }
 
+        // FILIP, Here is where we need to change things
+
+        // Add optional configuration option samlToCertReqAttribute:
+        //                                        "blabla:sambi/asdf" : "1.2.3.4"
+
+        // if(config.fetchRequestCertAttributesFromMetaData (boolean, default false, better name)){
+              // fetch related Metadata
+              // Go through all requestAttribute in metaData,
+              //  and lookup first in samlToCertReqAttribute then in default value for certAttr (tokenFieldMapToDefaultSAMLAttributes + fieldNameToAttrRef in AvailableFields)
+              // lookup certNameType in AvailableFieldNames.fieldNameToAttrType
+              // If no default value exists throw error with instructions to configure manually.
+        //}else{
         if (config.getRequestedCertAttributes() != null) {
             for (Map.Entry<String, Map<String, Object>> entry : config.getRequestedCertAttributes().entrySet()) {
                 signRequestExtensionType.getCertRequestProperties().getRequestedCertAttributes().getRequestedCertAttribute().add(
@@ -509,6 +521,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 );
             }
         }
+        //}
+
+        // TODO add unit, and integration tests for this, check of docker tests need to be updated.
 
         JAXBElement<SignRequestExtensionType> signRequestExtension = sweEid2ObjectFactory.createSignRequestExtension(signRequestExtensionType);
         SignTasksType signTasksType = sweEid2ObjectFactory.createSignTasksType();
