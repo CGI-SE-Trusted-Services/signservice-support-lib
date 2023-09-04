@@ -221,6 +221,17 @@ public class SupportAPIProfile implements SupportProfile {
     private Map<String, Map<String,Object>> requestedCertAttributes;
 
     /**
+     * Boolean value if requestedCertAttributes should be fetched
+     * and parsed from metadata.
+     *
+     * Example configuration:
+     * requestedCertAttributes {
+     *     fetchFromMetaData = true
+     * }
+     */
+    private boolean fetchFromMetaData = false;
+
+    /**
      * Map containing attributes to be included in the signer element within the sign request,
      * in addition to the mandatory userId attribute (see defaultUserIdAttributeMapping) that
      * is always included as a signer attribute.
@@ -549,8 +560,16 @@ public class SupportAPIProfile implements SupportProfile {
         return requestedCertAttributes;
     }
 
+    public boolean getRequestCertAttributesFromMetaData() {
+        return fetchFromMetaData;
+    }
+
     public void setRequestedCertAttributes(Map<String, Map<String,Object>> requestedCertAttributes) {
         this.requestedCertAttributes = requestedCertAttributes;
+    }
+
+    public void setRequestCertAttributesFromMetaData(boolean fetchFromMetaData) {
+        this.fetchFromMetaData = fetchFromMetaData;
     }
 
     public Map<String, Map<String,Object>> getSignerAttributes() {
