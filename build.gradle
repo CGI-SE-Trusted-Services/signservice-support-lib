@@ -3,6 +3,22 @@ group "se.signatureservice.support"
 apply plugin: "groovy"
 apply plugin: "java-library"
 
+pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
+    certserviceSettings {
+        signjar = true
+        signjarFolder = "/tmp"
+        useMavenCentral = true
+        licenseName = "GNU Lesser General Public License v3.0 or later"
+        licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
+        useDeveloperPOM = true
+        useScmPOM = true
+        scmConnection = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmDeveloperConnection = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+        projectUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -69,4 +85,38 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+publishing{
+    repositories{
+        maven {
+            name 'mavenCentral'
+            url (project.version =~ "SNAPSHOT"? "https://s01.oss.sonatype.org/content/repositories/snapshots/" : 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
+            credentials {
+                username = getGradleProperty("repository.sonatype.username")
+                password = getGradleProperty("repository.sonatype.password")
+            }
+        }
+    }
+}
+
+tasks.register('verifyRemoteSignProperties') {
+    doFirst {
+        verifyGradleProperties([
+                "remotesign.signtype",
+                "remotesign.keyid",
+                "remotesign.org",
+                "remotesign.baseurl",
+                "remotesign.keystore.path",
+                "remotesign.keystore.password",
+                "remotesign.truststore.path",
+                "remotesign.pgppublickey.path"
+        ])
+
+        verifyEnvironmentProperty("bamboo_remotesign_api_password")
+    }
+}
+
+tasks.matching { it.name == 'signMavenPublication' }.configureEach { Task task ->
+    task.dependsOn verifyRemoteSignProperties
 }
