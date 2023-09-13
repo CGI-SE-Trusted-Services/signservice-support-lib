@@ -205,6 +205,46 @@ public class SupportAPIProfile implements SupportProfile {
     private String certificateType;
 
     /**
+     * Boolean value if requestedCertAttributes should be fetched
+     * and parsed from metadata.
+     *
+     * Example configuration:
+     * fetchCertAttributesFromMetaData = true
+     */
+    private boolean fetchCertAttributesFromMetaData = false;
+
+    /**
+     * Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.
+     * Used in special cases when the Name in RequestedAttribute metadata don't apply.
+     *
+     * For each entry the following configuration keys are used :
+     *   - samlAttributeName : The SAML attribute name to be matched against the Name
+     *   for a RequestedAttribute in the metadata.
+     *   - certAttributeRef : To which the samlAttributeName will be mapped to.
+     *
+     * Example configuration 1:
+     * metadataCustomCertAttribute {
+     *     givenName {
+     *         samlAttributeName: "http://sambi.se/attributes/1/givenName"
+     *         certAttributeRef: "2.5.4.42"
+     *     }
+     * }
+     *
+     * Example configuration 2:
+     * metadataCustomCertAttribute {
+     *     givenName {
+     *         samlAttributeName:
+     *                      -"http://sambi.se/attributes/1/surname"
+     *                      -"urn:surname"
+     *         certAttributeRef: "2.5.4.4"
+     *         certNameType: "sda"
+     *         required: true
+     *     }
+     * }
+     */
+    private Map<String, Map<String,Object>> metadataCustomCertAttribute;
+
+    /**
      * Map containing Requests for subject attributes in a signer
      * certificate that is associated with the signer of the generated
      * signature as a result of the sign request.
@@ -219,17 +259,6 @@ public class SupportAPIProfile implements SupportProfile {
      * }
      */
     private Map<String, Map<String,Object>> requestedCertAttributes;
-
-    /**
-     * Boolean value if requestedCertAttributes should be fetched
-     * and parsed from metadata.
-     *
-     * Example configuration:
-     * requestedCertAttributes {
-     *     fetchFromMetaData = true
-     * }
-     */
-    private boolean fetchFromMetaData = false;
 
     /**
      * Map containing attributes to be included in the signer element within the sign request,
@@ -556,20 +585,32 @@ public class SupportAPIProfile implements SupportProfile {
         this.certificateType = certificateType;
     }
 
-    public Map<String, Map<String,Object>> getRequestedCertAttributes() {
-        return requestedCertAttributes;
+    public boolean isFetchCertAttributesFromMetaData() {
+        return fetchCertAttributesFromMetaData;
     }
 
-    public boolean getRequestCertAttributesFromMetaData() {
-        return fetchFromMetaData;
+    public void setFetchCertAttributesFromMetaData(boolean fetchCertAttributesFromMetaData) {
+        this.fetchCertAttributesFromMetaData = fetchCertAttributesFromMetaData;
+    }
+
+    public Map<String, Map<String,Object>> getMetadataCustomCertAttribute() {
+        return metadataCustomCertAttribute;
+    }
+
+    public void setMetadataCustomCertAttribute(Map<String, Map<String,Object>> metadataCustomCertAttribute) {
+        this.metadataCustomCertAttribute = metadataCustomCertAttribute;
+    }
+
+    public Map<String, Map<String,Object>> getRequestedCertAttributes() {
+        return requestedCertAttributes;
     }
 
     public void setRequestedCertAttributes(Map<String, Map<String,Object>> requestedCertAttributes) {
         this.requestedCertAttributes = requestedCertAttributes;
     }
 
-    public void setRequestCertAttributesFromMetaData(boolean fetchFromMetaData) {
-        this.fetchFromMetaData = fetchFromMetaData;
+    public void addRequestedCertAttributes(String fieldName, Map<String,Object> requestedCertAttribute) {
+        requestedCertAttributes.put(fieldName, requestedCertAttribute);
     }
 
     public Map<String, Map<String,Object>> getSignerAttributes() {
@@ -815,6 +856,16 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder certificateType(String certificateType) {
             config.setCertificateType(certificateType);
+            return this;
+        }
+
+        public Builder fetchCertAttributesFromMetaData(boolean fetchCertAttributesFromMetaData) {
+            config.setFetchCertAttributesFromMetaData(fetchCertAttributesFromMetaData);
+            return this;
+        }
+
+        public Builder metadataCustomCertAttribute(Map<String, Map<String,Object>> metadataCustomCertAttribute) {
+            config.setMetadataCustomCertAttribute(metadataCustomCertAttribute);
             return this;
         }
 

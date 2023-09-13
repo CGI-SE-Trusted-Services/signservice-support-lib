@@ -502,8 +502,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signRequestExtensionType.setAuthnProfile(config.getRelatedProfile());
         }
 
-        String adasd = config.getRelatedProfile();
-
         if(config.getRequestedCertAttributes() != null) {
             for (Map.Entry<String, Map<String, Object>> entry : config.getRequestedCertAttributes().entrySet()) {
                 signRequestExtensionType.getCertRequestProperties().getRequestedCertAttributes().getRequestedCertAttribute().add(
@@ -511,8 +509,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 );
             }
         }
-
-
 
         JAXBElement<SignRequestExtensionType> signRequestExtension = sweEid2ObjectFactory.createSignRequestExtension(signRequestExtensionType);
         SignTasksType signTasksType = sweEid2ObjectFactory.createSignTasksType();
@@ -984,10 +980,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     try {
                         order = Integer.parseInt(samlAttributeNameMap.get("order").toString());
                     } catch (Exception e) {
-                        throw ErrorCode.INVALID_PROFILE.toException(profile + ".requestedCertAttributes.serialNumber." + samlAttributeNameMap.get("value") + " has no-integer order value.");
+                        throw ErrorCode.INVALID_PROFILE.toException(profile + ".requestedCertAttributes." + friendlyName + "." + samlAttributeNameMap.get("value") + " has no-integer order value.");
                     }
                     if (order < 0) {
-                        throw ErrorCode.INVALID_PROFILE.toException(profile + ".requestedCertAttributes.serialNumber." + samlAttributeNameMap.get("value") + " has invalid order value. Order must be larger than or equal to 0");
+                        throw ErrorCode.INVALID_PROFILE.toException(profile + ".requestedCertAttributes." + friendlyName + "." + samlAttributeNameMap.get("value") + " has invalid order value. Order must be larger than or equal to 0");
                     }
                     PreferredSAMLAttributeNameType preferredSAMLAttributeNameType = new PreferredSAMLAttributeNameType();
                     preferredSAMLAttributeNameType.setValue((String) samlAttributeNameMap.get("value"));
