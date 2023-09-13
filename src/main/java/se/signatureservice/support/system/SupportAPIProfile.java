@@ -609,7 +609,7 @@ public class SupportAPIProfile implements SupportProfile {
         this.requestedCertAttributes = requestedCertAttributes;
     }
 
-    public void addRequestedCertAttributes(String fieldName, Map<String,Object> requestedCertAttribute) {
+    public void addRequestedCertAttribute(String fieldName, Map<String,Object> requestedCertAttribute) {
         requestedCertAttributes.put(fieldName, requestedCertAttribute);
     }
 
