@@ -3,6 +3,22 @@ group "se.signatureservice.support"
 apply plugin: "groovy"
 apply plugin: "java-library"
 
+pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
+    certserviceSettings {
+        signjar = true
+        signjarFolder = "/tmp"
+        useMavenCentral = true
+        licenseName = "GNU Lesser General Public License v3.0 or later"
+        licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
+        useDeveloperPOM = true
+        useScmPOM = true
+        scmConnection = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmDeveloperConnection = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+        projectUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+    }
+}
+
 repositories {
     mavenCentral()
 }
