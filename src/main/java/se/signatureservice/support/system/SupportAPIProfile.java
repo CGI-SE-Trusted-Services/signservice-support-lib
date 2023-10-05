@@ -209,7 +209,7 @@ public class SupportAPIProfile implements SupportProfile {
      * and parsed from metadata.
      *
      * Example configuration:
-     * fetchCertAttributesFromMetaData = true
+     * fetchCertAttributesFromMetaData: true
      */
     private boolean fetchCertAttributesFromMetaData = false;
 
