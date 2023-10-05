@@ -223,24 +223,20 @@ public class SupportAPIProfile implements SupportProfile {
      *   - certAttributeRef : To which the samlAttributeName will be mapped to.
      *
      * Example configuration 1:
-     * metadataCustomCertAttribute {
-     *     givenName {
-     *         samlAttributeName: "http://sambi.se/attributes/1/givenName"
-     *         certAttributeRef: "2.5.4.42"
-     *     }
-     * }
+     * metadataCustomCertAttribute:
+     *   givenName:
+     *     samlAttributeName: "http://sambi.se/attributes/1/givenName"
+     *     certAttributeRef: "2.5.4.42"
      *
      * Example configuration 2:
-     * metadataCustomCertAttribute {
-     *     givenName {
-     *         samlAttributeName:
-     *                      -"http://sambi.se/attributes/1/surname"
-     *                      -"urn:surname"
-     *         certAttributeRef: "2.5.4.4"
-     *         certNameType: "sda"
-     *         required: true
-     *     }
-     * }
+     * metadataCustomCertAttribute:
+     *   surName:
+     *     samlAttributeName:
+     *       -"http://sambi.se/attributes/1/surname"
+     *       -"urn:surname"
+     *     certAttributeRef: "2.5.4.4"
+     *     certNameType: "sda"
+     *     required: true
      */
     private Map<String, Map<String,Object>> metadataCustomCertAttribute;
 
