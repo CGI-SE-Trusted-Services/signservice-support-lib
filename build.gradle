@@ -46,7 +46,7 @@ dependencies {
     api "org.apache.pdfbox:pdfbox:2.0.27"
     api "org.apache.santuario:xmlsec:2.3.1"
     api "org.slf4j:slf4j-api:1.7.36"
-    api("org.json:json:20230227") {
+    api("org.json:json:20231013") {
         exclude group: 'cn.hutool', module: 'hutool-json'
     }
     api "org.slf4j:slf4j-simple:1.7.36"
