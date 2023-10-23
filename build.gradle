@@ -44,7 +44,7 @@ dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:$dssVersion"
     api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:$dssVersion"
     api "org.apache.pdfbox:pdfbox:2.0.27"
-    api "org.apache.santuario:xmlsec:2.3.1"
+    api "org.apache.santuario:xmlsec:2.3.4"
     api "org.slf4j:slf4j-api:1.7.36"
     api("org.json:json:20231013") {
         exclude group: 'cn.hutool', module: 'hutool-json'
