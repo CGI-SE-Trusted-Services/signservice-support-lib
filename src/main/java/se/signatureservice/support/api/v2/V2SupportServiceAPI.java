@@ -491,8 +491,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         signRequestExtensionType.setRequestTime(datatypeFactory.newXMLGregorianCalendar(requestTime));
         signRequestExtensionType.setIdentityProvider(createNameIDType(authenticationServiceId, "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.setSignService(createNameIDType(config.getSignServiceId(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
-        signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
-        signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().addAll(getAuthnContextClassRefs(authenticationServiceId, config));
+        setCertRequestProperties(signRequestExtensionType,authenticationServiceId, config, signatureAttributes);
         signRequestExtensionType.setSignRequester(createNameIDType(config.getSignRequester(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.getCertRequestProperties().setCertType(config.getCertificateType());
         signRequestExtensionType.setRequestedSignatureAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getUri());
@@ -1117,6 +1116,25 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return signatureAttributePreProcessors.get(sigType);
     }
 
+    /**
+     TODO Filip
+
+
+     */
+    protected void setCertRequestProperties(SignRequestExtensionType signRequestExtensionType, String authenticationServiceId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws ClientErrorException{
+        /*
+        TODO Filip
+           Here if signatureAttributes has AvailableSignatureAttribute.ATTRIBUTE_AUTHCONTEXTCLASSREF
+             check that it exists in list of authnContextClassRefs, then only set that value, otherwise whole list
+
+             if attirubte is set but not exist in list throw exception ClientErrorException
+
+             TODO Add errorcodes and update docuemtnation.
+         */
+        List<String> authnContextClassRefs = getAuthnContextClassRefs(authenticationServiceId, config);
+        signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
+        signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().addAll(authnContextClassRefs);
+    }
     /**
      * Method to set parameters for the visible signature.
      *
