@@ -194,6 +194,15 @@ public class SupportAPIProfile implements SupportProfile {
     private String defaultAuthnContextClassRef;
 
     /**
+     * Boolean value if AuthnContextClassRef should be fetched
+     * and parsed from metadata.
+     *
+     * Example configuration:
+     * fetchAuthnContextClassRefFromMetaData: true
+     */
+    private boolean fetchAuthnContextClassRefFromMetaData = false;
+
+    /**
      * List of default Types/levels of authentication to request in the signature process.
      */
     private List<String> defaultAuthnContextClassRefs;
@@ -565,6 +574,14 @@ public class SupportAPIProfile implements SupportProfile {
         this.defaultAuthnContextClassRef = defaultAuthnContextClassRef;
     }
 
+    public boolean isFetchAuthnContextClassRefFromMetaData() {
+        return fetchAuthnContextClassRefFromMetaData;
+    }
+
+    public void setFetchAuthnContextClassRefFromMetaData(boolean fetchAuthnContextClassRefFromMetaData) {
+        this.fetchAuthnContextClassRefFromMetaData = fetchAuthnContextClassRefFromMetaData;
+    }
+
     public List<String> getDefaultAuthnContextClassRefs() {
         return defaultAuthnContextClassRefs;
     }
@@ -623,6 +640,21 @@ public class SupportAPIProfile implements SupportProfile {
 
     public void setTrustedAuthenticationServices(Map<String,Map<String,Object>> trustedAuthenticationServices) {
         this.trustedAuthenticationServices = trustedAuthenticationServices;
+    }
+
+    public boolean addTrustedAuthenticationServiceAuthnContextClassRef(String idp, List<String> supportedAuthnContextClassRefs) {
+        if (supportedAuthnContextClassRefs == null || supportedAuthnContextClassRefs.isEmpty()) {
+            return false;
+        }
+
+        Map<String, Object> service = getTrustedAuthenticationServices().get(idp);
+        if (service == null) {
+            return false;
+        }
+
+        service.keySet().removeIf(key -> key.startsWith("authnContextClassRef"));
+        service.put("authnContextClassRefs", supportedAuthnContextClassRefs);
+        return true;
     }
 
     public List<String> getAuthorizedCentralServiceEntityIds() {
@@ -827,6 +859,11 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder signRequester(String signRequester) {
             config.setSignRequester(signRequester);
+            return this;
+        }
+
+        public Builder fetchAuthnContextClassRefFromMetaData(boolean fetchAuthnContextClassRefFromMetaData) {
+            config.setFetchAuthnContextClassRefFromMetaData(fetchAuthnContextClassRefFromMetaData);
             return this;
         }
 

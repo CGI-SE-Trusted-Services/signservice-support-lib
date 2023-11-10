@@ -491,7 +491,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         signRequestExtensionType.setRequestTime(datatypeFactory.newXMLGregorianCalendar(requestTime));
         signRequestExtensionType.setIdentityProvider(createNameIDType(authenticationServiceId, "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.setSignService(createNameIDType(config.getSignServiceId(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
-        setCertRequestProperties(signRequestExtensionType,authenticationServiceId, config, signatureAttributes);
+        setCertRequestProperties(signRequestExtensionType, authenticationServiceId, config, signatureAttributes);
         signRequestExtensionType.setSignRequester(createNameIDType(config.getSignRequester(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.getCertRequestProperties().setCertType(config.getCertificateType());
         signRequestExtensionType.setRequestedSignatureAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getUri());
@@ -1117,24 +1117,32 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     TODO Filip
-
-
+     * Sets the certification request properties for a given authentication service.
+     *
+     * @param signRequestExtensionType Instance of the Java class for SignRequestExtensionType complex type.
+     * @param authenticationServiceId  Authentication service to add recipient for.
+     * @param config                   Profile configuration.
+     * @param signatureAttributes      Related signature attributes.
+     * @throws ClientErrorException If Attribute is in signatureAttributes set but don't exist in AuthnContextClassRefs List.
      */
-    protected void setCertRequestProperties(SignRequestExtensionType signRequestExtensionType, String authenticationServiceId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws ClientErrorException{
-        /*
-        TODO Filip
-           Here if signatureAttributes has AvailableSignatureAttribute.ATTRIBUTE_AUTHCONTEXTCLASSREF
-             check that it exists in list of authnContextClassRefs, then only set that value, otherwise whole list
+    protected void setCertRequestProperties(SignRequestExtensionType signRequestExtensionType, String authenticationServiceId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws BaseAPIException {
+        String attributeValue = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF);
 
-             if attirubte is set but not exist in list throw exception ClientErrorException
-
-             TODO Add errorcodes and update docuemtnation.
-         */
         List<String> authnContextClassRefs = getAuthnContextClassRefs(authenticationServiceId, config);
-        signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
-        signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().addAll(authnContextClassRefs);
+
+        if (attributeValue == null) {
+            log.debug("No value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ". Setting certification request properties from list of AuthnContextClassRefs: " + authnContextClassRefs + ". Given authenticationServiceId: " + authenticationServiceId);
+            signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
+            signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().addAll(authnContextClassRefs);
+        } else if (authnContextClassRefs.contains(attributeValue)) {
+            log.debug("Value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + " matches an existing request property in list of AuthnContextClassRefs: " + authnContextClassRefs + ". Setting it for authenticationServiceId: " + authenticationServiceId);
+            signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
+            signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().add(attributeValue);
+        } else {
+            throw ErrorCode.INVALID_AUTH_CONTEXT_CLASS_REF.toException("Value specified in Signature Request 'signatureAttributes' for attribute '" + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + "' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: " + authnContextClassRefs + " for authenticationServiceId: " + authenticationServiceId);
+        }
     }
+
     /**
      * Method to set parameters for the visible signature.
      *

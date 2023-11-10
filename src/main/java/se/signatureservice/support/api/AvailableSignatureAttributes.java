@@ -13,6 +13,10 @@
  *************************************************************************/
 package se.signatureservice.support.api;
 
+import se.signatureservice.support.api.v2.Attribute;
+
+import java.util.List;
+
 /**
  * Class containing supported signature attributes that can be used
  * when processing signatures.
@@ -68,4 +72,33 @@ public class AvailableSignatureAttributes {
      * Default value for visible signature page
      */
     public static final String DEFAULT_VISIBLE_SIGNATURE_PAGE = "1";
+
+    /**
+     * ServiceName
+     */
+    public static final String ATTRIBUTE_SERVICE_NAME = "service_name";
+
+    /**
+     * AuthContextClassRef
+     */
+    public static final String ATTRIBUTE_AUTH_CONTEXT_CLASS_REF = "auth_context_class_ref";
+
+    /**
+     * Help method to fetch signer attribute value where keys is treated case-insensitive.
+     * @param signatureAttributes list of signature attributes.
+     * @param attributeKey the attribute key to lookup.
+     * @return value of null if no such attribute where set.
+     */
+    public static String getAttributeValue(List<Attribute> signatureAttributes, String attributeKey) {
+        if (signatureAttributes == null || signatureAttributes.isEmpty() || attributeKey == null) {
+            return null;
+        }
+
+        for (Attribute attribute : signatureAttributes) {
+            if (attribute != null && attribute.getKey().equalsIgnoreCase(attributeKey)) {
+                return attribute.getValue();
+            }
+        }
+        return null;
+    }
 }

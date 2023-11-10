@@ -45,6 +45,9 @@ import java.security.cert.X509Certificate
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
 
+/**
+ * Unit tests for {@link se.signatureservice.support.api.v2.V2SupportServiceAPI}.
+ */
 class V2SupportServiceAPISpec extends Specification {
     static V2SupportServiceAPI supportServiceAPI
     static List<Object> testDocuments = []
@@ -549,10 +552,88 @@ class V2SupportServiceAPISpec extends Specification {
         testProfile8  | "https://testidp1" | ["Ref:B"]
         testProfile8  | "https://testidpX" | ["Ref:A"]
         testProfile9  | "https://testidp1" | ["Ref:D"]
-        testProfile9  | "https://testidp2" | ["Ref:D","Ref:G"]
+        testProfile9  | "https://testidpX" | ["Ref:A", "Ref:B", "Ref:C"]
+        testProfile9  | "https://testidp2" | ["Ref:D", "Ref:G"]
         testProfile10 | "https://testidp1" | ["Ref:C", "Ref:D"]
         testProfile10 | "https://testidpX" | ["Ref:A", "Ref:B"]
-        testProfile10  | "https://testidp2" | ["Ref:B"]
+        testProfile10 | "https://testidp2" | ["Ref:B"]
+    }
+
+    @Unroll
+    void "test generateSignRequest with RSA and signatureAttributes for setCertRequestProperties"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+        def signatureAttributes = null
+        if (signatureAttributeValue) {
+            signatureAttributes = [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: signatureAttributeValue)]
+        }
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+                context,
+                "a864b33d-244a-4072-b540-0b29e2e7f40b",
+                documents,
+                "You want to sign?",
+                user,
+                authenticationServiceId,
+                "https://localhost:8080/response",
+                testProfile9,
+                signatureAttributes
+        )
+
+        then:
+        response != null
+        def signRequest = new XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        authnContextClassRefsResult.every { signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef*.text().contains(it) }
+
+        where:
+        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId
+        ["Ref:D"]                   | null                    | "https://testidp1"
+        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+    }
+
+    @Unroll
+    def "test setCertRequestProperties method"() {
+        setup:
+        def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
+        def signatureAttributes = null
+        if (signatureAttributeValue) {
+            signatureAttributes = [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: signatureAttributeValue)]
+        }
+        when:
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, authenticationServiceId, testProfile9, signatureAttributes)
+
+        then:
+        signRequestExtensionType.certRequestProperties.authnContextClassRef.containsAll(authnContextClassRefsResult)
+
+        where:
+        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId
+        ["Ref:D"]                   | null                    | "https://testidp1"
+        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+    }
+
+    def "test setCertRequestProperties method when exception is thrown"() {
+        setup:
+        def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
+
+        when:
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10, [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")])
+
+        then:
+        def error = thrown(ClientErrorException)
+        error.code == "10024"
+        error.message.contains("Value specified in Signature Request 'signatureAttributes' for attribute 'auth_context_class_ref: Ref:B' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: [Ref:C, Ref:D] for authenticationServiceId: https://testidp1")
     }
 
     def "test setVisibleSignature with all kinds of invalid attributes"(){
