@@ -183,7 +183,7 @@ public class SignTaskHelper {
 
         Element signedDataObjectProperties = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_SIGNED_DATA_OBJECT_PROPERTIES);
         Element dataObjectFormat = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_DATA_OBJECT_FORMAT);
-        dataObjectFormat.setAttribute(XML_ATTRIBUTE_OBJECT_REFERENCE, "#r-id-1");
+        dataObjectFormat.setAttribute(XML_ATTRIBUTE_OBJECT_REFERENCE, generateDeterministicId(null, signingTime, "#r-id-", "-1"));
         Element mimeType = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_MIME_TYPE);
         mimeType.appendChild(document.createTextNode(XML_MIMETYPE));
         dataObjectFormat.appendChild(mimeType);
@@ -396,12 +396,28 @@ public class SignTaskHelper {
 
     /**
      * Calculate deterministic ID to use within SignedInfo structure when incorporating
-     * signing certificate.
+     * signing certificate, with a given prefix.
+     *
      * @param x509Certificate Signing certificate part of the signature process
      * @param signingTime Signature time
+     * @param prefix Prefix to use for resulting deterministic ID.
      * @return Deterministic ID
      */
     private static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix){
+        return generateDeterministicId(x509Certificate, signingTime, prefix, null);
+    }
+
+    /**
+     * Calculate deterministic ID to use within SignedInfo structure when incorporating
+     * signing certificate, with a given prefix and suffix.
+     *
+     * @param x509Certificate Signing certificate part of the signature process
+     * @param signingTime Signature time
+     * @param prefix Prefix to use for resulting deterministic ID.
+     * @param suffix Suffix to use for resulting deterministic ID.
+     * @return Deterministic ID
+     */
+    private static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix, String suffix){
         String deterministicId;
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -416,7 +432,7 @@ public class SignTaskHelper {
                 dos.writeChars(xmlId);
             }
             dos.flush();
-            deterministicId = prefix + DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest(baos.toByteArray())).toLowerCase();
+            deterministicId = prefix + DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest(baos.toByteArray())).toLowerCase() + (suffix != null ? suffix : "");
         } catch(Exception e){
             return null;
         }
