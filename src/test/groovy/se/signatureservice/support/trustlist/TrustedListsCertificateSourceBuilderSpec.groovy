@@ -140,6 +140,11 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
         testUntrustedSignedXMLDocument = new Document(referenceId: "234567", type: "text/xml", name: "testdocument-untrusted.xml", data: new File("src/test/resources/signed-documents/untrusted/testdocument-untrusted.xml").bytes)
         testUntrustedSignedCMSDocument = new Document(referenceId: "345678", type: "application/msword", name: "testdocument-untrusted.doc", data: new File("src/test/resources/signed-documents/untrusted/testdocument-untrusted.doc").bytes)
 
+        /**
+         * eu-lotl.xml
+         * Tests pruned to fail when not maintained.
+         * TODO <NextUpdate> 2024-05-07T14:10:01Z
+         */
         euDSSTestSignedXMLDocument = new Document(referenceId: "133737", type: "text/xml", name: "OJ_C_2017_173_FULL.xml", data: new File("src/test/resources/signed-documents/dss-lib-signed/OJ_C_2017_173_FULL.xml").bytes)
     }
 
@@ -468,7 +473,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
 
         then:
-            response.verifies
+            response.verifies // Usually when it fails it's on https://ec.europa.eu/tools/lotl/eu-lotl.xml part. Wait and test again.
             xmlReport.Signature[0].@SignatureFormat == expectedSignatureFormat
             xmlReport.Signature[0].Indication == "TOTAL_PASSED"
             response.reportData != null
@@ -489,7 +494,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             testSignedXMLDocument       | "XAdES-BES"                | "CN=sub Network - Development"           | "XML"
             testSignedPDFDocument       | "PAdES-BASELINE-B"         | "CN=sub Network - Development"           | "PDF"
             testSignedCMSDocument       | "CAdES-BASELINE-B"         | "CN=sub Network - Development"           | "CMS"
-            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"
+            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
     }
 
     def "Test that getCertificateVerifier returns correct class instance"() {
