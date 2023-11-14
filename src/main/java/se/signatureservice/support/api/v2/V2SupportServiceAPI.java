@@ -99,6 +99,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
@@ -118,7 +119,7 @@ import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
 public class V2SupportServiceAPI implements SupportServiceAPI {
     private static final Logger log = LoggerFactory.getLogger(V2SupportServiceAPI.class);
 
-    private XAdESService xAdESService;
+    private final XAdESService xAdESService;
     private PAdESService pAdESService;
     private CAdESService cAdESService;
     private Map<String, TSPSource> onlineTSPSources;
@@ -198,7 +199,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
         long currentTime, operationStart = System.currentTimeMillis();
         int operationTime;
-        PreparedSignatureResponse preparedSignature = null;
+        PreparedSignatureResponse preparedSignature;
         try {
             if (transactionId == null) {
                 transactionId = SupportLibraryUtils.generateTransactionId();
@@ -366,7 +367,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         try {
             DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(signedDocument);
-            SignedDocumentValidator validator = null;
+            SignedDocumentValidator validator;
             try {
                 validator = SignedDocumentValidator.fromDocument(dssDocument);
             } catch (Exception e) {
@@ -642,7 +643,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 signedDocument.data = IOUtils.toByteArray(dssSignedDocument.openStream());
             }
 
-            if (config.isEnableAutomaticValidation()) {
+            if (config.isEnableAutomaticValidation() && signedDocument != null) {
                 try {
                     VerifyDocumentResponse validationInfo = verifyDocument(config, signedDocument);
                     signedDocument.setValidationInfo(validationInfo);
@@ -710,7 +711,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             policy = this.getClass().getResourceAsStream(policyClassPath);
             if (policy == null) {
-                policy = new FileInputStream(policyPath.toFile());
+                policy = Files.newInputStream(policyPath.toFile().toPath());
             }
         } catch (Exception e) {
             log.error("Error while reading policy file: " + e.getMessage());
@@ -975,7 +976,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         } else if (parameters.get("samlAttributeName") instanceof List) {
             for (Map samlAttributeNameMap : (List<Map<String, String>>) parameters.get("samlAttributeName")) {
                 if (samlAttributeNameMap.get("order") != null && !samlAttributeNameMap.get("order").equals("")) {
-                    Integer order;
+                    int order;
                     try {
                         order = Integer.parseInt(samlAttributeNameMap.get("order").toString());
                     } catch (Exception e) {
@@ -1166,7 +1167,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                         log.error("The provided logo image path for visible signature is not valid (" + config.getVisibleSignature().getLogoImage() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
                     } else {
                         log.debug("Using logo image from file system: " + config.getVisibleSignature().getLogoImage());
-                        logoDocument = new InMemoryDocument(new FileInputStream(file));
+                        logoDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
                     }
                 } else {
                     log.debug("Using logo image from classpath: " + config.getVisibleSignature().getLogoImage());
@@ -1193,13 +1194,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             String signerLabel = config.getVisibleSignature().getSignerLabel().trim();
-            if (signerLabel.length() > 0) {
+            if (!signerLabel.isEmpty()) {
                 signatureText.append(signerLabel).append(": ");
             }
             signatureText.append(signerName).append("\n");
 
             String timeStampLabel = config.getVisibleSignature().getTimeStampLabel().trim();
-            if (timeStampLabel.length() > 0) {
+            if (!timeStampLabel.isEmpty()) {
                 signatureText.append(timeStampLabel).append(": ");
             }
             signatureText.append(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
@@ -1219,7 +1220,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                         log.error("The provided font file path for visible signature is not valid (" + config.getVisibleSignature().getFont() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
                     } else {
                         log.debug("Using font file from file system: " + config.getVisibleSignature().getFont());
-                        fontDocument = new InMemoryDocument(new FileInputStream(file));
+                        fontDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
                     }
                 } else {
                     log.debug("Using font file from classpath: " + config.getVisibleSignature().getFont());
@@ -1528,7 +1529,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             attributeKeys.add(a.getKey());
         }
 
-        return attributeKeys.containsAll(requiredAttributeKeys);
+        return new HashSet<>(attributeKeys).containsAll(requiredAttributeKeys);
     }
 
     /**
@@ -1860,6 +1861,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             for (String url : config.getAuthorizedConsumerURLs()) {
                 if (consumerURL.startsWith(url)) {
                     authorized = true;
+                    break;
                 }
             }
         } else {
@@ -1870,7 +1872,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             throw (ServerErrorException) ErrorCode.INVALID_CONFIGURATION.toException("Unauthorized consumer URL: " + consumerURL + ".");
         }
 
-        return authorized;
+        return true;
     }
 
     private void validateAuthenticationServiceId(String authenticationServiceId, SupportAPIProfile config) throws ClientErrorException {

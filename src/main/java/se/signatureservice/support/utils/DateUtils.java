@@ -46,7 +46,7 @@ public class DateUtils {
             xmlGregorianCalendar.setFractionalSecond(null);
             xmlGregorianCalendar = xmlGregorianCalendar.normalize();
             return xmlGregorianCalendar;
-        } catch (DatatypeConfigurationException e) { }
+        } catch (DatatypeConfigurationException ignored) { }
 
         return null;
     }

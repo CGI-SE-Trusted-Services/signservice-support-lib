@@ -17,7 +17,7 @@ import java.io.ObjectOutput;
 @XmlType(name="DocumentRefType", propOrder = {"referenceId"})
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DocumentRef implements Externalizable {
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private static final int LATEST_VERSION = 1;
 

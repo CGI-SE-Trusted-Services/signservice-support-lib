@@ -23,7 +23,7 @@ import java.util.List;
 @XmlType(name="UserType", propOrder = {"userId","role","userAttributes"})
 @XmlAccessorType(XmlAccessType.FIELD)
 public class User implements Externalizable {
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private static final int LATEST_VERSION = 1;
 

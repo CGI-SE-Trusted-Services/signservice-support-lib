@@ -129,7 +129,11 @@ public class SignTaskHelper {
         // handle split-configuration between signservice-support and signservice-backend.
         NodeList nodeList = signedInfo.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_CANONICALIZATIONMETHOD);
         Element canonicalizationMethodElement = nodeList != null ? (Element)signedInfo.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_CANONICALIZATIONMETHOD).item(0) : null;
-        String canonicalizationMethod = canonicalizationMethodElement.getAttribute(XML_ATTRIBUTE_ALGORITHM);
+        String canonicalizationMethod = null;
+        if(canonicalizationMethodElement != null) {
+            canonicalizationMethod = canonicalizationMethodElement.getAttribute(XML_ATTRIBUTE_ALGORITHM);
+        }
+
 
         if(signingTime == null){
             signingTime = DateUtils.round(getSystemTime().getSystemTime(), Calendar.SECOND);

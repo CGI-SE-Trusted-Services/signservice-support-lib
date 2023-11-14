@@ -256,9 +256,9 @@ public class SupportLibraryUtils {
         sb.append("<html>\n");
 		sb.append("<body onload=\"document.forms[0].submit()\">\n");
         sb.append("<center>Processing signature...</center>\n");
-		sb.append("<form method=\"post\" action=\"" + preparedSignature.getActionURL() + "\" style=\"display: none;\">\n");
-		sb.append("<input type=\"hidden\" name=\"RelayState\" value=\"" + preparedSignature.getTransactionId() + "\" />\n");
-		sb.append("<input type=\"hidden\" name=\"EidSignRequest\" value=\"" + preparedSignature.getSignRequest() + "\" />\n");
+		sb.append("<form method=\"post\" action=\"").append(preparedSignature.getActionURL()).append("\" style=\"display: none;\">\n");
+		sb.append("<input type=\"hidden\" name=\"RelayState\" value=\"").append(preparedSignature.getTransactionId()).append("\" />\n");
+		sb.append("<input type=\"hidden\" name=\"EidSignRequest\" value=\"").append(preparedSignature.getSignRequest()).append("\" />\n");
 		sb.append("<input type=\"submit\" value=\"Submit\" />\n");
 		sb.append("</form>\n");
 		sb.append("</body>\n");

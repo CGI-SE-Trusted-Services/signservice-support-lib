@@ -78,7 +78,7 @@ public class SerializableUtils {
         byte[] retval  = null;
         int size = input.readInt();
         if(size >= 0){
-            int len = 0;
+            int len;
             int index=0;
             retval = new byte[size];
             while((len = input.read(retval, index, size)) != -1){

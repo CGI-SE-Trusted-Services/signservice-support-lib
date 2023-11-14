@@ -33,7 +33,7 @@ import java.util.Map;
  * @author Tobias Agerberg
  */
 public class TransactionState implements Externalizable {
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The latest version of persisted data. Should be update for every change in the stored

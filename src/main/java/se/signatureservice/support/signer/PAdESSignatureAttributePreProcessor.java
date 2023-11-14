@@ -40,11 +40,12 @@ public class PAdESSignatureAttributePreProcessor extends BaseSignatureAttributeP
      */
     @Override
     protected void doPreProcess(List<Attribute> signatureAttributes, DocumentSigningRequest document) throws IOException {
-        PDDocument pdDocument = PDDocument.load(document.getData());
-        for(Attribute attribute : signatureAttributes){
-            if(Objects.equals(attribute.getKey(), AvailableSignatureAttributes.VISIBLE_SIGNATURE_PAGE)){
-                if(Integer.parseInt(attribute.getValue()) > pdDocument.getNumberOfPages()){
-                    attribute.setValue(String.valueOf(pdDocument.getNumberOfPages()));
+        try (PDDocument pdDocument = PDDocument.load(document.getData())) {
+            for (Attribute attribute : signatureAttributes) {
+                if (Objects.equals(attribute.getKey(), AvailableSignatureAttributes.VISIBLE_SIGNATURE_PAGE)) {
+                    if (Integer.parseInt(attribute.getValue()) > pdDocument.getNumberOfPages()) {
+                        attribute.setValue(String.valueOf(pdDocument.getNumberOfPages()));
+                    }
                 }
             }
         }
