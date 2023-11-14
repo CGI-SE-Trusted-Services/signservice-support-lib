@@ -218,7 +218,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             ContextMessageSecurityProvider.Context context = new ContextMessageSecurityProvider.Context(Constants.CONTEXT_USAGE_SIGNREQUEST, profileConfig.getRelatedProfile());
             preparedSignature = new PreparedSignatureResponse();
             preparedSignature.setProfile(profileConfig.getRelatedProfile());
-            preparedSignature.setActionURL(profileConfig.getSignServiceRequestURL());
+            preparedSignature.setActionURL(getSignServiceRequestURL(profileConfig, signatureAttributes));
             preparedSignature.setTransactionId(transactionId);
             preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes));
 
@@ -1671,6 +1671,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return (explicitAccRefs.isEmpty() ? accRefs : explicitAccRefs);
     }
 
+    /**
+     * Gets the user ID attribute mapping for the specified authentication service.
+     * It defaults to the profile configuration if no specific mapping is provided.
+     *
+     * @param authenticationServiceId The ID of the authentication service.
+     * @param config The profile configuration.
+     * @return The determined user ID attribute mapping.
+     */
     private String getUserIdAttributeMapping(String authenticationServiceId, SupportAPIProfile config) {
         if (config.getUserIdAttributeMapping() != null) {
             log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please remove it and use 'defaultUserIdAttributeMapping' instead.");
@@ -1692,7 +1700,30 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         return userIdAttributeMapping;
     }
 
+    /**
+     * Retrieves the signservice request URL from signature attributes or falls back to profile configuration.
+     *
+     * @param profileConfig        the profile configuration containing default SignServiceRequestURL.
+     * @param signatureAttributes  list of attributes from which to extract the SignServiceRequestURL.
+     * @return the SignServiceRequestURL found in signature attributes, or the default from profileConfig if not found.
+     */
+    private String getSignServiceRequestURL(SupportAPIProfile profileConfig, List<Attribute> signatureAttributes) {
+        String attributeValue = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, ATTRIBUTE_SIGNSERVICE_REQUEST_URL);
+        if (attributeValue != null && !attributeValue.isEmpty()) {
+            log.info("Setting SignServiceRequestURL from SOAP API SignatureAttributes Parameter " + ATTRIBUTE_SIGNSERVICE_REQUEST_URL + ": " + attributeValue);
+            return attributeValue;
+        }
+        log.info("Setting SignServiceRequestURL from Profile Configuration: " + profileConfig.getSignServiceRequestURL());
+        return profileConfig.getSignServiceRequestURL();
+    }
 
+    /**
+     * Creates a SAML2 AttributeType with the given name and value.
+     *
+     * @param name The attribute name.
+     * @param value The attribute value.
+     * @return A populated AttributeType object.
+     */
     private AttributeType generateSignerAttribute(String name, String value) {
         AttributeType attributeType = saml2ObjectFactory.createAttributeType();
         attributeType.setName(name);

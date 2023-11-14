@@ -84,6 +84,11 @@ public class AvailableSignatureAttributes {
     public static final String ATTRIBUTE_AUTH_CONTEXT_CLASS_REF = "auth_context_class_ref";
 
     /**
+     * SignServiceRequestURL
+     */
+    public static final String ATTRIBUTE_SIGNSERVICE_REQUEST_URL = "signservice_request_url";
+
+    /**
      * Help method to fetch signer attribute value where keys is treated case-insensitive.
      * @param signatureAttributes list of signature attributes.
      * @param attributeKey the attribute key to lookup.

@@ -215,7 +215,7 @@ class V2SupportServiceAPISpec extends Specification {
         response != null
         println new String(Base64.decode(response), "UTF-8")
 
-        def signRequest = new groovy.util.XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        def signRequest = new XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
         signRequest.@Profile == "http://id.elegnamnden.se/csig/1.1/dss-ext/profile"
         signRequest.@RequestID == "b8ae1fba-b66c-4f97-8d92-c78f3d58283f"
         signRequest.OptionalInputs != null
@@ -257,7 +257,7 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.InputDocuments.Other.SignTasks.children().size() == 3
         signRequest.InputDocuments.Other.SignTasks.SignTaskData.find{it.@SigType=="PDF"}.ToBeSignedBytes != null
         signRequest.InputDocuments.Other.SignTasks.SignTaskData.find{it.@SigType=="CMS"}.ToBeSignedBytes != null
-        def signedInfo = new groovy.util.XmlSlurper().parseText(new String(Base64.decode((signRequest.InputDocuments.Other.SignTasks.SignTaskData.find{it.@SigType=="XML"}.ToBeSignedBytes as String).bytes)))
+        def signedInfo = new XmlSlurper().parseText(new String(Base64.decode((signRequest.InputDocuments.Other.SignTasks.SignTaskData.find{it.@SigType=="XML"}.ToBeSignedBytes as String).bytes)))
         signedInfo.CanonicalizationMethod.@Algorithm == "http://www.w3.org/2001/10/xml-exc-c14n#"
         signedInfo.SignatureMethod.@Algorithm == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
         signedInfo.Reference.size() == 2
@@ -345,7 +345,7 @@ class V2SupportServiceAPISpec extends Specification {
         then:
         response != null
         println new String(Base64.decode(response), "UTF-8")
-        def signRequest = new groovy.util.XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        def signRequest = new XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 4
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
@@ -914,6 +914,25 @@ class V2SupportServiceAPISpec extends Specification {
         ocspProxyConfig.httpProperties.user == "user"
         ocspProxyConfig.httpProperties.password == "pass"
         ocspProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
+    }
+
+    @Unroll
+    def "test that getSignServiceRequestURL returns correct"() {
+        setup:
+        //SupportAPIProfile profile = new SupportAPIProfile()
+        SupportAPIProfile profile = Mock(SupportAPIProfile)
+        profile.getSignServiceRequestURL() >> "https://signservice.test.se/"
+
+        when:
+        def result = supportServiceAPI.getSignServiceRequestURL(profile, signatureAttributes)
+
+        then:
+        result == expectedUrl
+
+        where:
+        expectedUrl                                      | signatureAttributes
+        "https://signservice.test.se/"                   | null
+        "https://signservice.signatureattributetest.se/" | [new Attribute(key: ATTRIBUTE_SIGNSERVICE_REQUEST_URL, value: "https://signservice.signatureattributetest.se/")]
     }
 
     static int getMinutesBetween(String a, String b) {
