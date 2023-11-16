@@ -105,6 +105,13 @@ public class SupportAPIConfiguration {
     private Map<String, Map> authContextMappings = new HashMap<>();
 
     /**
+     * If missing revocation data should be ignored during validation. This is not recommended
+     * in production, but may be useful during test and development.
+     * Default value: false
+     */
+    private boolean ignoreMissingRevocationData = false;
+
+    /**
      * Message source to use for internationalization of messages or null to use
      * default language.
      * Default value: null
@@ -143,20 +150,20 @@ public class SupportAPIConfiguration {
         this.certificateVerifier = certificateVerifier;
     }
 
-    public TSPSource getTspSource() {
-        return this.tspSource;
-    }
-
-    public void setTspSource(TSPSource tspSource){
-        this.tspSource = tspSource;
-    }
-
     public boolean isUseSimpleValidationReport() {
         return useSimpleValidationReport;
     }
 
     public void setUseSimpleValidationReport(boolean useSimpleValidationReport) {
         this.useSimpleValidationReport = useSimpleValidationReport;
+    }
+
+    public boolean isIgnoreMissingRevocationData() {
+        return ignoreMissingRevocationData;
+    }
+
+    public void setIgnoreMissingRevocationData(boolean ignoreMissingRevocationData){
+        this.ignoreMissingRevocationData = ignoreMissingRevocationData;
     }
 
     public void setValidationPolicyDirectory(String validationPolicyDirectory){

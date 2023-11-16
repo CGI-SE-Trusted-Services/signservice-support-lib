@@ -753,6 +753,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                         certificateVerifier.setTrustedCertSources(certificateSource);
                     }
                 }
+
+                if(apiConfig.isIgnoreMissingRevocationData()) {
+                    certificateVerifier.setAlertOnMissingRevocationData(alert -> {
+                        log.warn("Ignoring missing revocation data: " + alert.getMessage() + ", error: " + alert.getErrorString());
+                    });
+                }
             } else {
                 certificateVerifier = apiConfig.getCertificateVerifier();
             }
@@ -1010,13 +1016,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return TSP source for given timestamp server.
      */
     private TSPSource getTspSource(String timeStampServer) {
-        TSPSource tspSource = apiConfig.getTspSource();
+        TSPSource tspSource = onlineTSPSources.get(timeStampServer);
         if (tspSource == null) {
-            tspSource = onlineTSPSources.get(timeStampServer);
-            if (tspSource == null) {
-                tspSource = new OnlineTSPSource(timeStampServer);
-                onlineTSPSources.put(timeStampServer, tspSource);
-            }
+            tspSource = new OnlineTSPSource(timeStampServer);
+            onlineTSPSources.put(timeStampServer, tspSource);
         }
         return tspSource;
     }
@@ -1956,17 +1959,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
 
         /**
-         * Specify timestamp source to use.
-         *
-         * @param tspSource Timestamp source.
-         * @return Updated builder.
-         */
-        public Builder timeStampSource(TSPSource tspSource) {
-            config.setTspSource(tspSource);
-            return this;
-        }
-
-        /**
          * Specify certificate verifier to use when verifying certificates.
          * If not specified the default verifier will be used.
          *
@@ -2087,6 +2079,19 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          */
         public Builder simpleValidationReport(boolean simpleReport) {
             config.setUseSimpleValidationReport(simpleReport);
+            return this;
+        }
+
+        /**
+         * Specify if missing revocation data should be ignored during validation.
+         * This is not recommended in production, but can be useful during test
+         * and development.
+         *
+         * @param ignoreMissingRevocationData If missing revocation data should be ignored.
+         * @return Updated builder.
+         */
+        public Builder ignoreMissingRevocationData(boolean ignoreMissingRevocationData){
+            config.setIgnoreMissingRevocationData(ignoreMissingRevocationData);
             return this;
         }
 

@@ -252,7 +252,7 @@
         </SignedAttributes>
     </CounterSignatureConstraints>
     <Timestamp>
-        <TimestampDelay Level="FAIL" Unit="DAYS" Value="0"/>
+        <TimestampDelay Level="FAIL" Unit="MINUTES" Value="5"/>
         <RevocationTimeAgainstBestSignatureTime Level="FAIL"/>
         <Coherence Level="WARN"/>
         <BasicSignatureConstraints>
