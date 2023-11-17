@@ -36,7 +36,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <KeyUsage Level="INFORM">
                     <Id>nonRepudiation</Id>
                 </KeyUsage>
@@ -75,7 +75,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="FAIL">
@@ -151,7 +151,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <KeyUsage Level="WARN">
                     <Id>nonRepudiation</Id>
                 </KeyUsage>
@@ -190,7 +190,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="FAIL">
@@ -252,7 +252,7 @@
         </SignedAttributes>
     </CounterSignatureConstraints>
     <Timestamp>
-        <TimestampDelay Level="FAIL" Unit="MINUTES" Value="5"/>
+        <TimestampDelay Level="WARN" Unit="MINUTES" Value="5"/>
         <RevocationTimeAgainstBestSignatureTime Level="FAIL"/>
         <Coherence Level="WARN"/>
         <BasicSignatureConstraints>
@@ -267,7 +267,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="FAIL">
@@ -301,7 +301,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="FAIL">
@@ -368,7 +368,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="WARN">
@@ -402,7 +402,7 @@
                 <RevocationDataAvailable Level="WARN"/>
                 <CRLNextUpdatePresent Level="WARN"/>
                 <OCSPNextUpdatePresent Level="WARN"/>
-                <RevocationFreshness Level="WARN" Unit="DAYS" Value="0"/>
+                <RevocationFreshness Level="WARN" Unit="DAYS" Value="10"/>
                 <NotRevoked Level="FAIL"/>
                 <NotOnHold Level="FAIL"/>
                 <Cryptographic Level="FAIL">
