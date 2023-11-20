@@ -50,51 +50,57 @@ public class SupportAPIProfile implements SupportProfile {
      * Supported values: XML-NOT-ETSI, XAdES-BASELINE-B, XAdES-BASELINE-T,
      * XAdES-BASELINE-LT, XAdES-BASELINE-LTA
      */
-    private String xadesSignatureLevel = "XAdES-BASELINE-B";
+    private String xadesSignatureLevel = Constants.DEFAULT_XADES_SIGNATURELEVEL;
 
     /**
      * XAdES Signature packing setting.
      * Supported values: DETACHED, ENVELOPED, ENVELOPING
      */
-    private String xadesSignaturePacking = "ENVELOPED";
+    private String xadesSignaturePacking = Constants.DEFAULT_XADES_SIGNATUREPACKAGING;
 
     /**
      * XAdES canonicalization algorithm that will be used when
      * calculating digests for SignedInfo and SignedProperties structures
      */
-    private String xadesCanonicalizationAlgorithmURI = "http://www.w3.org/2001/10/xml-exc-c14n#";
+    private String xadesCanonicalizationAlgorithmURI = Constants.DEFAULT_XADES_SIGNEDINFOCANONICALIZATIONMETHOD;
 
     /**
      * XAdES XPath location string that defines the area where
      * the signature will be added
      */
-    private String xadesXPathLocationString = "node()[not(self::Signature)]";
+    private String xadesXPathLocationString = Constants.DEFAULT_XADES_XPATHLOCATIONSTRING;
 
     /**
      * PAdES Signature level.
      * Supported values: PDF-NOT-ETSI, PAdES-BASELINE-B, PAdES-BASELINE-T,
      * PAdES-BASELINE-LT, PAdES-BASELINE-LTA
      */
-    private String padesSignatureLevel = "PAdES-BASELINE-B";
+    private String padesSignatureLevel = Constants.DEFAULT_PADES_SIGNATURELEVEL;
 
     /**
-     * PaDES Signature packing setting.
+     * PAdES Signature packing setting.
      * Supported values: DETACHED, ENVELOPED, ENVELOPING
      */
-    private String padesSignaturePacking = "ENVELOPED";
+    private String padesSignaturePacking = Constants.DEFAULT_PADES_SIGNATUREPACKING;
+
+    /**
+     * PAdES content size reserved for signature data during
+     * signature operation.
+     */
+    private int padesContentSize = Constants.DEFAULT_PADES_CONTENT_SIZE;
 
     /**
      * CAdES Signature level.
      * Supported values: CMS-NOT-ETSI, CAdES-BASELINE-B, CAdES-BASELINE-T,
      * CAdES-BASELINE-LT, CAdES-BASELINE-LTA
      */
-    private String cadesSignatureLevel = "CAdES-BASELINE-B";
+    private String cadesSignatureLevel = Constants.DEFAULT_CADES_SIGNATURELEVEL;
 
     /**
      * CAdES Signature packing setting.
      * Supported values: DETACHED, ENVELOPING
      */
-    private String cadesSignaturePacking = "ENVELOPING";
+    private String cadesSignaturePacking = Constants.DEFAULT_CADES_SIGNATUREPACKING;
 
     /**
      * Overlap in minutes to overcome problems with time
@@ -111,7 +117,7 @@ public class SupportAPIProfile implements SupportProfile {
     /**
      * Signature algorithm in Java-form to use.
      */
-    private String signatureAlgorithm = "SHA256withRSA";
+    private String signatureAlgorithm = Constants.DEFAULT_SIGNATUREALGORITHM;
 
     /**
      * Algorithm schem to use when encrypting data. Used i.e. if encrypted sign
@@ -120,7 +126,7 @@ public class SupportAPIProfile implements SupportProfile {
      * RSA_PKCS1_5_WITH_AES192, RSA_OAEP_WITH_AES192, RSA_PKCS1_5_WITH_AES256,
      * RSA_OAEP_WITH_AES256
      */
-    private String encryptionAlgorithmScheme = "RSA_PKCS1_5_WITH_AES256";
+    private String encryptionAlgorithmScheme = Constants.DEFAULT_ENCRYPTION_ALGORITHM_SCHEME;
 
     /**
      * Flag to choose if sign message should be encrypted or not. If this
@@ -318,9 +324,9 @@ public class SupportAPIProfile implements SupportProfile {
     /**
      * Validation policy to use when verifying signed documents. Policy file must be present
      * in the class path.
-     * Default value: /basicpolicy.xml
+     * Default value: /policy/basicpolicy.xml
      */
-    private String validationPolicy = "/policy/basicpolicy.xml";
+    private String validationPolicy = Constants.DEFAULT_VALIDATION_POLICY_NAME;
 
     /**
      * Flag indicating if enhanced logging should be enabled or not. If enhanced logging is
@@ -429,6 +435,14 @@ public class SupportAPIProfile implements SupportProfile {
 
     public void setPadesSignaturePacking(String padesSignaturePacking) {
         this.padesSignaturePacking = padesSignaturePacking;
+    }
+
+    public int getPadesContentSize() {
+        return padesContentSize;
+    }
+
+    public void setPadesContentSize(int padesContentSize) {
+        this.padesContentSize = padesContentSize;
     }
 
     public String getCadesSignatureLevel() {

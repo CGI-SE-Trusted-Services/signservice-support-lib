@@ -591,6 +591,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters) signatureParameters;
                     boolean validAttributes = validateVisibleSignatureAttributesFromCache(strongReferenceId);
                     pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
+                    pAdESParameters.setContentSize(config.getPadesContentSize());
                     if (config.getVisibleSignature().isEnable()) {
                         if (validAttributes) {
                             setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), strongReferenceId, null);
@@ -602,7 +603,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                                     AvailableSignatureAttributes.VISIBLE_SIGNATURE_HEIGHT);
                         }
                     }
-                    pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
                     dssSignedDocument = pAdESService.signDocument(dssDocument, pAdESParameters, signatureValue);
                     break;
                 case CMS:
@@ -1112,7 +1112,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
                 PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters) dssParameters;
                 pAdESParameters.setSignerName(signingId);
-
+                pAdESParameters.setContentSize(config.getPadesContentSize());
                 if (config.getVisibleSignature().isEnable()) {
                     setVisibleSignature(config, pAdESParameters, signingId, SupportLibraryUtils.generateStrongReferenceId(transactionId, document.getReferenceId()), signatureAttributes);
                 }
