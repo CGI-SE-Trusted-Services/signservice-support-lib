@@ -24,9 +24,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.crl.OnlineCRLSource;
-import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
-import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader;
-import eu.europa.esig.dss.service.http.commons.OCSPDataLoader;
+import eu.europa.esig.dss.service.http.commons.*;
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
@@ -79,6 +77,7 @@ import se.signatureservice.configuration.common.cache.MetaData;
 import se.signatureservice.configuration.common.utils.ColorParser;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.configuration.support.system.TimeStampConfig;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
@@ -98,6 +97,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1012,15 +1012,74 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     /**
      * Get TSP source from cache if possible or create new one.
      *
-     * @param timeStampServer Timestamp server
-     * @return TSP source for given timestamp server.
+     * @param config Timestamp configuration
+     * @return TSP source using the given timestamp configuration.
      */
-    private TSPSource getTspSource(String timeStampServer) {
-        TSPSource tspSource = onlineTSPSources.get(timeStampServer);
-        if (tspSource == null) {
-            tspSource = new OnlineTSPSource(timeStampServer);
-            onlineTSPSources.put(timeStampServer, tspSource);
+    private TSPSource getTspSource(TimeStampConfig config) throws ServerErrorException {
+        if(config.getUrl() == null){
+            throw (ServerErrorException) ErrorCode.MISSING_CONFIGURATION.toException("Time stamp url is missing in configuration");
         }
+
+        TSPSource tspSource = onlineTSPSources.get(config.getUrl());
+        if (tspSource == null) {
+            log.debug("Creating new time stamp source: " + config.getUrl());
+            CommonsDataLoader dataLoader = new CommonsDataLoader();
+
+            if(config.getProxyHost() != null){
+                log.debug("Using proxy for time stamp source: " + config.getProxyHost());
+                ProxyProperties proxyProperties = new ProxyProperties();
+                proxyProperties.setHost(config.getProxyHost());
+                proxyProperties.setPort(config.getProxyPort());
+                proxyProperties.setScheme(config.getProxyScheme());
+                proxyProperties.setUser(config.getProxyUser());
+                proxyProperties.setPassword(config.getProxyPassword());
+
+                if(config.getProxyExcludedHosts() != null){
+                    List<String> excludedHosts = new ArrayList<>();
+                    for(String host : config.getProxyExcludedHosts().split(",")){
+                        excludedHosts.add(host.trim());
+                    }
+                    proxyProperties.setExcludedHosts(excludedHosts);
+                }
+
+                ProxyConfig proxyConfig = new ProxyConfig();
+                proxyConfig.setHttpsProperties(proxyProperties);
+                proxyConfig.setHttpProperties(proxyProperties);
+                dataLoader.setProxyConfig(proxyConfig);
+            }
+
+            if(config.getKeyStorePath() != null && config.getKeyStorePassword() != null){
+                log.debug("Using keystore for time stamp source: " + config.getTrustStorePath());
+                dataLoader.setSslKeystore(DSSLibraryUtils.createDSSDocument(config.getKeyStorePath()));
+                dataLoader.setSslKeystorePassword(config.getKeyStorePassword());
+                dataLoader.setSslKeystoreType(config.getKeyStoreType());
+            }
+
+            if(config.getTrustStorePath() != null && config.getTrustStorePassword() != null){
+                log.debug("Using truststore for time stamp source: " + config.getTrustStorePath());
+                dataLoader.setSslTruststore(DSSLibraryUtils.createDSSDocument(config.getTrustStorePath()));
+                dataLoader.setSslTruststorePassword(config.getTrustStorePassword());
+                dataLoader.setSslTruststoreType(config.getTrustStoreType());
+            }
+
+            if(config.getUsername() != null && config.getPassword() != null){
+                try {
+                    log.debug("Using username/password authentication for time stamp source");
+                    URL tspUrl = new URL(config.getUrl());
+                    final HostConnection hostConnection = new HostConnection(tspUrl.getHost(), tspUrl.getPort(), tspUrl.toURI().getScheme());
+                    final UserCredentials userCredentials = new UserCredentials(config.getUsername(), config.getPassword());
+                    dataLoader.addAuthentication(hostConnection, userCredentials);
+                } catch(Exception e){
+                    log.error("Failed to configure username/password authentication for time stamp source: " + e.getMessage());
+                }
+            }
+
+            tspSource = new OnlineTSPSource(config.getUrl(), dataLoader);
+            onlineTSPSources.put(config.getUrl(), tspSource);
+        } else {
+            log.debug("Using cached time stamp source: " + config.getUrl());
+        }
+
         return tspSource;
     }
 
@@ -1043,13 +1102,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         switch (sigType) {
             case XML:
                 if (!config.getXadesSignatureLevel().equals(SignatureLevel.XAdES_BASELINE_B.toString())) {
-                    xAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
+                    xAdESService.setTspSource(getTspSource(config.getTimeStamp()));
                 }
                 signTask.setToBeSignedBytes(xAdESService.getDataToSign(dssDocument, (XAdESSignatureParameters) dssParameters).getBytes());
                 break;
             case PDF:
                 if (!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())) {
-                    pAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
+                    pAdESService.setTspSource(getTspSource(config.getTimeStamp()));
                 }
                 PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters) dssParameters;
                 pAdESParameters.setSignerName(signingId);
@@ -1063,7 +1122,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 break;
             case CMS:
                 if (!config.getCadesSignatureLevel().equals(SignatureLevel.CAdES_BASELINE_B.toString())) {
-                    cAdESService.setTspSource(getTspSource(config.getTimeStampServer()));
+                    cAdESService.setTspSource(getTspSource(config.getTimeStamp()));
                 }
                 signTask.setToBeSignedBytes(cAdESService.getDataToSign(dssDocument, (CAdESSignatureParameters) dssParameters).getBytes());
                 break;

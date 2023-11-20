@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import se.signatureservice.configuration.common.InternalErrorException;
 import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.SupportProfile;
+import se.signatureservice.configuration.support.system.TimeStampConfig;
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 
 import java.util.ArrayList;
@@ -158,11 +159,6 @@ public class SupportAPIProfile implements SupportProfile {
      * or if the specified attribute is missing the userId will be used.
      */
     private String userDisplayNameAttribute;
-
-    /**
-     * Time Stamp Server (TSA) to use. Required for all profiles except basic (B).
-     */
-    private String timeStampServer;
 
     /**
      * Signature service (frontend) SAML identity to specify in generated
@@ -374,6 +370,11 @@ public class SupportAPIProfile implements SupportProfile {
      */
     private VisibleSignatureConfig visibleSignature = null;
 
+    /**
+     * Timestamp configuration.
+     */
+    private TimeStampConfig timeStamp = null;
+
     public String getRelatedProfile() {
         return relatedProfile;
     }
@@ -524,14 +525,6 @@ public class SupportAPIProfile implements SupportProfile {
 
     public void setUserDisplayNameAttribute(String userDisplayNameAttribute) {
         this.userDisplayNameAttribute = userDisplayNameAttribute;
-    }
-
-    public String getTimeStampServer() {
-        return timeStampServer;
-    }
-
-    public void setTimeStampServer(String timeStampServer) {
-        this.timeStampServer = timeStampServer;
     }
 
     public String getSignServiceId() {
@@ -732,6 +725,17 @@ public class SupportAPIProfile implements SupportProfile {
         this.visibleSignature = visibleSignature;
     }
 
+    public TimeStampConfig getTimeStamp() throws InternalErrorException {
+        if(timeStamp == null){
+            timeStamp = new TimeStampConfig(null);
+        }
+        return timeStamp;
+    }
+
+    public void setTimeStamp(TimeStampConfig timeStamp){
+        this.timeStamp = timeStamp;
+    }
+
     /**
      * Builder class to help when building a ProfileConfiguration instance.
      */
@@ -839,11 +843,6 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder userDisplayNameAttribute(String userDisplayNameAttribute) {
             config.setUserDisplayNameAttribute(userDisplayNameAttribute);
-            return this;
-        }
-
-        public Builder timeStampServer(String timeStampServer) {
-            config.setTimeStampServer(timeStampServer);
             return this;
         }
 
@@ -1057,6 +1056,11 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder visibleSignatureConfig(VisibleSignatureConfig visibleSignatureConfig) {
             config.setVisibleSignature(visibleSignatureConfig);
+            return this;
+        }
+
+        public Builder timeStamp(TimeStampConfig timeStampConfig){
+            config.setTimeStamp(timeStampConfig);
             return this;
         }
 

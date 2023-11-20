@@ -59,12 +59,6 @@ public class SupportAPIConfiguration {
     private CertificateVerifier certificateVerifier = null;
 
     /**
-     * Timestamp source to use, or null to use default.
-     * Default value: null
-     */
-    private TSPSource tspSource = null;
-
-    /**
      * If simple report should be generated during validation.
      * Default value: true
      */
