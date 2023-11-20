@@ -100,9 +100,9 @@ class SupportAPIProfileSpec extends Specification {
                 signatureValidityMinutes: "10",
                 enableAuthnProfile: false,
                 padesSignaturePacking: "ENVELOPED",
+                padesContentSize: 1337,
                 authnContextClassRef: null,
                 encryptionAlgorithmScheme: "RSA_PKCS1_5_WITH_AES256",
-                timeStampServer: null,
                 enableAutomaticValidation: false,
                 signatureValidityOverlapMinutes: "5",
                 visibleSignature: [
@@ -124,7 +124,25 @@ class SupportAPIProfileSpec extends Specification {
                 enableEnhancedLogging: false,
                 signRequester: "TheCompany",
                 xadesSignatureLevel: "XAdES-BASELINE-B",
-                xadesCanonicalizationAlgorithmURI: "http://www.w3.org/2001/10/xml-exc-c14n#"
+                xadesCanonicalizationAlgorithmURI: "http://www.w3.org/2001/10/xml-exc-c14n#",
+                timeStamp: [
+                        url: "https://timestamp.random.local",
+                        username: "randomuser",
+                        password: "randompassword",
+                        keyStorePath: "/config/keystore.p12",
+                        keyStorePassword: "123456",
+                        keyStoreType: "PKCS12",
+                        trustStorePath: "/config/truststore.jks",
+                        trustStorePassword: "654321",
+                        trustStoreType: "JKS",
+                        proxyHost: "randomproxy.local",
+                        proxyPort: 443,
+                        proxyScheme: "https",
+                        proxyUser: "proxyuser",
+                        proxyPassword: "123123",
+                        proxyExcludedHosts: "localhost,google.com",
+                        sslProtocol: "TLS v1.3"
+                ]
         ]
 
         when:
@@ -157,9 +175,9 @@ class SupportAPIProfileSpec extends Specification {
         profile.signatureValidityMinutes == 10
         !profile.enableAuthnProfile
         profile.padesSignaturePacking == "ENVELOPED"
+        profile.padesContentSize == 1337
         profile.authnContextClassRef == null
         profile.encryptionAlgorithmScheme == "RSA_PKCS1_5_WITH_AES256"
-        profile.timeStampServer == null
         !profile.enableAutomaticValidation
         profile.signatureValidityOverlapMinutes == 5
         profile.visibleSignature.enable
@@ -179,6 +197,22 @@ class SupportAPIProfileSpec extends Specification {
         profile.signRequester == "TheCompany"
         profile.xadesSignatureLevel == "XAdES-BASELINE-B"
         profile.xadesCanonicalizationAlgorithmURI == "http://www.w3.org/2001/10/xml-exc-c14n#"
+        profile.timeStamp.url == "https://timestamp.random.local"
+        profile.timeStamp.username ==  "randomuser"
+        profile.timeStamp.password == "randompassword"
+        profile.timeStamp.keyStorePath == "/config/keystore.p12"
+        profile.timeStamp.keyStorePassword == "123456"
+        profile.timeStamp.keyStoreType == "PKCS12"
+        profile.timeStamp.trustStorePath == "/config/truststore.jks"
+        profile.timeStamp.trustStorePassword == "654321"
+        profile.timeStamp.trustStoreType == "JKS"
+        profile.timeStamp.proxyHost == "randomproxy.local"
+        profile.timeStamp.proxyScheme == "https"
+        profile.timeStamp.proxyPort == 443
+        profile.timeStamp.proxyUser == "proxyuser"
+        profile.timeStamp.proxyPassword == "123123"
+        profile.timeStamp.proxyExcludedHosts == "localhost,google.com"
+        profile.timeStamp.sslProtocol == "TLS v1.3"
     }
 
     def "verify default Support API profile settings"() {

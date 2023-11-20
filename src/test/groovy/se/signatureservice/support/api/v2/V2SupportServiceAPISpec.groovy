@@ -63,6 +63,7 @@ class V2SupportServiceAPISpec extends Specification {
     static SupportAPIProfile testProfile8 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile8.yml")) as Map)
     static SupportAPIProfile testProfile9 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile9.yml")) as Map)
     static SupportAPIProfile testProfile10 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile10.yml")) as Map)
+    static SupportAPIProfile testProfile11 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile11.yml")) as Map)
 
     static X509Certificate testRecipientCert
 
@@ -919,7 +920,6 @@ class V2SupportServiceAPISpec extends Specification {
     @Unroll
     def "test that getSignServiceRequestURL returns correct"() {
         setup:
-        //SupportAPIProfile profile = new SupportAPIProfile()
         SupportAPIProfile profile = Mock(SupportAPIProfile)
         profile.getSignServiceRequestURL() >> "https://signservice.test.se/"
 
@@ -933,6 +933,32 @@ class V2SupportServiceAPISpec extends Specification {
         expectedUrl                                      | signatureAttributes
         "https://signservice.test.se/"                   | null
         "https://signservice.signatureattributetest.se/" | [new Attribute(key: ATTRIBUTE_SIGNSERVICE_REQUEST_URL, value: "https://signservice.signatureattributetest.se/")]
+    }
+
+    def "test generateSignRequest with LTA profile"(){
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+                context,
+                "a864b33d-244a-4072-b540-0b29e2e7f30a",
+                documents,
+                "You want to sign?",
+                user,
+                "https://idp.cgi.com/v2/metadata",
+                "https://localhost:8080/response",
+                testProfile11,
+                null
+        )
+
+        then:
+        response != null
+        supportServiceAPI.onlineTSPSources.get("http://timestamp.digicert.com") != null
+        println new String(Base64.decode(response), "UTF-8")
     }
 
     static int getMinutesBetween(String a, String b) {
