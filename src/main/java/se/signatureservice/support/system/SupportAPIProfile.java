@@ -19,10 +19,7 @@ import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.SupportProfile;
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Support service API profile configuration. Contains all configuration parameters
@@ -212,6 +209,18 @@ public class SupportAPIProfile implements SupportProfile {
      * Supported values: PKC, QC, QC/SSCD
      */
     private String certificateType;
+
+    /**
+     * List of DefaultUserIdAttributeMapping values which can be overloaded
+     * from DefaultUserIdAttributeMappingConstants.
+     *
+     * Example configuration:
+     *   defaultUserIdAttributeMappingConstants:
+     *     -"urn:oid:1.2.752.29.4.13"
+     *     -"urn:oid:1.2.752.201.3.4"
+     *     -"http://sambi.se/attributes/1/personalIdentityNumber"
+     */
+    private List<String> defaultUserIdAttributeMappingConstants;
 
     /**
      * Boolean value if requestedCertAttributes should be fetched
@@ -598,6 +607,18 @@ public class SupportAPIProfile implements SupportProfile {
         this.certificateType = certificateType;
     }
 
+    public List<String> getDefaultUserIdAttributeMappingConstants() {
+        return defaultUserIdAttributeMappingConstants;
+    }
+
+    public void setDefaultUserIdAttributeMappingConstants(List<String> defaultUserIdAttributeMappingConstants) {
+        this.defaultUserIdAttributeMappingConstants = defaultUserIdAttributeMappingConstants;
+    }
+
+    public void addDefaultUserIdAttributeMappingConstant(String defaultUserIdAttributeMappingConstant) {
+        this.defaultUserIdAttributeMappingConstants.add(defaultUserIdAttributeMappingConstant);
+    }
+
     public boolean isFetchCertAttributesFromMetaData() {
         return fetchCertAttributesFromMetaData;
     }
@@ -889,6 +910,11 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder certificateType(String certificateType) {
             config.setCertificateType(certificateType);
+            return this;
+        }
+
+        public Builder defaultUserIdAttributeMappingConstants(List<String> defaultUserIdAttributeMappingConstants) {
+            config.setDefaultUserIdAttributeMappingConstants(defaultUserIdAttributeMappingConstants);
             return this;
         }
 
