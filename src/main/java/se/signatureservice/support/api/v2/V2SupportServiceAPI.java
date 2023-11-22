@@ -1017,7 +1017,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     private TSPSource getTspSource(TimeStampConfig config) throws ServerErrorException {
         if(config.getUrl() == null){
-            throw (ServerErrorException) ErrorCode.MISSING_CONFIGURATION.toException("Time stamp url is missing in configuration");
+            if(apiConfig.getDefaultTimeStampSource() != null){
+                log.debug("Using default time stamp source");
+                return apiConfig.getDefaultTimeStampSource();
+            }
+            throw (ServerErrorException) ErrorCode.MISSING_CONFIGURATION.toException("Time stamp url is missing in configuration and no default time stamp source is specified");
         }
 
         TSPSource tspSource = onlineTSPSources.get(config.getUrl());
@@ -2026,6 +2030,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          */
         public Builder certificateVerifier(CertificateVerifier certificateVerifier) {
             config.setCertificateVerifier(certificateVerifier);
+            return this;
+        }
+
+        /**
+         * Specify default time stamp source to use if time stamp configuration is
+         * missing in signature profile.
+         *
+         * @param timeStampSource Time stamp source to use if not specified in signature profile.
+         * @return Updated builder.
+         */
+        public Builder defaultTimeStampSource(TSPSource timeStampSource) {
+            config.setDefaultTimeStampSource(timeStampSource);
             return this;
         }
 

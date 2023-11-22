@@ -59,6 +59,13 @@ public class SupportAPIConfiguration {
     private CertificateVerifier certificateVerifier = null;
 
     /**
+     * Default time stamp source to use, if required but missing
+     * in signature profile.
+     * Default value: null
+     */
+    private TSPSource defaultTimeStampSource = null;
+
+    /**
      * If simple report should be generated during validation.
      * Default value: true
      */
@@ -142,6 +149,14 @@ public class SupportAPIConfiguration {
 
     public void setCertificateVerifier(CertificateVerifier certificateVerifier){
         this.certificateVerifier = certificateVerifier;
+    }
+
+    public TSPSource getDefaultTimeStampSource() {
+        return defaultTimeStampSource;
+    }
+
+    public void setDefaultTimeStampSource(TSPSource defaultTimeStampSource) {
+        this.defaultTimeStampSource = defaultTimeStampSource;
     }
 
     public boolean isUseSimpleValidationReport() {
