@@ -212,15 +212,15 @@ public class SupportAPIProfile implements SupportProfile {
 
     /**
      * List of DefaultUserIdAttributeMapping values which can be overloaded
-     * from DefaultUserIdAttributeMappingConstants.
+     * via defaultUserIdAttributeMappingValues.
      *
      * Example configuration:
-     *   defaultUserIdAttributeMappingConstants:
+     *   defaultUserIdAttributeMappingValues:
      *     -"urn:oid:1.2.752.29.4.13"
      *     -"urn:oid:1.2.752.201.3.4"
      *     -"http://sambi.se/attributes/1/personalIdentityNumber"
      */
-    private List<String> defaultUserIdAttributeMappingConstants;
+    private List<String> defaultUserIdAttributeMappingValues;
 
     /**
      * Boolean value if requestedCertAttributes should be fetched
@@ -607,16 +607,16 @@ public class SupportAPIProfile implements SupportProfile {
         this.certificateType = certificateType;
     }
 
-    public List<String> getDefaultUserIdAttributeMappingConstants() {
-        return defaultUserIdAttributeMappingConstants;
+    public List<String> getDefaultUserIdAttributeMappingValues() {
+        return defaultUserIdAttributeMappingValues;
     }
 
-    public void setDefaultUserIdAttributeMappingConstants(List<String> defaultUserIdAttributeMappingConstants) {
-        this.defaultUserIdAttributeMappingConstants = defaultUserIdAttributeMappingConstants;
+    public void setDefaultUserIdAttributeMappingValues(List<String> defaultUserIdAttributeMappingValues) {
+        this.defaultUserIdAttributeMappingValues = defaultUserIdAttributeMappingValues;
     }
 
-    public void addDefaultUserIdAttributeMappingConstant(String defaultUserIdAttributeMappingConstant) {
-        this.defaultUserIdAttributeMappingConstants.add(defaultUserIdAttributeMappingConstant);
+    public void addDefaultUserIdAttributeMappingValue(String defaultUserIdAttributeMappingValue) {
+        this.defaultUserIdAttributeMappingValues.add(defaultUserIdAttributeMappingValue);
     }
 
     public boolean isFetchCertAttributesFromMetaData() {
@@ -913,8 +913,8 @@ public class SupportAPIProfile implements SupportProfile {
             return this;
         }
 
-        public Builder defaultUserIdAttributeMappingConstants(List<String> defaultUserIdAttributeMappingConstants) {
-            config.setDefaultUserIdAttributeMappingConstants(defaultUserIdAttributeMappingConstants);
+        public Builder defaultUserIdAttributeMappingValues(List<String> defaultUserIdAttributeMappingValues) {
+            config.setDefaultUserIdAttributeMappingValues(defaultUserIdAttributeMappingValues);
             return this;
         }
 
