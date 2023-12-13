@@ -27,7 +27,7 @@ import java.util.GregorianCalendar;
  * Created by agerbergt on 2017-07-05.
  */
 public class DateUtils {
-    private static SimpleDateFormat xmlDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+    private static final SimpleDateFormat xmlDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
 
     /**
      * Create XMLGregorianCalendar from a given java Date object

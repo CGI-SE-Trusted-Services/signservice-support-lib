@@ -44,7 +44,7 @@ public abstract class BaseSignatureAttributePreProcessor implements SignatureAtt
     public List<Attribute> preProcess(List<Attribute> signatureAttributes, DocumentSigningRequest document) {
         List<Attribute> preProcessedAttributes = new ArrayList<>();
 
-        if(signatureAttributes == null || signatureAttributes.size() == 0){
+        if(signatureAttributes == null || signatureAttributes.isEmpty()){
             return signatureAttributes;
         }
 

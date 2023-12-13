@@ -1,7 +1,7 @@
 package se.signatureservice.support.api.v2;
 
 import javax.xml.bind.annotation.*;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,14 +27,14 @@ public class BaseAPIException extends Exception {
     public BaseAPIException(String code, Message messages, String detailMessage) {
         super(detailMessage);
         this.code = code;
-        this.setMessages(new Messages(Arrays.asList(messages)));
+        this.setMessages(new Messages(Collections.singletonList(messages)));
         this.detailMessage = detailMessage;
     }
 
     public BaseAPIException(String code, List<Message> messages, String detailMessage) {
         super(detailMessage);
         this.code = code;
-        assert messages.size() > 0 : "Error at least on internationalized message must exist in fault";
+        assert !messages.isEmpty() : "Error at least on internationalized message must exist in fault";
         this.setMessages(new Messages(messages));
         this.detailMessage = detailMessage;
     }

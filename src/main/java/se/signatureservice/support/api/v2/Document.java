@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlType;
 public class Document extends AbstractDocument {
 
 
-    @XmlElement(name="signatures",required = false)
+    @XmlElement(name="signatures")
     private Signatures signatures;
 
     @XmlElement(name="hasDetachedSignature",defaultValue = "false")
@@ -22,7 +22,7 @@ public class Document extends AbstractDocument {
     @XmlElement(name="detachedSignatureData")
     protected byte[] detachedSignatureData;
 
-    @XmlElement(name="validationInfo", required = false)
+    @XmlElement(name="validationInfo")
     private VerifyDocumentResponse validationInfo;
 
     public Signatures getSignatures() {

@@ -32,7 +32,7 @@ public class SerializableUtils {
 
     /**
      * Help method to serialize a string that might be null.
-     * @throws IOException
+     * @throws IOException I/O exceptions during string serialization.
      */
     public static void serializeNullableString(ObjectOutput out, String string) throws IOException{
         if(string != null){
@@ -45,7 +45,7 @@ public class SerializableUtils {
 
     /**
      * Help method to deserialize a String that might be null.
-     * @throws IOException
+     * @throws IOException I/O exceptions during string deserialization.
      */
     public static String deserializeNullableString(ObjectInput input) throws IOException{
         String retval = null;
@@ -59,7 +59,7 @@ public class SerializableUtils {
 
     /**
      * Help method to serialize a byte array that might be null.
-     * @throws IOException
+     * @throws IOException I/O exceptions during byte array serialization.
      */
     public static void serializeNullableByteArray(ObjectOutput out, byte[] data) throws IOException{
         if(data != null){
@@ -72,7 +72,7 @@ public class SerializableUtils {
 
     /**
      * Help method to deserialize a byte array that might be null.
-     * @throws IOException
+     * @throws IOException I/O exceptions during byte array deserialization.
      */
     public static byte[] deserializeNullableByteArray(ObjectInput input) throws IOException{
         byte[] retval  = null;
@@ -95,7 +95,7 @@ public class SerializableUtils {
 
     /**
      * Help method to serialize a list of serializable objects that might be null.
-     * @throws IOException
+     * @throws IOException I/O exceptions during list serialization.
      */
     public static void serializeNullableList(ObjectOutput out, List<Object> l) throws IOException{
         if(l != null){
@@ -111,8 +111,8 @@ public class SerializableUtils {
 
     /**
      * Help method to deserialize a list of serializable objects that might be null.
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * @throws IOException I/O exceptions during list deserialization.
+     * @throws ClassNotFoundException class not found.
      */
     public static List<Serializable> deserializeNullableList(ObjectInput input) throws IOException, ClassNotFoundException{
         List<Serializable> retval  = null;

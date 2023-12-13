@@ -36,8 +36,8 @@ public class SimpleCacheProvider implements CacheProvider {
 
     SystemTime systemTime = new DefaultSystemTime();
 
-    private ConcurrentHashMap<String,Object> objects;
-    private ConcurrentHashMap<String, Date> expireDates;
+    private final ConcurrentHashMap<String,Object> objects;
+    private final ConcurrentHashMap<String, Date> expireDates;
 
     public SimpleCacheProvider(){
         objects = new ConcurrentHashMap<String,Object>();
@@ -150,24 +150,15 @@ public class SimpleCacheProvider implements CacheProvider {
     private void setObject(String key, Object value, MetaData metaData){
         if(value != null){
             objects.put(key,value);
-        } else if(objects.containsKey(key)){
-            objects.remove(key);
-        }
+        } else objects.remove(key);
 
         if(metaData != null && metaData.getTimeToLive() != null){
             expireDates.put(key, new Date(systemTime.getSystemTimeMS() + (metaData.getTimeToLive() * 1000)));
-        } else if(expireDates.containsKey(key)){
-            expireDates.remove(key);
-        }
+        } else expireDates.remove(key);
     }
 
     private void deleteObject(String key) {
-        if(objects.containsKey(key)){
-            objects.remove(key);
-        }
-
-        if(expireDates.containsKey(key)){
-            expireDates.remove(key);
-        }
+        objects.remove(key);
+        expireDates.remove(key);
     }
 }

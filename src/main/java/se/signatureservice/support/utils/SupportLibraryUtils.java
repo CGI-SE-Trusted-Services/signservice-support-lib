@@ -208,7 +208,7 @@ public class SupportLibraryUtils {
         if(authContext != null){
             List<AttributeMappingType> attributes = authContext.getIdAttributes().getAttributeMapping();
             for(AttributeMappingType attribute : attributes){
-                if(attribute.getAttribute().getName().equals(attributeName) && attribute.getAttribute().getAttributeValue().size() > 0){
+                if(attribute.getAttribute().getName().equals(attributeName) && !attribute.getAttribute().getAttributeValue().isEmpty()){
                     value = attribute.getAttribute().getAttributeValue().get(0).toString();
                     break;
                 }
@@ -239,7 +239,7 @@ public class SupportLibraryUtils {
             }
 
             if(retval != null){
-                return messageParser.parse(retval.getBytes("UTF-8"));
+                return messageParser.parse(retval.getBytes(StandardCharsets.UTF_8));
             }
         }
 

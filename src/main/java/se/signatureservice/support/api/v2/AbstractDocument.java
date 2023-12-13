@@ -30,7 +30,7 @@ public class AbstractDocument implements Externalizable {
     @XmlElement(required = true)
     protected String name;
 
-    @XmlElement(required = false)
+    @XmlElement()
     protected String referenceId = null;
 
     public String getType() {

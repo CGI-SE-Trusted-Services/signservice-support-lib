@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.encoders.Base64;
 import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
 import org.certificateservices.messages.dss1.core.jaxb.SignResponse;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.AdESObjectType;
@@ -56,6 +55,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -231,7 +231,7 @@ public class SignTaskHelper {
     /**
      * Get DocumentBuilderFactory to use when creating new instance of
      * DocumentBuilder. This is shared across threads.
-     * @return
+     * @return DocumentBuilderFactory
      */
     private static DocumentBuilderFactory getSignedInfoDocumentBuilderFactory(){
         if(documentBuilderFactory == null){
@@ -328,10 +328,10 @@ public class SignTaskHelper {
         for (int i = 0; i < references.getLength(); i++) {
             Element reference = ((Element) references.item(i));
             String type = reference.getAttribute(XML_ATTRIBUTE_TYPE);
-            if (type != null && type.equalsIgnoreCase(NS_ETSI_1_3_2_SIGNED_PROPERTIES)) {
+            if (type.equalsIgnoreCase(NS_ETSI_1_3_2_SIGNED_PROPERTIES)) {
                 reference.setAttribute(XML_ATTRIBUTE_URI, referenceURI);
                 Element element = (Element)reference.getElementsByTagNameNS(NS_W3_XMLDSIG, DS_DIGESTVALUE).item(0);
-                element.getFirstChild().setNodeValue(new String(Base64.encode(digestValue), "UTF-8"));
+                element.getFirstChild().setNodeValue(new String(Base64.encode(digestValue), StandardCharsets.UTF_8));
                 return true;
             }
         }

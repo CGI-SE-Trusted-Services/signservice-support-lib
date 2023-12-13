@@ -56,7 +56,7 @@ public class DocumentRequests implements Externalizable {
      * Builder class to help when building a DocumentRequests instance.
      */
     public static class Builder {
-        private DocumentRequests documentRequests;
+        private final DocumentRequests documentRequests;
 
         /**
          * Create new TransactionSigner builder

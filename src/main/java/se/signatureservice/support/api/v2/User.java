@@ -1,7 +1,5 @@
 package se.signatureservice.support.api.v2;
 
-import se.signatureservice.support.api.SupportServiceAPI;
-import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.utils.SerializableUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -30,10 +28,10 @@ public class User implements Externalizable {
     @XmlElement(required = true)
     private String userId;
 
-    @XmlElement(required = false)
+    @XmlElement()
     private String role;
 
-    @XmlElement(required = false)
+    @XmlElement()
     private List<Attribute> userAttributes;
 
     public String getUserId() {
@@ -75,7 +73,7 @@ public class User implements Externalizable {
         role = SerializableUtils.deserializeNullableString(in);
 
         List<Serializable> deserializedList = SerializableUtils.deserializeNullableList(in);
-        userAttributes = (deserializedList != null && deserializedList.size() > 0) ? (List)deserializedList.get(0) : null;
+        userAttributes = (deserializedList != null && !deserializedList.isEmpty()) ? (List)deserializedList.get(0) : null;
     }
 
     /**

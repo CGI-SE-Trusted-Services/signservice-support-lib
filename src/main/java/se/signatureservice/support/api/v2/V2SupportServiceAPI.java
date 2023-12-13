@@ -120,14 +120,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private static final Logger log = LoggerFactory.getLogger(V2SupportServiceAPI.class);
 
     private final XAdESService xAdESService;
-    private PAdESService pAdESService;
-    private CAdESService cAdESService;
-    private Map<String, TSPSource> onlineTSPSources;
+    private final PAdESService pAdESService;
+    private final CAdESService cAdESService;
+    private final Map<String, TSPSource> onlineTSPSources;
     private CertificateVerifier certificateVerifier;
     private DefaultAIASource aiaSource;
     private CRLSource crlSource;
     private OCSPSource ocspSource;
-    private Map<SigType, SignatureAttributePreProcessor> signatureAttributePreProcessors = new HashMap<>();
+    private final Map<SigType, SignatureAttributePreProcessor> signatureAttributePreProcessors = new HashMap<>();
 
     private final SupportAPIConfiguration apiConfig;
     private final MessageSource messageSource;
@@ -1601,7 +1601,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     /**
      * Get signature type from a given document mime type.
      *
-     * @param mimeType
+     * @param mimeType mine type
      * @return Signature type ("XML", "PDF" or "CMS") for given mime type.
      */
     protected String getSigTypeFromMimeType(String mimeType) {
@@ -1865,14 +1865,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             throw (ClientErrorException) ErrorCode.INVALID_DOCUMENT.toException("No documents to be signed", messageSource);
         }
 
-        if (documents.documents == null || documents.documents.size() == 0) {
+        if (documents.documents == null || documents.documents.isEmpty()) {
             throw (ClientErrorException) ErrorCode.INVALID_DOCUMENT.toException("Empty list of documents to be signed", messageSource);
         }
 
         for (Object object : documents.documents) {
             if (object instanceof DocumentSigningRequest) {
                 DocumentSigningRequest document = (DocumentSigningRequest) object;
-                if (document.name == null || document.name.length() == 0) {
+                if (document.name == null || document.name.isEmpty()) {
                     throw (ClientErrorException) ErrorCode.INVALID_DOCUMENT.toException("Missing document name", messageSource);
                 }
 
@@ -1880,7 +1880,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     throw (ClientErrorException) ErrorCode.INVALID_DOCUMENT.toException("Missing data for document (" + document.getName() + ")", messageSource);
                 }
 
-                if (document.type == null || document.type.length() == 0) {
+                if (document.type == null || document.type.isEmpty()) {
                     throw (ClientErrorException) ErrorCode.INVALID_MIMETYPE.toException("Missing document type for document (" + document.getName() + ")", messageSource);
                 }
 
