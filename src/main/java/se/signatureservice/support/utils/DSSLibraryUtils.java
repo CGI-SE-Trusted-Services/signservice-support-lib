@@ -13,10 +13,9 @@
  *************************************************************************/
 package se.signatureservice.support.utils;
 
-import eu.europa.esig.dss.enumerations.MimeType;
-import eu.europa.esig.dss.enumerations.MimeTypeEnum;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.MimeType;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +55,7 @@ public class DSSLibraryUtils {
      * @return DSSDocument based on given parameters.
      */
     public static DSSDocument createDSSDocument(String path){
-        return createDSSDocument(path, MimeTypeEnum.BINARY);
+        return createDSSDocument(path, MimeType.BINARY);
     }
 
     /**
