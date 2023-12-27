@@ -34,15 +34,15 @@ configurations.configureEach {
 }
 
 dependencies {
-    api "eu.europa.ec.joinup.sd-dss:dss-xades:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-cades:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-pades:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-service:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-utils:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:5.12.1"
-    api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:5.12.1"
+    api "eu.europa.ec.joinup.sd-dss:dss-xades:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-cades:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-pades:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-service:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-utils:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:$dssVersion"
+    api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:$dssVersion"
     api "org.apache.pdfbox:pdfbox:2.0.27"
     api "org.apache.santuario:xmlsec:2.3.4"
     api "org.slf4j:slf4j-api:1.7.36"
@@ -71,8 +71,8 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:2.14.3"
     implementation 'com.fasterxml.woodstox:woodstox-core:6.4.0'
 
-    testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:5.12.1"
-    testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:5.12.1"
+    testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:$dssVersion"
+    testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:$dssVersion"
     testImplementation 'com.squareup.okhttp3:okhttp:4.10.0'
     testImplementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.75'
     testImplementation "org.codehaus.groovy.modules.http-builder:http-builder:0.7.1"
