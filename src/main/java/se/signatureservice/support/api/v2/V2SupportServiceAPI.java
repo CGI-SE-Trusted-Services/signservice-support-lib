@@ -2262,17 +2262,4 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             return new V2SupportServiceAPI(config);
         }
     }
-
-    public static final void main(String[] args){
-        // Create instance of visible signature configuration
-        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
-        visibleSignatureConfig.setEnable(true);
-
-        SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
-                // Specify visible signature configuration
-                .visibleSignatureConfig(visibleSignatureConfig)
-
-                // Build the profile.
-                .build();
-    }
 }
