@@ -78,6 +78,7 @@ import se.signatureservice.configuration.common.utils.ColorParser;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.TimeStampConfig;
+import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
@@ -86,6 +87,9 @@ import se.signatureservice.support.signer.*;
 import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.system.SupportAPIProfile;
 import se.signatureservice.support.system.TransactionState;
+import se.signatureservice.support.template.AvailableTemplateVariables;
+import se.signatureservice.support.template.DefaultTemplateProcessor;
+import se.signatureservice.support.template.TemplateProcessor;
 import se.signatureservice.support.trustlist.TrustedListsCertificateSourceBuilder;
 import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
@@ -138,6 +142,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory sweEid2ObjectFactory;
     private org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
+    private final TemplateProcessor templateProcessor;
 
 
     /**
@@ -174,6 +179,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             cAdESService = new CAdESService(getCertificateVerifier());
 
             onlineTSPSources = new HashMap<>();
+            templateProcessor = new DefaultTemplateProcessor();
         } catch (Exception e) {
             throw new SupportServiceLibraryException("Error while creating Support Service API: " + e.getMessage());
         }
@@ -1248,28 +1254,42 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat(config.getVisibleSignature().getTimeStampFormat());
-                    cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(new Date()));
+                    cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(parameters.bLevel().getSigningDate()));
                 } catch(Exception e) {
                     throw ErrorCode.INVALID_CONFIGURATION.toException("Invalid configuration value for timeStampFormat: " + config.getVisibleSignature().getTimeStampFormat() + " (" + e.getMessage() + ")");
                 }
             }
 
             StringBuilder signatureText = new StringBuilder();
-            if (config.getVisibleSignature().isShowHeadline()) {
-                signatureText.append(config.getVisibleSignature().getHeadlineText()).append("\n");
-            }
+            String signatureTextTemplate = config.getVisibleSignature().getSignatureTextTemplate();
 
-            String signerLabel = config.getVisibleSignature().getSignerLabel().trim();
-            if (!signerLabel.isEmpty()) {
-                signatureText.append(signerLabel).append(": ");
-            }
-            signatureText.append(signerName).append("\n");
+            if(signatureTextTemplate != null){
+                log.debug("Generating visible signature using signature text template");
+                Map<String,String> signatureTextValues = new HashMap<>();
+                signatureTextValues.put(AvailableTemplateVariables.HEADLINE, config.getVisibleSignature().getHeadlineText());
+                signatureTextValues.put(AvailableTemplateVariables.SIGNER_NAME, signerName);
+                signatureTextValues.put(AvailableTemplateVariables.TIMESTAMP, cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
+                for(Attribute signatureAttribute : signatureAttributes){
+                    signatureTextValues.put(AvailableTemplateVariables.SIGNATURE_ATTRIBUTE_PREFIX + signatureAttribute.getKey(), signatureAttribute.getValue());
+                }
+                signatureText.append(templateProcessor.populateTemplate(signatureTextTemplate, signatureTextValues));
+            } else {
+                if (config.getVisibleSignature().isShowHeadline()) {
+                    signatureText.append(config.getVisibleSignature().getHeadlineText()).append("\n");
+                }
 
-            String timeStampLabel = config.getVisibleSignature().getTimeStampLabel().trim();
-            if (!timeStampLabel.isEmpty()) {
-                signatureText.append(timeStampLabel).append(": ");
+                String signerLabel = config.getVisibleSignature().getSignerLabel().trim();
+                if (!signerLabel.isEmpty()) {
+                    signatureText.append(signerLabel).append(": ");
+                }
+                signatureText.append(signerName).append("\n");
+
+                String timeStampLabel = config.getVisibleSignature().getTimeStampLabel().trim();
+                if (!timeStampLabel.isEmpty()) {
+                    signatureText.append(timeStampLabel).append(": ");
+                }
+                signatureText.append(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
             }
-            signatureText.append(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
 
             SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
             textParameters.setText(signatureText.toString());
@@ -2241,5 +2261,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             return new V2SupportServiceAPI(config);
         }
+    }
+
+    public static final void main(String[] args){
+        // Create instance of visible signature configuration
+        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
+        visibleSignatureConfig.setEnable(true);
+
+        SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+                // Specify visible signature configuration
+                .visibleSignatureConfig(visibleSignatureConfig)
+
+                // Build the profile.
+                .build();
     }
 }

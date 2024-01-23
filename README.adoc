@@ -1,7 +1,309 @@
 = Signature Support Service Library
 
+== Introduction
 The purpose of the signature support API is to help with creating signature requests, and processing
 signature responses, according to the technical framework specified by Sweden Connect
 (https://docs.swedenconnect.se/technical-framework/).
 
-Library documentation and example code is available in the *Integration Guide* in subfolder `docs`.
+This document describes the technical details of the Signature Support Service API,
+and how to use it to implement digital signature workflow in an existing web application.
+
+*NOTE:* This document only shows a handful of configuration options available when using the different builders.
+Please check out the `javadoc` to get a complete listening of available configuration options.
+
+== Building the API
+The API is configured and initialized using builder pattern. The following gives an example of how to build
+an instance of the API:
+```
+    SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
+        .messageSecurityProvider(messageSecurityProvider)
+        .cacheProvider(cacheProvider)
+        .trustStore(trustedCertificateSource)
+        .build();
+```
+
+NOTE: For all available api settings please refer to the `V2SupportServiceAPI.Builder` Javadoc.
+
+=== Message Security Provider
+When creating an instance of the support service API a message security provider must be provided. The
+message security provider is used when signing signature requests and when verifying signature responses.
+A custom message security provider can be created by implementing `org.certificateservices.messages.MessageSecurityProvider`.
+It is also possible to use a build-in simple message security provider. The following gives an example of how to
+create a simple message security provider:
+```
+    // Initialize XML security library. This is needed before creating the
+    // message security provider.
+    Init.init();
+
+    MessageSecurityProvider messageSecurityProvider = SupportLibraryUtils.createSimpleMessageSecurityProvider(
+        "/path/to/keystore.jks",
+        "keystore_password",
+        "keystore_alias",
+        "/path/to/truststore.jks",
+        "truststore_password"
+    );
+```
+=== Cache Provider
+The API also requires a cache provider that will be used when storing transaction state information that needs
+to be kept after creating a signature request and until processing the signature response. A custom cache provider
+can be created by implementing `se.signatureservice.support.common.cache.CacheProvider` . It is also possible to use
+a built-in simple cache provider that stores everything in memory. The following gives an example of how to create
+a simple cache provider:
+```
+    CacheProvider cacheProvider = new SimpleCacheProvider();
+```
+=== Trusted Certificate Source
+The API needs a source of trusted certificates that will be used when validating signed documents. A custom implementation
+of a trusted certificate source can be created by implementing `eu.europa.esig.dss.spi.x509.CertificateSource`. It is also
+possible to use the existing KeyStoreCertificateSource that loads trusted certificates from a keystore file (JKS or PKCS#12):
+```
+    CertificateSource certificateSource = new KeyStoreCertificateSource(
+        "/path/to/keystore.p12",
+        "PKCS12",
+        "somepassword"
+    )
+```
+== Using the API
+The API will be used to create signature requests that then needs to be sent to the central signature service
+through an `HTTP POST` through the user browser. The central signature service will the re-direct the user to the
+identity provider, and after successful authentication the user will be re-directed to a pre-determined consumer URL
+through an `HTTP POST` with the signature request as parameter. The following gives an overview how the API is used
+during these steps:
+```
+    // Create user that is going to sign the document(s)
+    User user = new User.Builder()
+        // Specify user ID (required)
+        .userId("195207092072")
+        // Specify role (optional)
+        .role("testrole")
+        // Build user
+        .build();
+
+    // Create document requests to include in the transaction.
+    DocumentRequests documentRequests = new DocumentRequests.Builder()
+        .addXMLDocument("/path/to/document.xml")
+        .build();
+
+    // Generate the prepared signature request using the support service API.
+    PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature(
+            // Profile configuration (see below).
+            profileConfig,
+            // Docment(s) to request signature for.
+            documentRequests,
+            // Let the API generate transaction ID automatically.
+            null,
+            // Sign message or null if not used.
+            "Some sign message",
+            // User signing the document.
+            user,
+            // Entity ID of identity provider to use.
+            "https://idp.someorg.com/samlv2/idp/metadata",
+            // Consumer URL to receive the sign response.
+            "https://app.someorg.com/sign",
+            // No attributes.
+            null
+    );
+```
+The `PreparedSignatureResponse` received from a successful call to prepareSignature contains the following information:
+
+* `signRequest` - Base64 encoded signature request data.
+* `actionURL` - URL that the signature request should be sent to.
+* `transactionId` - Transaction ID related to the signature request.
+* `profile` - Name of related profile that was used.
+
+An auto-submit form can be used in order to re-direct the user browser with the signature request. This form can
+be generated using a helper:
+
+    String formContent = SupportLibraryUtils.generateRedirectHtml(preparedSignature);
+
+After a successful signature flow the signature response will be sent to the consumer URL. The library can then
+be used to create the complete signed document(s), shown through the following example:
+```
+        // Process the sign response using the support service API.
+        CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignature(
+                profileConfig,
+                eidSignResponse,
+                transactionId
+        );
+
+        // Retrieve the signed document
+        Document signedDocument = (Document)completeSignature
+            .getDocuments().getDocuments().get(0);
+```
+
+=== Verifying a document
+The API can be used in order to verify a signed document and to assure that the document has not been altered. The
+following example shows how to verify a signed document using the API:
+```
+    VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(
+        profileConfig,
+        signedDocument
+    );
+
+    if(verifiedDocument.isVerifies()) {
+        // Document verified successfully.
+    } else {
+        // Document verification failed.
+    }
+```
+
+The validation report is available within the `verifiedDocument.getReportData()`.
+
+== Profile configuration
+When using the API a profile configuration instance (`se.signatureservice.support.system.SupportAPIProfile`) needs to be created and provided. The profile configuration contains
+a lot of settings to control how the request is created and how the signature is performed. Profile configuration is
+created using builder pattern. The following gives an example of how to create a profile configuration:
+```
+    SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+        // Entity ID of central signature service to use.
+        .signServiceId("https://sign.someorg.com/signservice-frontend/metadata")
+
+        // Request URL to send signature requests to.
+        .signServiceRequestURL("https://sign.someorg.com/signservice-frontend/request")
+
+        // Add identity provider that are trusted to be used by this profile.
+        .addTrustedAuthenticationService("Some idP", "https://idp.someorg.com/samlv2/idp/metadata", "Some Trusted iDP")
+
+        // Add requested certificate attribute that will be used within the request.
+        .addRequestedCertAttribute("givenName",  "urn:oid:2.5.4.42", "2.5.4.42", true)
+        .addRequestedCertAttribute("sn", "urn:oid:2.5.4.4", "2.5.4.4", true)
+        .addRequestedCertAttribute("serialNumber", "urn:oid:1.2.752.29.4.13", "2.5.4.5", true)
+        .addRequestedCertAttribute("commonName", "urn:oid:2.16.840.1.113730.3.1.241", "2.5.4.3", false)
+        .addRequestedCertAttribute("displayName", "urn:oid:2.16.840.1.113730.3.1.241", "2.16.840.1.113730.3.1.241", false)
+        .addRequestedCertAttribute("c", "urn:oid:2.5.4.6", "2.5.4.6", false)
+        .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
+
+        // Add authorized consumer URL that can be used with this profile.
+        .addAuthorizedConsumerURL("https://app.someorg.com/sign")
+
+        // Specify identity of the application that generates the signature requests.
+        .signRequester("https://app.someorg.com/support/metadata")
+
+        // Specify a name for the profile.
+        .relatedProfile("rsaProfile")
+
+        // Enable Authn profile. This must match how the signature service is configured.
+        .enableAuthnProfile(true)
+
+        // Finally build the profile.
+        .build();
+```
+
+NOTE: For all available profile settings please refer to the `SupportAPIProfile.Builder` Javadoc.
+
+=== Visible PDF Signatures
+Visible signatures is a feature that can be enabled when signing PDF documents. It consists of
+an image and text element that is embedded into the document after it has been signed. The purpose
+is to give a visual indication that the document is digitally signed, and some information about
+the signature such as the name of the person that signed the document, the signature time.
+
+IMPORTANT: A visible signature does not replace the actual cryptographic signature within
+a digitally signed document. It should not be used as a way of verifying that a document has
+been signed, as it is easy to forge.
+
+Visible signatures are enabled by specifying a `VisibleSignatureConfig` when building a profile _(Only relevant parts are included in the example)_:
+
+```
+// Create instance of visible signature configuration
+VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
+visibleSignatureConfig.setEnable(true);
+
+SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+        // Specify visible signature configuration
+        .visibleSignatureConfig(visibleSignatureConfig)
+
+        // Build the profile.
+        .build();
+```
+
+Configuration of visible signatures are performed by creating an instance of
+VisibleSignatureConfiguration class and providing it to the `SupportAPIProfile.Builder`
+as shown above. The following table shows available settings that can be used. Each field
+within the table is specified using its setter.
+
+|===
+| Field | Default value | Description
+
+|enable
+|false
+|If visible signature should be added to PDF documents or not.
+
+|font
+| _Built-in / PT Serif Regular_
+|Path to true type font file to use (.ttf) when rendering text within the visible signature. The font file must be available either within the classpath or the file system, where classpath takes precedence.
+
+|fontSize
+|9
+|Font size to use when rendering text within the visible signature.
+
+|fontColor
+|#000000
+|Font color to use when rendering text within the visible signature. Color is specified "HTML-style" as RGB hex string.
+
+|backgroundColor
+|#ffffff
+|Text background to use when rendering text within the visible signature. Color is specified "HTML-style" as RGB hex string.
+
+|showLogo
+|true
+|If logo image should be displayed or not.
+
+|logoImage
+|_CGI Signature service logo_
+|Path to logo image file to display within the visible signature. The image file must be available either within the classpath or the file system, where classpath takes precedence.
+
+|showHeadline
+|true
+|If header text line should be displayed or not.
+
+|headlineText
+|Document Digital Signed
+|Text to display in the first headline row, if shown.
+
+|signerLabel
+|Signer
+|Prefix label to use on the second signer row that is displayed before the signatory name/ID.
+
+|timeStampLabel
+|Time
+|Prefix label to use on the last timestamp row that is displayed before the signing time.
+
+|timeStampFormat
+|yyyy-MM-dd HH:mm:ss
+|Format pattern to use for timestamp. List of available date and time patterns are available here: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/text/SimpleDateFormat.html)
+
+|textPadding
+|50
+|Padding to use for text that is rendered within the visible signature.
+
+| signatureTextTemplate
+| _N/A_
+| Template to use for text in visible signature. If a template is specified all other text-related settings are ignored (ex. showHeadline) as the template takes precedence. For information about the template format and available variables see the section regarding signature text template below.
+|===
+
+==== Signature Text Template
+The signature text template is a string that can contain replacement variables and new-lines that
+will be used in order to create the text element rendered within a visible signature. Variables
+within the template must be specified using curly-bracket syntax, ex. `{signerName}`, and is case
+sensitive. The following gives an example of a signature text template.
+
+```
+"Document signed by: {signerName}\nTime: {timestamp}"
+```
+The following table shows supported template variables that can be used.
+
+|===
+| Variable name | Description
+
+| signerName
+| Name of the signer which can be either the full name or a personal identification number depending on the configuration and the given user attributes that was used in the signing process.
+
+| timestamp
+| Time that the document was signed. The timestamp is formatted according to the visible signature field *timeStampFormat* specified in the visible signature configuration.
+
+| headline
+| Will be replaced by the field *headlineText* in the visible signature configuration.
+
+| signatureAttribute._<key>_
+| Will be replaced by signature attribute value with the specified key. For example to use the value of a signature attribute named *department* the variable in the template is specified as *{signatureAttribute.department}*.
+|===

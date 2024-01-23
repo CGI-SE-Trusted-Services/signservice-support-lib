@@ -34,6 +34,7 @@ import org.joda.time.Minutes
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
 import se.signatureservice.configuration.support.system.Constants
+import se.signatureservice.configuration.support.system.VisibleSignatureConfig
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
@@ -42,6 +43,8 @@ import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Specification
 import spock.lang.Unroll
 import java.security.cert.X509Certificate
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
 
@@ -710,6 +713,7 @@ class V2SupportServiceAPISpec extends Specification {
     def "test setVisibleSignature with valid attributes from caches"(){
         setup:
         PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+        DateFormat dateFormat = new SimpleDateFormat(testProfile1.visibleSignature.timeStampFormat)
 
         when:
         supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_PAGE, "1")
@@ -724,6 +728,7 @@ class V2SupportServiceAPISpec extends Specification {
         parameters.imageParameters.fieldParameters.originY == 30
         parameters.imageParameters.fieldParameters.width == 40
         parameters.imageParameters.fieldParameters.height == 50
+        parameters.imageParameters.textParameters.text == "Document Digital Signed\nSigner: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
     }
 
     def "test setVisibleSignature with valid attributes input but invalid image resource"(){
@@ -744,6 +749,51 @@ class V2SupportServiceAPISpec extends Specification {
         parameters.imageParameters.fieldParameters.width == 200
         parameters.imageParameters.fieldParameters.height == 50
         parameters.imageParameters.image != null
+    }
+
+    void "test setVisibleSignature with signature text template"(){
+        setup:
+        DateFormat dateFormat
+        SupportAPIProfile profile = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+        def attributes = [new Attribute(key: VISIBLE_SIGNATURE_PAGE, value: "1"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "20"),
+                          new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "30"),
+                          new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200"),
+                          new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
+        dateFormat = new SimpleDateFormat(profile.visibleSignature.timeStampFormat)
+
+        when:
+        profile.visibleSignature.signatureTextTemplate = "Document has been signed\nSigner name: {signerName}\nTime: {timestamp}"
+        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "11223344", attributes)
+
+        then:
+        parameters.imageParameters.textParameters.text == "Document has been signed\nSigner name: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
+
+        when:
+        profile.visibleSignature.signatureTextTemplate = "Signed document"
+        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "22334455", attributes)
+
+        then:
+        parameters.imageParameters.textParameters.text == "Signed document"
+
+        when:
+        profile.visibleSignature.timeStampFormat = "yyyy-MM-dd"
+        dateFormat = new SimpleDateFormat(profile.visibleSignature.timeStampFormat)
+        profile.visibleSignature.signatureTextTemplate = "Document signed by:\n{signerName} @ {timestamp}"
+        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "33445566", attributes)
+
+        then:
+        parameters.imageParameters.textParameters.text == "Document signed by:\nsomeSigner @ ${dateFormat.format(parameters.bLevel().signingDate)}"
+
+        when:
+        attributes.add(new Attribute(key: "customName", value: "Johnny Cash"))
+        attributes.add(new Attribute(key: "department", value: "Men in black"))
+        profile.visibleSignature.signatureTextTemplate = "Signed by: {signatureAttribute.customName}\nDepartment: {signatureAttribute.department}"
+        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "44556677", attributes)
+
+        then:
+        parameters.imageParameters.textParameters.text == "Signed by: Johnny Cash\nDepartment: Men in black"
     }
 
     def "test that signature attribute pre-processor is called for all documents"(){
@@ -959,6 +1009,26 @@ class V2SupportServiceAPISpec extends Specification {
         response != null
         supportServiceAPI.onlineTSPSources.get("http://timestamp.digicert.com") != null
         println new String(Base64.decode(response), "UTF-8")
+    }
+
+    def foo(){
+//        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
+//        visibleSignatureConfig.enable = true
+//        visibleSignatureConfig.signatureTextTemplate = "Document signed by:\n{signerName}"
+//        SupportAPIProfile.Builder profileBuilder = new SupportAPIProfile.Builder()
+//        profileBuilder.visibleSignatureConfig(visibleSignatureConfig)
+//        SupportAPIProfile profile = profileBuilder.build()
+
+        // Create instance of visible signature configuration
+        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
+        visibleSignatureConfig.enable = true
+
+        SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+            // Specify visible signature configuration
+            .visibleSignatureConfig(visibleSignatureConfig)
+
+            // Build the profile.
+            .build();
     }
 
     static int getMinutesBetween(String a, String b) {

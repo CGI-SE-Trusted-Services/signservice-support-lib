@@ -1,0 +1,36 @@
+= Changelog
+
+This document provides information about changes that have been made for each new version
+of the Signature Service Support Library.
+
+== version 2401.1
+* Added support for using text template for visible signatures.
+
+=== Upgrade notes
+
+==== Visible signature text template
+By using visible signature text template it is possible to get full control over the text
+that is presented within the visible signatures. Information and examples on how to use
+this feature is available in README.
+
+== Version 2312.1
+
+=== New features
+* Added support for LTA-level signatures with customizable time stamp source.
+
+=== Improvements and bug fixes
+* Fixed incorrect object reference in XAdES DataObjectFormat-element that caused warning during validation.
+
+=== Vulnerability mitigations
+* xmlsec upgraded to 2.3.4 (CVE-2023-44483)
+* json upgraded to 20231013 (CVE-2023-5072)
+
+=== Upgrade notes
+A new class TimeStampConfig has been added that contains information about time stamp configuration.
+An instance of this class must be provided to the SupportAPIProfile builder in order to customize time stamping
+when using signature levels that includes timestamps (-T, LT and -LTA).
+
+== Version 2308.1
+This is the first publicly available version of the Signature Support Service Library. The main purpose
+of the library is to help with creating signature requests, and processing signature responses, according
+to the technical framework specified by Sweden Connect (https://docs.swedenconnect.se/technical-framework/).
