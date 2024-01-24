@@ -33,8 +33,10 @@ import org.joda.time.DateTimeZone
 import org.joda.time.Minutes
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
+import org.w3c.dom.Attr
 import se.signatureservice.configuration.support.system.Constants
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig
+import se.signatureservice.support.api.AvailableSignatureAttributes
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
@@ -796,6 +798,93 @@ class V2SupportServiceAPISpec extends Specification {
         parameters.imageParameters.textParameters.text == "Signed by: Johnny Cash\nDepartment: Men in black"
     }
 
+    def "test to specify logo image as signature parameter"() {
+        setup:
+        SupportAPIProfile profile = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
+        PAdESSignatureParameters parameters = new PAdESSignatureParameters()
+        byte[] imageData = new File("src/test/resources/testlogo.png").bytes
+        def attributes = [new Attribute(key: VISIBLE_SIGNATURE_LOGO_IMAGE, value: new String(Base64.encode(imageData)))]
+
+        when:
+        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "99887766", attributes)
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+        parameters.imageParameters.image.writeTo(outputStream)
+
+        then:
+        outputStream.toByteArray() == imageData
+    }
+
+    def "test to specify signature attributes per document"(){
+        setup:
+        SupportAPIProfile profile = new SupportAPIProfile.Builder()
+            .relatedProfile("testProfile")
+            .addTrustedAuthenticationService("authService", "authService", "authService")
+            .addRequestedCertAttribute("certAttribute", "certAttribute", "certAttribute", false)
+            .addAuthorizedConsumerURL("consumerUrl")
+            .visibleSignatureConfig(new VisibleSignatureConfig(
+                    ["enable": "true"]
+            ))
+            .build()
+        DocumentRequests documentRequests = new DocumentRequests([
+            new DocumentSigningRequest(referenceId: "1", data: new File("src/test/resources/testdocument.pdf").bytes, type: "application/pdf", name: "testdocument1.pdf"),
+            new DocumentSigningRequest(referenceId: "2", data: new File("src/test/resources/testdocument.pdf").bytes, type: "application/pdf", name: "testdocument2.pdf"),
+            new DocumentSigningRequest(referenceId: "3", data: new File("src/test/resources/testdocument.pdf").bytes, type: "application/pdf", name: "testdocument3.pdf")
+        ])
+        User user = new User(userId: "190101010001")
+        List<Attribute> signatureAttributes = []
+        Map<String,List<Attribute>> documentSignatureAttributes = [
+                "1": [
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: 10),
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: 10)
+                ],
+                "2": [
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: 20),
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: 20)
+                ],
+                "3": [
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: 30),
+                        new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: 30)
+                ]
+        ]
+        V2SupportServiceAPI supportServiceAPISpy = Spy(supportServiceAPI)
+        String transactionId = UUID.randomUUID().toString()
+        String strongReferenceId1 = SupportLibraryUtils.generateStrongReferenceId(transactionId, "1")
+        String strongReferenceId2 = SupportLibraryUtils.generateStrongReferenceId(transactionId, "2")
+        String strongReferenceId3 = SupportLibraryUtils.generateStrongReferenceId(transactionId, "3")
+        List<String> verifiedContextIds = []
+
+        when:
+        PreparedSignatureResponse response = supportServiceAPISpy.prepareSignature(profile, documentRequests, transactionId,
+                "Test signature attributes", user, "authService", "consumerUrl",
+                signatureAttributes, documentSignatureAttributes
+        )
+
+        then:
+        response != null
+        3 * supportServiceAPISpy.setVisibleSignature(_,_,_,_,_,) >> { SupportAPIProfile config, PAdESSignatureParameters parameters, String signerName, String contextId, List<Attribute> attributes ->
+            assert signerName == "190101010001"
+
+            if(contextId == strongReferenceId1){
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_X }?.value == "10"
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_Y }?.value == "10"
+            }
+
+            if(contextId == strongReferenceId2){
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_X }?.value == "20"
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_Y }?.value == "20"
+            }
+
+            if(contextId == strongReferenceId3){
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_X }?.value == "30"
+                assert attributes.find { it.key == VISIBLE_SIGNATURE_POSITION_Y }?.value == "30"
+            }
+
+            // Verify 3 unique context IDs were used.
+            assert !verifiedContextIds.contains(contextId)
+            verifiedContextIds.add(contextId)
+        }
+    }
+
     def "test that signature attribute pre-processor is called for all documents"(){
         setup:
         User user = new User(userId: "190102030010")
@@ -1009,26 +1098,6 @@ class V2SupportServiceAPISpec extends Specification {
         response != null
         supportServiceAPI.onlineTSPSources.get("http://timestamp.digicert.com") != null
         println new String(Base64.decode(response), "UTF-8")
-    }
-
-    def foo(){
-//        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
-//        visibleSignatureConfig.enable = true
-//        visibleSignatureConfig.signatureTextTemplate = "Document signed by:\n{signerName}"
-//        SupportAPIProfile.Builder profileBuilder = new SupportAPIProfile.Builder()
-//        profileBuilder.visibleSignatureConfig(visibleSignatureConfig)
-//        SupportAPIProfile profile = profileBuilder.build()
-
-        // Create instance of visible signature configuration
-        VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
-        visibleSignatureConfig.enable = true
-
-        SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
-            // Specify visible signature configuration
-            .visibleSignatureConfig(visibleSignatureConfig)
-
-            // Build the profile.
-            .build();
     }
 
     static int getMinutesBetween(String a, String b) {

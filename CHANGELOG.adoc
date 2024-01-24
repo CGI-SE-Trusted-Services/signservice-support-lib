@@ -3,15 +3,29 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
-== version 2401.1
-* Added support for using text template for visible signatures.
+== Version 2401.1
+
+=== New features
+* Support for using text template for visible signatures.
+* Support for specifying signature attributes per document when signing multiple documents at the same time.
+* Support for reading visible signature logo image to use from signature attributes.
+
+=== Improvements and bug fixes
+* Improvements in `V2SupportServiceAPI.Builder` to give better errors if required configuration is missing.
 
 === Upgrade notes
+This release contains no breaking changes. This section contains brie information about the
+included enhancements.
 
 ==== Visible signature text template
 By using visible signature text template it is possible to get full control over the text
 that is presented within the visible signatures. Information and examples on how to use
 this feature is available in README.
+
+==== Signature attributes per document
+New overloaded version of the method `prepareSignature(...)` has been added to the SupportServiceAPI interface
+that takes an additional map-parameter `Map<String, List<Attribute>> documentSignatureAttributes`. Map-key is a document reference ID which is mapped to the list of signature attributes that should be used for
+that particular document.
 
 == Version 2312.1
 

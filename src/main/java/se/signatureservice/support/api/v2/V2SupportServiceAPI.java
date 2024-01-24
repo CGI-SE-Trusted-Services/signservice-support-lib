@@ -78,10 +78,10 @@ import se.signatureservice.configuration.common.utils.ColorParser;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.TimeStampConfig;
-import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
+import se.signatureservice.support.common.cache.SimpleCacheProvider;
 import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
 import se.signatureservice.support.signer.*;
 import se.signatureservice.support.system.SupportAPIConfiguration;
@@ -196,17 +196,45 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param user                    Information about the signatory.
      * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
      * @param consumerURL             Return URL that the user should be redirected to in the end of the signature flow.
-     * @param signatureAttributes     Optional attributes to use.
+     * @param signatureAttributes     Optional attributes to use when signing documents.
      * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
      * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
     public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
+        return prepareSignature(profileConfig, documents, transactionId, signMessage, user, authenticationServiceId, consumerURL, signatureAttributes, null);
+    }
+
+    /**
+     * Generate signature request info that contains the signature request
+     * along with the transaction state that needs to be persisted and supplied
+     * to processSignResponse in order to obtain the final signed document(s).
+     *
+     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents Documents to generate sign request for.
+     * @param transactionId Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage Signature message to include in the request or null if no signature message should be used.
+     * @param user Information about the signatory.
+     * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
+     * @param consumerURL Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes Optional attributes to use when signing documents.
+     * @param documentSignatureAttributes Optional attributes to use for individual documents. Mapping key is document
+     *                                    referenceId and mapping value is list of signature attributes that will
+     *                                    override signatureAttributes for given document.
+     * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
+     * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when generating the signature request.
+     */
+    @Override
+    public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes, Map<String, List<Attribute>> documentSignatureAttributes) throws ClientErrorException, ServerErrorException {
         long currentTime, operationStart = System.currentTimeMillis();
         int operationTime;
         PreparedSignatureResponse preparedSignature;
+
         try {
+            validateDocumentSignatureAttributes(documentSignatureAttributes);
+
             if (transactionId == null) {
                 transactionId = SupportLibraryUtils.generateTransactionId();
             } else {
@@ -227,7 +255,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             preparedSignature.setProfile(profileConfig.getRelatedProfile());
             preparedSignature.setActionURL(getSignServiceRequestURL(profileConfig, signatureAttributes));
             preparedSignature.setTransactionId(transactionId);
-            preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes));
+            preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes, documentSignatureAttributes));
 
             // Fetch transaction state that is created and stored together with to-be-signed data (TBS).
             // If no transaction state can be read it indicates a problem with generating TBS.
@@ -483,7 +511,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     protected synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
                                                       String signMessage, User user, String authenticationServiceId, String consumerURL,
-                                                      SupportAPIProfile config, List<Attribute> signatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+                                                      SupportAPIProfile config, List<Attribute> signatureAttributes, Map<String,List<Attribute>> documentSignatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
 
         GregorianCalendar requestTime = new GregorianCalendar();
         requestTime.setTime(new Date());
@@ -525,7 +553,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if (documentSigningRequest.referenceId == null) {
                     documentSigningRequest.referenceId = SupportLibraryUtils.generateReferenceId();
                 }
-                List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(documentSigningRequest).preProcess(signatureAttributes, documentSigningRequest);
+                List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(documentSigningRequest).preProcess(documentSignatureAttributes != null ? documentSignatureAttributes.getOrDefault(documentSigningRequest.referenceId, signatureAttributes) : signatureAttributes, documentSigningRequest);
                 signTasksType.getSignTaskData().add(generateSignTask(documentSigningRequest, transactionId, getSigningId(user, config), config, preProcessedSignatureAttributes));
             } else if (object instanceof DocumentRef) {
                 // TODO: Implement support for signing document by reference
@@ -1232,18 +1260,33 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             if (config.getVisibleSignature().isShowLogo()) {
                 DSSDocument logoDocument = null;
-                InputStream logoStream = this.getClass().getResourceAsStream(config.getVisibleSignature().getLogoImage());
-                if (logoStream == null) {
-                    File file = new File(config.getVisibleSignature().getLogoImage());
-                    if (!file.exists() || !file.isFile() || !file.canRead()) {
-                        log.error("The provided logo image path for visible signature is not valid (" + config.getVisibleSignature().getLogoImage() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
-                    } else {
-                        log.debug("Using logo image from file system: " + config.getVisibleSignature().getLogoImage());
-                        logoDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
+
+                for(Attribute signatureAttribute : signatureAttributes){
+                    if(Objects.equals(signatureAttribute.getKey(), VISIBLE_SIGNATURE_LOGO_IMAGE)){
+                        log.info("Using logo image specified as signature attribute");
+                        try {
+                            logoDocument = new InMemoryDocument(Base64.decode(signatureAttribute.getValue().getBytes(StandardCharsets.UTF_8)));
+                        } catch(Exception e){
+                            log.error("Unable to parse image data from signature attribute (" + VISIBLE_SIGNATURE_LOGO_IMAGE + "). Verify that the attribute contains image data as Base64-encoded string.");
+                        }
+                        break;
                     }
-                } else {
-                    log.debug("Using logo image from classpath: " + config.getVisibleSignature().getLogoImage());
-                    logoDocument = new InMemoryDocument(logoStream, null);
+                }
+
+                if(logoDocument == null) {
+                    InputStream logoStream = this.getClass().getResourceAsStream(config.getVisibleSignature().getLogoImage());
+                    if (logoStream == null) {
+                        File file = new File(config.getVisibleSignature().getLogoImage());
+                        if (!file.exists() || !file.isFile() || !file.canRead()) {
+                            log.error("The provided logo image path for visible signature is not valid (" + config.getVisibleSignature().getLogoImage() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                        } else {
+                            log.debug("Using logo image from file system: " + config.getVisibleSignature().getLogoImage());
+                            logoDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
+                        }
+                    } else {
+                        log.debug("Using logo image from classpath: " + config.getVisibleSignature().getLogoImage());
+                        logoDocument = new InMemoryDocument(logoStream, null);
+                    }
                 }
 
                 if (logoDocument != null) {
@@ -1269,8 +1312,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 signatureTextValues.put(AvailableTemplateVariables.HEADLINE, config.getVisibleSignature().getHeadlineText());
                 signatureTextValues.put(AvailableTemplateVariables.SIGNER_NAME, signerName);
                 signatureTextValues.put(AvailableTemplateVariables.TIMESTAMP, cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
-                for(Attribute signatureAttribute : signatureAttributes){
-                    signatureTextValues.put(AvailableTemplateVariables.SIGNATURE_ATTRIBUTE_PREFIX + signatureAttribute.getKey(), signatureAttribute.getValue());
+                if(signatureAttributes != null) {
+                    for (Attribute signatureAttribute : signatureAttributes) {
+                        signatureTextValues.put(AvailableTemplateVariables.SIGNATURE_ATTRIBUTE_PREFIX + signatureAttribute.getKey(), signatureAttribute.getValue());
+                    }
                 }
                 signatureText.append(templateProcessor.populateTemplate(signatureTextTemplate, signatureTextValues));
             } else {
@@ -1303,7 +1348,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if (fontStream == null) {
                     File file = new File(config.getVisibleSignature().getFont());
                     if (!file.exists() || !file.isFile() || !file.canRead()) {
-                        log.error("The provided font file path for visible signature is not valid (" + config.getVisibleSignature().getFont() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                        log.error("The provided font file path for visible signature is not valid (" + config.getVisibleSignature().getFont() + "). Check if the provided path points to an existing file and it has read permission.");
                     } else {
                         log.debug("Using font file from file system: " + config.getVisibleSignature().getFont());
                         fontDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
@@ -1875,6 +1920,25 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
+     * Ensure that a given map of document signature attributes are valid and
+     * allowed to be used during signature flow.
+     *
+     * @param attributes Document signature attribute mapping to validate.
+     * @throws ClientErrorException if given attribute mapping contains invalid entries.
+     */
+    private void validateDocumentSignatureAttributes(Map<String, List<Attribute>> attributes) throws ClientErrorException {
+        if(attributes != null){
+            for(String key : attributes.keySet()){
+                for(Attribute attribute : attributes.get(key)){
+                    if(!AvailableSignatureAttributes.isAllowedPerDocument(attribute.getKey())){
+                        throw (ClientErrorException) ErrorCode.INVALID_SIGNATURE_ATTRIBUTE.toException("The provided signature attribute (" + attribute.getKey() + ") is not allowed to be specified per document");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Ensures that there are no obvious errors within a set of documents
      *
      * @param documents Documents to validate
@@ -2257,6 +2321,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 addAuthContextMapping("softwarePKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI", "http://id.elegnamnden.se/loa/1.0/loa3");
                 addAuthContextMapping("mobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "http://id.elegnamnden.se/loa/1.0/loa3");
                 addAuthContextMapping("smartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "http://id.elegnamnden.se/loa/1.0/loa4");
+            }
+
+            if(config.getCacheProvider() == null){
+                log.info("No cache provider specified, using in-memory cache.");
+                cacheProvider(new SimpleCacheProvider());
+            }
+
+            if(config.getMessageSecurityProvider() == null){
+                throw new SupportServiceLibraryException("No message security provider specified.");
             }
 
             return new V2SupportServiceAPI(config);
