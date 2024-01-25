@@ -2335,9 +2335,4 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             return new V2SupportServiceAPI(config);
         }
     }
-
-    public static final void main(String[] args){
-        TimeStampConfig timeStampConfig = new TimeStampConfig();
-        timeStampConfig.setUrl("http://timestamp.digicert.com");
-    }
 }
