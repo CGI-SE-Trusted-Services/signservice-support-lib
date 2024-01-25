@@ -36,6 +36,9 @@ SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
     .trustStore(trustedCertificateSource)
     .build();
 ```
+NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
+within this document.
+
 ==== Message Security Provider
 When creating an instance of the support service API a message security provider must be provided. The
 message security provider is used when signing signature requests and when verifying signature responses.
@@ -199,6 +202,106 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
     // Finally build the profile.
     .build();
 ```
+NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
+within this document.
+
+=== Time stamp configuration (-T, -LT and -LTA level)
+When using a profile that has been configured with a -T, -LT or -LTA signature level, a time stamp will be requested
+from a time stamp server. This applies for the following signature levels:
+
+* CAdES-BASELINE-T
+* CAdES-BASELINE-LT
+* CAdES-BASELINE-LTA
+* PAdES-BASELINE-T
+* PAdES-BASELINE-LT
+* PAdES-BASELINE-LTA
+* XAdES-BASELINE-T
+* XAdES-BASELINE-LT
+* XAdES-BASELINE-LTA
+
+Time stamp configuration is performed by specifying `timeStamp` when building a profile _(Only relevant parts are
+included in the example)_:
+```
+// Create instance of timestamp configuration
+TimeStampConfig timeStampConfig = new TimeStampConfig();
+timeStampConfig.setUrl("http://timestamp.digicert.com");
+
+SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+        // Specify time stamp configuration
+        .timeStamp(timeStampConfig)
+
+        // Build the profile.
+        .build();
+```
+The following table shows available settings that can be used. Each field
+within the table is specified using its setter.
+|===
+| Field | Default value | Description
+
+| url
+| _required_
+| URL to Time Stamp Authority (TSA) server to use. This is the only _required_ value.
+
+| username
+| _N/A_
+| Username to use if username/password-authentication should be performed when requesting time stamps.
+
+| password
+| _N/A_
+| Password to use if username/password-authentication should be performed when requesting time stamps.
+
+| keyStorePath
+| _N/A_
+| Key store to use in order to enable certificate-based TLS authentication when requesting time stamps.
+
+| keyStorePassword
+| _N/A_
+| Password that protects the key store. Used if keyStorePath is specified.
+
+| keyStoreType
+| _N/A_
+| Key store type. Supported values are *JKS* or *PKCS12*.
+
+| trustStorePath
+| _N/A_
+| Trust store to use when requesting time stamp using TLS/SSL, in order to verify server certificate.
+
+| trustStorePassword
+| _N/A_
+| Password that protects the trust store. Used if trustStorePath is specified.
+
+| trustStoreType
+| _N/A_
+| Trust store type. Supported values are *JKS* or *PKCS12*.
+
+| proxyHost
+| _N/A_
+| Hostname of proxy-server if requests should be sent through proxy.
+
+| proxyScheme
+| http
+| Connection scheme. Used if proxyHost is specified. Ex: *http* or *https*.
+
+| proxyPort
+| 80
+| TCP port to use when connecting to proxy-server.
+
+| proxyUser
+| _N/A_
+| Username to use if username/password-authentication should be performed when connecting to proxy.
+
+| proxyPassword
+| _N/A_
+| Password to use if username/password-authentication should be performed when connecting to proxy.
+
+| proxyExcludedHosts
+| _N/A_
+| Comma-separated list of hostnames that should be excluded from proxy.
+
+| sslProtocol
+| TLS v1.2
+| SSL/TLS protocol to use when connecting to TSA-server.
+|===
 
 === Visible PDF Signatures
 Visible signatures is a feature that can be enabled when signing PDF documents. It consists of
@@ -224,10 +327,7 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
         // Build the profile.
         .build();
 ```
-
-Configuration of visible signatures are performed by creating an instance of
-VisibleSignatureConfiguration class and providing it to the `SupportAPIProfile.Builder`
-as shown above. The following table shows available settings that can be used. Each field
+The following table shows available settings that can be used. Each field
 within the table is specified using its setter.
 
 |===
@@ -316,3 +416,342 @@ The following table shows supported template variables that can be used.
 | signatureAttribute._<key>_
 | Will be replaced by signature attribute value with the specified key. For example to use the value of a signature attribute named *department* the variable in the template is specified as *{signatureAttribute.department}*.
 |===
+
+== API Reference
+This section gives detailed information about important classes and methods that are used within the library
+when creating and validating signatures.
+
+=== Builders
+The library is using builder pattern in order to perform configuration of the library API and profiles that can
+be used.
+
+==== V2SupportServiceAPI.Builder
+|===
+| Method | Description
+| addAuthContextMapping(String name, String context, String loa)
+| Add mapping between authentication context and level of assurance.
+
+| addSignMessageRecipient(String authenticationServiceId, java.security.cert.X509Certificate recipient)
+| Add recipient certificate to use when generating encrypted sign messages.
+
+| addSignMessageRecipients(String authenticationServiceId, java.util.List<java.security.cert.X509Certificate> recipients)
+| Add list of recipient certificates to use when generating encrypted sign messages.
+
+| cacheProvider(se.signatureservice.configuration.common.cache.CacheProvider cacheProvider)
+| Specify cache provider to use for temporary storage.
+
+| certificateVerifier(eu.europa.esig.dss.validation.CertificateVerifier certificateVerifier)
+| Specify certificate verifier to use when verifying certificates.
+
+| defaultTimeStampSource(eu.europa.esig.dss.spi.x509.tsp.TSPSource timeStampSource)
+| Specify default time stamp source to use if time stamp configuration is missing in signature profile.
+
+| ignoreMissingRevocationData(boolean ignoreMissingRevocationData)
+| Specify if missing revocation data should be ignored during validation.
+
+| messageSecurityProvider(org.certificateservices.messages.MessageSecurityProvider messageSecurityProvider)
+| Specify a message security provider to use when signing requests and when verifying responses from central system.
+
+| messageSource(org.springframework.context.MessageSource messageSource)
+| Specify a custom message source to use when resolving error messages.
+
+| simpleValidationReport(boolean simpleReport)
+| Specify if simple validation report should be generated or not.
+
+| trustedCertificateSource(eu.europa.esig.dss.spi.x509.CertificateSource certificateSource)
+| Specify certificate source for trusted certificates that are used during validation of documents.
+
+| validationCacheExpirationTimeMS(long expirationTimeMS)
+| Set expiration time in milliseconds of cache used during validation to store revocation data.
+
+| validationPolicyDirectory(String validationPolicyDirectory)
+| Path to directory containing validation policy files.
+
+| validationProxy(String host, int port)
+| Specify proxy settings to use during document validation when fetching revocation data.
+
+| validationProxy(String host, int port, String user, String password)
+| Specify proxy settings to use during document validation when fetching revocation data.
+
+| validationProxy(String host, int port, String user, String password, java.util.List<String> excludedHosts)
+| Specify proxy settings to use during document validation when fetching revocation data.
+
+| validationProxy(String host, int port, java.util.List<String> excludedHosts)
+| Specify proxy settings to use during document validation when fetching revocation data.
+
+| build()
+| Build the Support Service API.
+|===
+
+==== SupportAPIProfile.Builder
+
+|===
+| Method | Description
+| addAuthorizedCentralServiceEntityId(String authorizedCentralServiceEntityId)
+| Add Meta Data Entity Id of trusted central service that might send signature responses to application using the library.
+
+| addAuthorizedConsumerURL(String authorizedConsumerURL)
+| Add authorized consumer URLs that can be specified when using the profile.
+
+| addDefaultAuthnContextClassRef(String defaultAuthnContextClassRef)
+| Add default Type/level of authentication to request in the signature process.
+
+| addRequestedCertAttribute(String name, String samlAttributeName, String certAttributeRef, boolean required)
+| Add requests for subject attributes in a signer certificate that is associated with the signer of the generated
+signature as a result of the sign request.
+
+| addRequestedCertAttribute(String name, String samlAttributeName, String certAttributeRef, String certNameType, boolean required)
+| Add requests for subject attributes in a signer certificate that is associated with the signer of the generated
+signature as a result of the sign request.
+
+| addSignerAttribute(String name, String samlAttributeName, String userAttributeMapping, boolean required)
+| Add attribute to be included in the signer element within the sign request, in addition to the mandatory userId
+attribute (see defaultUserIdAttributeMapping) that is always included as a signer attribute.
+
+| addTrustedAuthenticationService(String name, String entityId, String defaultDisplayName)
+| Add trusted authentication services/identity providers that can be used for the given profile.
+
+| addTrustedAuthenticationService(String name, String entityId, String defaultDisplayName, String authnContextClassRef, String userIdAttributeMapping)
+| Add trusted authentication services/identity providers that can be used for the given profile.
+
+| addTrustedAuthenticationService(String name, String entityId, String defaultDisplayName, java.util.List<String> authnContextClassRefs,
+String userIdAttributeMapping)
+| Add trusted authentication services/identity providers that can be used for the given profile.
+
+| allowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate)
+| Flag indicating if it should be possible to create a signed document using an expired certificate.
+
+| authorizedCentralServiceEntityIds(java.util.List<String> authorizedCentralServiceEntityIds)
+| Specify list of meta Data entity Id of all trusted central services that might send signature responses to the library.
+
+| authorizedConsumerURLs(java.util.List<String> authorizedConsumerURLs)
+| Specify list of authorized consumer URLs that can be specified by the driving application.
+
+| cadesSignatureLevel(String cadesSignatureLevel)
+| CAdES Signature level. Supported values: CMS-NOT-ETSI, CAdES-BASELINE-B, CAdES-BASELINE-T, CAdES-BASELINE-LT, CAdES-BASELINE-LTA
+
+| cadesSignaturePacking(String cadesSignaturePacking)
+| CAdES Signature packing setting. Supported values: DETACHED, ENVELOPING
+
+| certificateType(String certificateType)
+| Type of certificate to request in the signature process. Supported values: PKC, QC, QC/SSCD
+
+| defaultAuthnContextClassRef(String defaultAuthnContextClassRef)
+| Default Type/level of authentication to request in the signature process.
+
+| defaultAuthnContextClassRefs(java.util.List<String> defaultAuthnContextClassRefs)
+| List of default Type/level of authentication to request in the signature process.
+
+| defaultUserIdAttributeMapping(String defaultUserIdAttributeMapping)
+| SAML Attribute name that will map against user ID if not specified in the identity provider configuration (trustedAuthenticationServices).
+
+| defaultUserIdAttributeMappingValues(java.util.List<String> defaultUserIdAttributeMappingValues)
+| List of SAML Attribute names that will map against user ID if not specified in the identity provider configuration (trustedAuthenticationServices).
+
+| enableAuthnProfile(boolean enableAuthnProfile)
+| Flag indicating if AuthnProfile element should be used or not in the generated sign request. If enable the AuthnProfile
+will be set to the related signature profile that was being used when generating the signature request.
+
+| enableAutomaticValidation(boolean enableAutomaticValidation)
+| Flag indicating if signed documents should be automatically validated before returned from the support service.
+If enabled, validation information will be included in the response from completeSignature API call.
+
+| enableEnhancedLogging(boolean enableEnhancedLogging)
+| Flag indicating if enhanced logging should be enabled or not. If enhanced logging is enabled the
+following details will be written to the logfile using INFO-level: Subject of certificate that was used for signing,
+Signing time of document(s), Reference information of document(s) that were signed, Name of document(s) that were signed,
+Issuer of certificate that was used for signing, Information about which authentication performed prior to signing (assurance level),
+Complete signature response received from central signature service during signature flow. NOTE: By enabling this feature
+sensitive information might be written to the logfile.
+
+| encryptionAlgorithmScheme(String encryptionAlgorithmScheme)
+| Algorithm scheme to use when encrypting data. Used i.e. if encrypted sign messages are
+enabled through the setting 'useEncryptedSignMessage'. Available values: RSA_PKCS1_5_WITH_AES128,
+RSA_OAEP_WITH_AES128, RSA_PKCS1_5_WITH_AES192, RSA_OAEP_WITH_AES192, RSA_PKCS1_5_WITH_AES256,
+RSA_OAEP_WITH_AES256
+
+| fetchAuthnContextClassRefFromMetaData(boolean fetchAuthnContextClassRefFromMetaData)
+| If AuthnContextClassRef should be fetched and parsed from metadata.
+
+| fetchCertAttributesFromMetaData(boolean fetchCertAttributesFromMetaData)
+| If requestedCertAttributes should be fetched and parsed from metadata.
+
+| metadataCustomCertAttribute(Map<String,Map<String,Object>> metadataCustomCertAttribute)
+| Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.
+This is a complex setting that is described in a separate section below _(Configuration value: metadataCustomCertAttribute)_.
+
+| padesSignatureLevel(String padesSignatureLevel)
+| PAdES Signature level. Supported values: PDF-NOT-ETSI, PAdES-BASELINE-B, PAdES-BASELINE-T, PAdES-BASELINE-LT, PAdES-BASELINE-LTA
+
+| padesSignaturePacking(String padesSignaturePacking)
+| PAdES Signature packing setting. Supported values: DETACHED, ENVELOPED, ENVELOPING
+
+| relatedProfile(String relatedProfile)
+| The name of the related profile, set automatically by configuration manager.
+
+| requestedCertAttributes(Map<String,Map<String,Object>> requestedCertAttributes)
+| Map containing Requests for subject attributes in a signer certificate that is associated with the signer
+of the generated signature as a result of the sign request. This is a complex setting that is described in a separate
+section below _(Configuration value: requestedCertAttributes)_.
+
+| signatureAlgorithm(String signatureAlgorithm)
+| Signature algorithm in Java-form to use.
+
+| signatureValidityMinutes(int signatureValidityMinutes)
+| Signature certificate validity in minutes to request
+
+| signatureValidityOverlapMinutes(int signatureValidityOverlapMinutes)
+| Overlap in minutes to overcome problems with time synchronization. Signing certificate ValidFrom date will
+be set to current time minus the specified overlap.
+
+| signerAttributes(Map<String,Map<String,Object>> signerAttributes)
+| Specify attributes to be included in the signer element within the sign request, in addition to the mandatory userId
+attribute (see defaultUserIdAttributeMapping) that is always included as a signer attribute. This is a complex setting
+that is described in a separate section below _(Configuration value: signerAttributes)_.
+
+| signMessageMimeType(String signMessageMimeType)
+| Mimetype of sign message. Supported values: 'TEXT', 'HTML' or 'MARKDOWN'
+
+| signMessageMustShow(boolean signMessageMustShow)
+| Flag indicating if the sign message must be shown for a valid signature.
+
+| signRequester(String signRequester)
+| Name of signature requesting entity/organisation.
+
+| signRequestExtensionVersion(String signRequestExtensionVersion)
+| Setting indicating the version that should be set in the SignRequestExtension. Default is "1.5" that supports
+multiple authn context class references.
+
+| signServiceId(String signServiceId)
+| Signature service (frontend) SAML identity to specify in generated EID Sign Requests
+(ex.https://esign.v2.st.signatureservice.se/signservice-frontend/metadata)
+
+| signServiceRequestURL(String signServiceRequestURL)
+| Signature service (frontend) URL to redirect the user to with the generated EID sign request
+(ex. https://esign.v2.st.signatureservice.se/signservice-frontend/request/4321a583928)
+
+| timeStamp(se.signatureservice.configuration.support.system.TimeStampConfig timeStampConfig)
+| Timestamp configuration.
+
+| trustedAuthenticationServices(Map<String,Map<String,Object>> trustedAuthenticationServices)
+| Map containing trusted authentication services/identity providers that can be used for the given profile. This is a
+complex setting that is described in a separate section below _(Configuration value: trustedAuthenticationServices)_.
+
+| useEncryptedSignMessage(boolean useEncryptedSignMessage)
+| Flag to choose if sign message should be encrypted or not. If this is enabled the sign message will be
+encrypted using the public key of the identity provider.
+
+| userDisplayNameAttribute(String userDisplayNameAttribute)
+| User attribute key that will be used to fetch display name of user to use when performing signatures. If this
+setting is missing or if the specified attribute is missing the userId will be used.
+
+| userIdAttributeMapping(String userIdAttributeMapping)
+| SAML Attribute name that will map against user ID. Deprecated Use defaultUserIdAttributeMapping (since 2019-05-25).
+
+| validationPolicy(String validationPolicy)
+| Validation policy to use when verifying signed documents. Policy file must be present in the class path.
+(Default value: "/policy/basicpolicy.xml")
+
+| visibleSignatureConfig(se.signatureservice.configuration.support.system.VisibleSignatureConfig config)
+| Visible signature configuration.
+
+| xadesCanonicalizationAlgorithmURI(String xadesCanonicalizationAlgorithmURI)
+| XAdES canonicalization algorithm that will be used when calculating digests for SignedInfo and SignedProperties structures
+
+| xadesSignatureLevel(String xadesSignatureLevel)
+| XAdES Signature level. Supported values: XML-NOT-ETSI, XAdES-BASELINE-B, XAdES-BASELINE-T, XAdES-BASELINE-LT, XAdES-BASELINE-LTA
+
+| xadesSignaturePacking(String xadesSignaturePacking)
+| XAdES Signature packing setting. Supported values: DETACHED, ENVELOPED, ENVELOPING
+
+| xadesXPathLocationString(String xadesXPathLocationString)
+| XAdES XPath location string that defines the area where the signature will be added
+
+| build()
+| Build the SupportAPIProfile instance.
+|===
+
+===== Configuration value: metadataCustomCertAttribute
+Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.
+Used in special cases when the Name in RequestedAttribute metadata don't apply.
+
+For each entry the following configuration keys are used:
+
+* **samlAttributeName** - The SAML attribute name to be matched against the Name for a RequestedAttribute in the metadata.
+* **certAttributeRef** - To which the samlAttributeName will be mapped to.
+
+*Example configuration 1:*
+```
+ metadataCustomCertAttribute:
+   givenName:
+     samlAttributeName: "http://sambi.se/attributes/1/givenName"
+     certAttributeRef: "2.5.4.42"
+```
+
+*Example configuration 2:*
+```
+metadataCustomCertAttribute:
+  surName:
+   samlAttributeName:
+      -"http://sambi.se/attributes/1/surname"
+      -"urn:surname"
+    certAttributeRef: "2.5.4.4"
+    certNameType: "sda"
+    required: true
+```
+
+===== Configuration value: signerAttributes
+Map containing attributes to be included in the signer element within the sign request,
+in addition to the mandatory userId attribute (see defaultUserIdAttributeMapping) that
+is always included as a signer attribute.
+
+For each entry the following configuration keys are used:
+
+* **samlAttributeName** - The SAML attribute name to use for the signer attribute.
+* **userAttributeMapping** - User attribute key to look for when populating the signer attribute value.
+* **required** - If set to true the user given user attribute must exist, or an error is generated.
+If set to false the signer attribute is set only if the user attribute exists.
+
+Example configuration:
+```
+signerAttributes {
+    orgAffiliation {
+        samlAttributeName = "urn:oid:1.2.752.201.3.1"
+        userAttributeMapping = "orgAffiliation"
+        required = true
+    }
+}
+```
+
+===== Configuration value: trustedAuthenticationServices
+Map containing trusted authentication services/identity providers that  can be used for the given profile.
+Corresponding metadata for each trusted service must also be available in the metadata directory.
+
+NOTE: defaultDisplayName will be used if display name is not available in metadata.
+
+Example configuration:
+```
+trustedAuthenticationServices {
+    iDPTest {
+        entityId = "https://idptest.someservice.se/samlv2/idp/metadata"
+        defaultDisplayName = "Test iDP ST"
+        authnContextClassRef = "urn:oasis:names:tc:SAML:2.0:ac:classes:Password"
+        userIdAttributeMapping = "urn:oid:1.2.752.29.4.13"
+    }
+}
+```
+
+===== Configuration value: requestedCertAttributes
+Map containing Requests for subject attributes in a signer certificate that is associated with the signer of the
+generated signature as a result of the sign request.
+
+Example configuration:
+```
+requestedCertAttributes {
+    givenName {
+        samlAttributeName = "urn:oid:2.5.4.42"
+        certAttributeRef = "2.5.4.42"
+        required = true
+    }
+}
+```
