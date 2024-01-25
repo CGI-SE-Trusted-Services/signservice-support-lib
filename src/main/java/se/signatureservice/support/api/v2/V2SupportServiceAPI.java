@@ -1261,15 +1261,17 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if (config.getVisibleSignature().isShowLogo()) {
                 DSSDocument logoDocument = null;
 
-                for(Attribute signatureAttribute : signatureAttributes){
-                    if(Objects.equals(signatureAttribute.getKey(), VISIBLE_SIGNATURE_LOGO_IMAGE)){
-                        log.info("Using logo image specified as signature attribute");
-                        try {
-                            logoDocument = new InMemoryDocument(Base64.decode(signatureAttribute.getValue().getBytes(StandardCharsets.UTF_8)));
-                        } catch(Exception e){
-                            log.error("Unable to parse image data from signature attribute (" + VISIBLE_SIGNATURE_LOGO_IMAGE + "). Verify that the attribute contains image data as Base64-encoded string.");
+                if(signatureAttributes != null) {
+                    for (Attribute signatureAttribute : signatureAttributes) {
+                        if (Objects.equals(signatureAttribute.getKey(), VISIBLE_SIGNATURE_LOGO_IMAGE)) {
+                            log.info("Using logo image specified as signature attribute");
+                            try {
+                                logoDocument = new InMemoryDocument(Base64.decode(signatureAttribute.getValue().getBytes(StandardCharsets.UTF_8)));
+                            } catch (Exception e) {
+                                log.error("Unable to parse image data from signature attribute (" + VISIBLE_SIGNATURE_LOGO_IMAGE + "). Verify that the attribute contains image data as Base64-encoded string.");
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
 

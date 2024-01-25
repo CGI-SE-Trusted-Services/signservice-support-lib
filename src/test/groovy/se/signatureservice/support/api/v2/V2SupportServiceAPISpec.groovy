@@ -26,6 +26,7 @@ import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.ContextMessageSecurityProvider
+import org.certificateservices.messages.MessageSecurityProvider
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType
 import org.certificateservices.messages.utils.CertUtils
 import org.joda.time.DateTime
@@ -128,6 +129,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "https://idp.cgi.com/v2/metadata",
                 "https://localhost:8080/response",
                 testProfile1,
+                null,
                 null
         )
 
@@ -214,6 +216,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "https://idp.cgi.com/v2/metadata",
                 "https://localhost:8080/response",
                 testProfile2,
+                null,
                 null
         )
 
@@ -301,6 +304,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7",
                 "https://localhost:8080/response",
                 testProfile3,
+                null,
                 null
         )
 
@@ -345,6 +349,7 @@ class V2SupportServiceAPISpec extends Specification {
             "https://idp.cgi.com/v2/metadata",
             "https://localhost:8080/response",
             testProfile4,
+            null,
             null
         )
 
@@ -383,6 +388,7 @@ class V2SupportServiceAPISpec extends Specification {
             "https://idp.cgi.com/v2/metadata",
             "https://localhost:8080/response",
             testProfile5,
+            null,
             null
         )
 
@@ -408,6 +414,7 @@ class V2SupportServiceAPISpec extends Specification {
             "https://idp.cgi.com/v2/metadata",
             "https://localhost:8080/response",
             testProfile6,
+            null,
             null
         )
 
@@ -434,6 +441,7 @@ class V2SupportServiceAPISpec extends Specification {
             "https://idp.cgi.com/v2/metadata",
             "https://localhost:8080/response",
             testProfile7,
+            null,
             null
         )
 
@@ -587,7 +595,8 @@ class V2SupportServiceAPISpec extends Specification {
                 authenticationServiceId,
                 "https://localhost:8080/response",
                 testProfile9,
-                signatureAttributes
+                signatureAttributes,
+                null
         )
 
         then:
@@ -885,6 +894,39 @@ class V2SupportServiceAPISpec extends Specification {
         }
     }
 
+    def "test that unsupported document signature attributes result in error"(){
+        setup:
+        SupportAPIProfile profile = new SupportAPIProfile.Builder()
+                .relatedProfile("testProfile")
+                .addTrustedAuthenticationService("authService", "authService", "authService")
+                .addRequestedCertAttribute("certAttribute", "certAttribute", "certAttribute", false)
+                .addAuthorizedConsumerURL("consumerUrl")
+                .visibleSignatureConfig(new VisibleSignatureConfig(
+                        ["enable": "true"]
+                ))
+                .build()
+        DocumentRequests documentRequests = new DocumentRequests([
+                new DocumentSigningRequest(referenceId: "abc123", data: new File("src/test/resources/testdocument.pdf").bytes, type: "application/pdf", name: "testdocument1.pdf"),
+        ])
+        User user = new User(userId: "190101010001")
+        List<Attribute> signatureAttributes = []
+        Map<String,List<Attribute>> documentSignatureAttributes = [
+                "abc123": [
+                        new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "classRef42"),
+                ]
+        ]
+
+        when:
+        supportServiceAPI.prepareSignature(profile, documentRequests, UUID.randomUUID().toString(),
+                "Test signature attributes", user, "authService", "consumerUrl",
+                signatureAttributes, documentSignatureAttributes
+        )
+
+        then:
+        ClientErrorException exception = thrown()
+        exception.message == "The provided signature attribute (auth_context_class_ref) is not allowed to be specified per document"
+    }
+
     def "test that signature attribute pre-processor is called for all documents"(){
         setup:
         User user = new User(userId: "190102030010")
@@ -911,7 +953,8 @@ class V2SupportServiceAPISpec extends Specification {
                 "https://idp.cgi.com/v2/metadata",
                 "https://localhost:8080/response",
                 testProfile1,
-                signatureAttributes
+                signatureAttributes,
+                null
         )
 
         then:
@@ -1026,8 +1069,9 @@ class V2SupportServiceAPISpec extends Specification {
     def "test that proxy settings are used if specified"(){
         when:
         V2SupportServiceAPI proxyAPI = new V2SupportServiceAPI.Builder()
-                .validationProxy("proxy.test.com", 1234, "user", "pass", ["google.com", "ikea.se"])
-                .build() as V2SupportServiceAPI
+            .messageSecurityProvider(Mock(MessageSecurityProvider))
+            .validationProxy("proxy.test.com", 1234, "user", "pass", ["google.com", "ikea.se"])
+            .build() as V2SupportServiceAPI
         ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)proxyAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
         ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)proxyAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
 
@@ -1091,6 +1135,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "https://idp.cgi.com/v2/metadata",
                 "https://localhost:8080/response",
                 testProfile11,
+                null,
                 null
         )
 
