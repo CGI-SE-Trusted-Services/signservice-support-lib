@@ -46,13 +46,13 @@ dependencies {
     api "org.apache.pdfbox:pdfbox:2.0.27"
     api "org.apache.santuario:xmlsec:2.3.4"
     api "org.slf4j:slf4j-api:1.7.36"
-    api("org.json:json:20231013") {
+    api("org.json:json:20240205") {
         exclude group: 'cn.hutool', module: 'hutool-json'
     }
     api "org.slf4j:slf4j-simple:1.7.36"
-    api "org.apache.httpcomponents:httpclient:4.5.13"
+    api "org.apache.httpcomponents:httpclient:4.5.14"
     api "org.bouncycastle:bcprov-jdk15on:1.70"
-    api("org.springframework:spring-context:5.3.30") {
+    api("org.springframework:spring-context:5.3.32") {
         exclude module: "spring-beans"
     }
     api("org.certificateservices.messages:certservice-messages") {
@@ -61,22 +61,21 @@ dependencies {
         exclude(module: "xmlsec")
         exclude(group: "org.bouncycastle")
     }
-    if(project.rootProject.name == "signservice") {
+    if (project.rootProject.name == "signservice") {
         api project(":signservice-java-configuration")
     } else {
         api("se.signatureservice.configuration:signservice-java-configuration:2203.1")
     }
     implementation "joda-time:joda-time:2.10.6"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.14.3"
-    implementation 'com.fasterxml.woodstox:woodstox-core:6.4.0'
 
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:$dssVersion"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:$dssVersion"
     testImplementation 'com.squareup.okhttp3:okhttp:4.10.0'
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:${tomcatEmbedVersion}"
     testImplementation "org.codehaus.groovy.modules.http-builder:http-builder:0.7.1"
-    testImplementation "org.codehaus.groovy:groovy-xml:3.0.12"
-    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.12"
+    testImplementation "org.codehaus.groovy:groovy-xml:3.0.19"
+    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.19"
 
     testImplementation platform("org.spockframework:spock-bom:2.3-groovy-3.0")
     testImplementation "org.spockframework:spock-core"

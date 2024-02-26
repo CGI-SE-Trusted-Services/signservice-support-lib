@@ -17,7 +17,7 @@ import se.signatureservice.configuration.common.InvalidArgumentException;
 
 /**
  * Class listing all available sign algorithms and based on the
- * reference code provided by elegitimationsnämnden.
+ * reference code provided by elegitimationsnamnden.
  *
  * @author Philip Vendil
  *
