@@ -1835,20 +1835,33 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Retrieves the signservice request URL from signature attributes or falls back to profile configuration.
+     * Retrieves the SignService request URL from the provided signature attributes if available;
+     * otherwise, falls back to the URL from the profile configuration, or constructs a fallback URL using the SignServiceId.
      *
-     * @param profileConfig        the profile configuration containing default SignServiceRequestURL.
+     * @param profileConfig        the profile configuration containing the default SignServiceRequestURL and the SignServiceId.
      * @param signatureAttributes  list of attributes from which to extract the SignServiceRequestURL.
-     * @return the SignServiceRequestURL found in signature attributes, or the default from profileConfig if not found.
+     * @return the SignServiceRequestURL found in signature attributes, the default from profileConfig, or a fallback URL constructed from the SignServiceId if not found.
      */
     private String getSignServiceRequestURL(SupportAPIProfile profileConfig, List<Attribute> signatureAttributes) {
-        String attributeValue = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, ATTRIBUTE_SIGNSERVICE_REQUEST_URL);
-        if (attributeValue != null && !attributeValue.isEmpty()) {
-            log.info("Setting SignServiceRequestURL from SOAP API SignatureAttributes Parameter " + ATTRIBUTE_SIGNSERVICE_REQUEST_URL + ": " + attributeValue);
-            return attributeValue;
+        String fromAttributes = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, ATTRIBUTE_SIGNSERVICE_REQUEST_URL);
+        if (fromAttributes != null && !fromAttributes.isEmpty()) {
+            log.info("Setting SignServiceRequestURL from SOAP API SignatureAttributes Parameter " + ATTRIBUTE_SIGNSERVICE_REQUEST_URL + ": " + fromAttributes);
+            return fromAttributes;
         }
-        log.info("Setting SignServiceRequestURL from Profile Configuration: " + profileConfig.getSignServiceRequestURL());
-        return profileConfig.getSignServiceRequestURL();
+
+        String fromProfile = profileConfig.getSignServiceRequestURL();
+        if (fromProfile != null) {
+            log.info("Setting SignServiceRequestURL from Profile Configuration: " + fromProfile);
+            return fromProfile;
+        }
+
+        String fallbackUrl = profileConfig.getSignServiceId();
+        if (fallbackUrl != null) {
+            log.info("Setting SignServiceRequestURL from SignServiceId: " + fallbackUrl + " to " + fallbackUrl.replace("/metadata/", "/request/"));
+            return fallbackUrl.replace("/metadata/", "/request/");
+        }
+        log.warn("Unable to set any SignServiceRequestURL");
+        return null;
     }
 
     /**

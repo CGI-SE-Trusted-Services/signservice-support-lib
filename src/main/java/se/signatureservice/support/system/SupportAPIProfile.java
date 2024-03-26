@@ -669,6 +669,10 @@ public class SupportAPIProfile implements SupportProfile {
         this.trustedAuthenticationServices = trustedAuthenticationServices;
     }
 
+    public void addTrustedAuthenticationService(String key, Map<String,Object> value) {
+        this.trustedAuthenticationServices.put(key, value);
+    }
+
     public boolean addTrustedAuthenticationServiceAuthnContextClassRef(String idp, List<String> supportedAuthnContextClassRefs) {
         if (supportedAuthnContextClassRefs == null || supportedAuthnContextClassRefs.isEmpty()) {
             return false;
@@ -681,6 +685,21 @@ public class SupportAPIProfile implements SupportProfile {
 
         service.keySet().removeIf(key -> key.startsWith("authnContextClassRef"));
         service.put("authnContextClassRefs", supportedAuthnContextClassRefs);
+        return true;
+    }
+
+    public boolean addDefaultDisplayNameToTrustedAuthenticationService(String idp, String displayName) {
+        if (displayName == null || displayName.isEmpty()) {
+            return false;
+        }
+
+        Map<String, Object> service = getTrustedAuthenticationServices().get(idp);
+        if (service == null) {
+            return false;
+        }
+
+        service.keySet().removeIf(key -> key.startsWith("defaultDisplayName"));
+        service.put("defaultDisplayName", displayName);
         return true;
     }
 

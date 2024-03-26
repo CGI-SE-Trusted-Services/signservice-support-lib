@@ -85,6 +85,11 @@ public class AvailableSignatureAttributes {
     public static final String ATTRIBUTE_SERVICE_NAME = "service_name";
 
     /**
+     * Preferred Lang.
+     */
+    public static final String ATTRIBUTE_PREFERRED_LANG = "preferred_lang";
+
+    /**
      * AuthContextClassRef
      */
     public static final String ATTRIBUTE_AUTH_CONTEXT_CLASS_REF = "auth_context_class_ref";
