@@ -21,7 +21,6 @@ repositories {
     mavenCentral()
 }
 
-
 configurations {
     integrationTestCompileClasspath.extendsFrom testCompileClasspath
     integrationTestRuntimeOnly.extendsFrom runtimeOnly
@@ -50,10 +49,10 @@ dependencies {
     api "org.slf4j:slf4j-simple:1.7.36"
     api "org.apache.httpcomponents:httpclient:4.5.14"
     api "org.bouncycastle:bcprov-jdk15on:1.70"
-    api("org.springframework:spring-context:5.3.32") {
+    api("org.springframework:spring-context:5.3.33") {
         exclude module: "spring-beans"
     }
-    api("org.certificateservices.messages:certservice-messages") {
+    api("org.certificateservices.messages:certservice-messages:v2402.1") {
         // certservice-messages is using a newer version of xmlsec and bouncy castle
         // which is not compatible with the current version of DSS library.
         exclude(module: "xmlsec")
@@ -62,7 +61,7 @@ dependencies {
     if (project.rootProject.name == "signservice") {
         api project(":signservice-java-configuration")
     } else {
-        api("se.signatureservice.configuration:signservice-java-configuration:2203.1")
+        api("se.signatureservice.configuration:signservice-java-configuration:v2402.1")
     }
     implementation "joda-time:joda-time:2.10.6"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.14.3"
