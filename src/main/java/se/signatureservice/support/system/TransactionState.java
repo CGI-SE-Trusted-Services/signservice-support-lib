@@ -12,17 +12,14 @@
  *************************************************************************/
 package se.signatureservice.support.system;
 
+import se.signatureservice.support.api.v2.Attribute;
 import se.signatureservice.support.api.v2.DocumentRequests;
 import se.signatureservice.support.api.v2.User;
 import se.signatureservice.support.utils.SerializableUtils;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Serializable class containing all information needed to describe
@@ -38,7 +35,7 @@ public class TransactionState implements Externalizable {
      * The latest version of persisted data. Should be update for every change in the stored
      * data.
      */
-    private static final int LATEST_VERSION = 1;
+    private static final int LATEST_VERSION = 2;
 
     /**
      * The transaction id to be used if same id should be used in
@@ -86,8 +83,8 @@ public class TransactionState implements Externalizable {
     private Map<String, Date> signingTime = new HashMap<>();
 
     /**
-     *  Transaction start time represented as the number of milliseconds
-     *  since epoch (Midnight January 1, 1970 UTC).
+     * Transaction start time represented as the number of milliseconds
+     * since epoch (Midnight January 1, 1970 UTC).
      */
     private long transactionStart;
 
@@ -96,6 +93,18 @@ public class TransactionState implements Externalizable {
      * With completed means that a call to completeSignature has been performed.
      */
     private boolean completed;
+
+    /**
+     * List containing the attributes to include in the signature request
+     * to control various behaviour.
+     */
+    private List<Attribute> signatureAttributes;
+
+    /**
+     * Map with a key used for document reference ID which is mapped to the list of signature attributes that should be used for
+     * that particular document.
+     */
+    private Map<String, List<Attribute>> documentSignatureAttributes;
 
     public String getTransactionId() {
         return transactionId;
@@ -169,11 +178,27 @@ public class TransactionState implements Externalizable {
         this.completed = completed;
     }
 
+    public List<Attribute> getSignatureAttributes() {
+        return signatureAttributes;
+    }
+
+    public void setSignatureAttributes(List<Attribute> signatureAttributes) {
+        this.signatureAttributes = signatureAttributes;
+    }
+
+    public Map<String, List<Attribute>> getDocumentSignatureAttributes() {
+        return documentSignatureAttributes;
+    }
+
+    public void setDocumentSignatureAttributes(Map<String, List<Attribute>> documentSignatureAttributes) {
+        this.documentSignatureAttributes = documentSignatureAttributes;
+    }
+
     /**
      * Serialize object and writing its content to stream
      *
      * @param output the stream to write the object to
-     * @exception IOException Includes any I/O exceptions that may occur
+     * @throws IOException Includes any I/O exceptions that may occur
      */
     @Override
     public void writeExternal(ObjectOutput output) throws IOException {
@@ -184,26 +209,40 @@ public class TransactionState implements Externalizable {
         SerializableUtils.serializeNullableString(output, authenticationServiceId);
         SerializableUtils.serializeNullableObject(output, user);
         SerializableUtils.serializeNullableObject(output, documents);
-        if(signingTime != null){
+
+        if (signingTime != null) {
             output.writeInt(signingTime.size());
-            for(Map.Entry<String,Date> entry : signingTime.entrySet()){
+            for (Map.Entry<String, Date> entry : signingTime.entrySet()) {
                 SerializableUtils.serializeNullableString(output, entry.getKey());
                 SerializableUtils.serializeNullableDate(output, entry.getValue());
             }
         } else {
             output.writeInt(-1);
         }
+
         output.writeLong(transactionStart);
         output.writeBoolean(completed);
+
+        SerializableUtils.serializeNullableList(output, Collections.singletonList(signatureAttributes));
+
+        if (documentSignatureAttributes != null) {
+            output.writeInt(documentSignatureAttributes.size());
+            for (Map.Entry<String, List<Attribute>> entry : documentSignatureAttributes.entrySet()) {
+                SerializableUtils.serializeNullableString(output, entry.getKey());
+                SerializableUtils.serializeNullableList(output, Collections.singletonList(entry.getValue()));
+            }
+        } else {
+            output.writeInt(-1);
+        }
     }
 
     /**
      * Deserialize object through data from stream
      *
      * @param input the stream to read data from in order to restore the object
-     * @exception IOException if I/O errors occur
-     * @exception ClassNotFoundException If the class for an object being
-     *              restored cannot be found.
+     * @throws IOException            if I/O errors occur
+     * @throws ClassNotFoundException If the class for an object being
+     *                                restored cannot be found.
      */
     @Override
     public void readExternal(ObjectInput input) throws IOException, ClassNotFoundException {
@@ -214,12 +253,40 @@ public class TransactionState implements Externalizable {
         authenticationServiceId = SerializableUtils.deserializeNullableString(input);
         user = (User) SerializableUtils.deserializeNullableObject(input);
         documents = (DocumentRequests) SerializableUtils.deserializeNullableObject(input);
+
         signingTime = new HashMap<>();
-        int size = input.readInt();
-        for(int i=0;i<size;i++){
+        int signingTimeSize = input.readInt();
+        for (int i = 0; i < signingTimeSize; i++) {
             signingTime.put(SerializableUtils.deserializeNullableString(input), SerializableUtils.deserializeNullableDate(input));
         }
+
         transactionStart = input.readLong();
         completed = input.readBoolean();
+
+        if (ver > 1) {
+            List<? extends Serializable> serializedAttributes = SerializableUtils.deserializeNullableList(input);
+            signatureAttributes = serializedAttributes != null ?
+                    serializedAttributes.stream()
+                            .filter(Attribute.class::isInstance) // Ensure it's an instance of Attribute
+                            .map(Attribute.class::cast) // Cast to Attribute
+                            .collect(Collectors.toList())
+                    : Collections.emptyList();
+
+            documentSignatureAttributes = new HashMap<>();
+            int docSigAttrsSize = input.readInt();
+            for (int i = 0; i < docSigAttrsSize; i++) {
+                String serializedKey = SerializableUtils.deserializeNullableString(input);
+                List<Serializable> serializedList = SerializableUtils.deserializeNullableList(input);
+
+                List<Attribute> attributeList = serializedList != null ?
+                        serializedList.stream()
+                                .filter(Attribute.class::isInstance) // Ensure it's an instance of Attribute
+                                .map(Attribute.class::cast) // Cast to Attribute
+                                .collect(Collectors.toList())
+                        : Collections.emptyList();
+
+                documentSignatureAttributes.put(serializedKey, attributeList);
+            }
+        }
     }
 }
