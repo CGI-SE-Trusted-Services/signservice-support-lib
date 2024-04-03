@@ -272,6 +272,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             transactionState.setDocuments(documents);
             transactionState.setTransactionStart(operationStart);
             transactionState.setCompleted(false);
+            transactionState.setSignatureAttributes(signatureAttributes);
+            transactionState.setDocumentSignatureAttributes(documentSignatureAttributes);
 
             storeTransactionState(preparedSignature.getTransactionId(), transactionState);
         } catch (Exception e) {
@@ -623,12 +625,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     break;
                 case PDF:
                     PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters) signatureParameters;
-                    boolean validAttributes = validateVisibleSignatureAttributesFromCache(strongReferenceId);
                     pAdESParameters.setSignerName(getSigningId(relatedTransaction.getUser(), config));
                     pAdESParameters.setContentSize(config.getPadesContentSize());
                     if (config.getVisibleSignature().isEnable()) {
-                        if (validAttributes) {
-                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), strongReferenceId, null);
+                        if (validateVisibleSignatureAttributesFromCache(strongReferenceId)) {
+                            List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(document).preProcess(relatedTransaction.getDocumentSignatureAttributes() != null ? relatedTransaction.getDocumentSignatureAttributes().getOrDefault(document.referenceId, relatedTransaction.getSignatureAttributes()) : relatedTransaction.getSignatureAttributes(), document);
+                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), strongReferenceId, preProcessedSignatureAttributes);
                         } else {
                             log.warn("Visible signatures are enabled in configuration (enableVisibleSignature) but required signature attributes are missing. The following attributes are required: " +
                                     AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_X + ", " +
@@ -1379,17 +1381,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @param transactionId Transaction ID that will be used as cache key
      * @param state         Transaction state to save for the given relay state
-     * @return Stored state
      */
-    protected TransactionState storeTransactionState(String transactionId, TransactionState state) throws IOException, InvalidArgumentException, InternalErrorException {
+    protected void storeTransactionState(String transactionId, TransactionState state) throws IOException, InvalidArgumentException, InternalErrorException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(state);
         MetaData metaData = new MetaData();
         metaData.setTimeToLive(Constants.DEFAULT_TRANSACTION_TTL);
         cacheProvider.set(transactionId, baos.toByteArray(), metaData);
-
-        return state;
     }
 
     /**
@@ -1402,7 +1401,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         byte[] serializedState = cacheProvider.getBinary(transactionId);
         if (serializedState != null) {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(serializedState)) {
-                protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
+                protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws ClassNotFoundException {
                     return Class.forName(objectStreamClass.getName(), true, V2SupportServiceAPI.class.getClassLoader());
                 }
             };
@@ -1815,7 +1814,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     private String getUserIdAttributeMapping(String authenticationServiceId, SupportAPIProfile config) {
         if (config.getUserIdAttributeMapping() != null) {
-            log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please remove it and use 'defaultUserIdAttributeMapping' instead.");
+            log.warn("Profile configuration 'userIdAttributeMapping' is deprecated. Please use 'defaultUserIdAttributeMapping' instead.");
         }
 
         String userIdAttributeMapping = config.getDefaultUserIdAttributeMapping();
@@ -2017,27 +2016,20 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @param consumerURL URL to validate
      * @param config      Configuration to validate against
-     * @return true if consumer URL is valid and authorized
      * @throws ServerErrorException If consumer URL is not authorized to use
      */
-    private boolean validateConsumerURL(String consumerURL, SupportAPIProfile config) throws ServerErrorException {
-        boolean authorized = false;
+    private void validateConsumerURL(String consumerURL, SupportAPIProfile config) throws ServerErrorException {
         if (config.getAuthorizedConsumerURLs() != null) {
             for (String url : config.getAuthorizedConsumerURLs()) {
                 if (consumerURL.startsWith(url)) {
-                    authorized = true;
-                    break;
+                    return;
                 }
             }
         } else {
-            log.warn("No authorized consumer URLs specified in configuration");
+            log.warn("No authorized consumer URLs specified in configuration.");
         }
 
-        if (!authorized) {
-            throw (ServerErrorException) ErrorCode.INVALID_CONFIGURATION.toException("Unauthorized consumer URL: " + consumerURL + ".");
-        }
-
-        return true;
+        throw (ServerErrorException) ErrorCode.INVALID_CONFIGURATION.toException("Unauthorized consumer URL: " + consumerURL + ".");
     }
 
     private void validateAuthenticationServiceId(String authenticationServiceId, SupportAPIProfile config) throws ClientErrorException {
