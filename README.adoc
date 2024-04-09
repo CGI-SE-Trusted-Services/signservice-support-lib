@@ -417,6 +417,39 @@ The following table shows supported template variables that can be used.
 | Will be replaced by signature attribute value with the specified key. For example to use the value of a signature attribute named *department* the variable in the template is specified as *{signatureAttribute.department}*.
 |===
 
+==== Visible Signature Attributes
+There are a number of signature parameters that can be used in order to control visible signatures. These attributes are specified
+in the initial call to `prepareSignature(...)` and can be specified either for all documents or for individual documents. The
+following table shows available signature attributes related to visible signatures.
+
+|===
+| Attribute key | Default value | Description
+
+| visible_signature_position_x
+| 20
+| Horizontal position of visible signature.
+
+| visible_signature_position_y
+| 20
+| Vertical position of visible signature.
+
+| visible_signature_width
+| _Automatically calculated_
+| Width of visible signature including text and optional image. It is recommended to let the library calculate this.
+
+| visible_signature_height
+| _Automatically calculated_
+| Height of visible signature including text and optional image. It is recommended to let the library calculate this.
+
+| visible_signature_page
+| 1
+| Page of PDF-document that the visible signature will be rendered on. If this number is greater than the number of pages it will be rendered on the last page.
+
+| visible_signature_logo_image
+| _n/a_
+| Image to use in the visible signature represented as a Base64-encoded string. The image must include metadata information about the mimetype and/or filename (ex. _XMP dc:format_).
+|===
+
 == API Reference
 This section gives detailed information about important classes and methods that are used within the library
 when creating and validating signatures.
