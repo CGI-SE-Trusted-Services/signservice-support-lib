@@ -1004,7 +1004,7 @@ public class SupportAPIProfile implements SupportProfile {
             newAttribute.put("required", Boolean.toString(required));
             signerAttributes.put(name, newAttribute);
 
-            config.setRequestedCertAttributes(signerAttributes);
+            config.setSignerAttributes(signerAttributes);
             return this;
         }
 
