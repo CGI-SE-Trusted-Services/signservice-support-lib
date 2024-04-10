@@ -239,4 +239,23 @@ class SupportAPIProfileSpec extends Specification {
         profile.signRequestExtensionVersion == "1.5"
         profile.validationPolicy == "/policy/basicpolicy.xml"
     }
+
+    def "test to add individual signer attributes"(){
+        when:
+        SupportAPIProfile profile = new SupportAPIProfile.Builder()
+            .addSignerAttribute("testattribute1", "urn:oid:2.5.4.42", "userattribute1", true)
+            .addSignerAttribute("testattribute2", "urn:oid:2.5.4.10", "userattribute2", false)
+            .build()
+
+        then:
+        profile.signerAttributes != null
+        profile.signerAttributes["testattribute1"] != null
+        profile.signerAttributes["testattribute1"]["samlAttributeName"] == "urn:oid:2.5.4.42"
+        profile.signerAttributes["testattribute1"]["userAttributeMapping"] == "userattribute1"
+        profile.signerAttributes["testattribute1"]["required"] == "true"
+        profile.signerAttributes["testattribute2"] != null
+        profile.signerAttributes["testattribute2"]["samlAttributeName"] == "urn:oid:2.5.4.10"
+        profile.signerAttributes["testattribute2"]["userAttributeMapping"] == "userattribute2"
+        profile.signerAttributes["testattribute2"]["required"] == "false"
+    }
 }

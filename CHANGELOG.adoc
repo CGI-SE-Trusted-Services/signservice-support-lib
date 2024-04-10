@@ -3,6 +3,24 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2403.2
+
+=== Improvements and bug fixes
+* Fixed bug causing incorrect serialization of signature attributes.
+* Fixed bug when adding individual signer attributes using `SupportAPIProfile.Builder`.
+
+== Version 2403.1
+
+=== Improvements and bug fixes
+* Fixed bug related to signature attributes not being stored properly in cache.
+* Upgraded certservice-messages dependency to version 2402.1.
+* Upgraded signservice-java-configuration dependency to version 2402.1.
+* Upgraded Gradle build tool to version 7.2.
+* Minor upgrades of various dependencies in order to fix vulnerabilities.
+
+=== New features
+* Default display name of trusted identity provider can be specified in `SupportAPIProfile.Builder`.
+
 == Version 2401.1
 
 === New features

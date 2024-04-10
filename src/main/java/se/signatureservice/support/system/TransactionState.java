@@ -264,28 +264,16 @@ public class TransactionState implements Externalizable {
         completed = input.readBoolean();
 
         if (ver > 1) {
-            List<? extends Serializable> serializedAttributes = SerializableUtils.deserializeNullableList(input);
-            signatureAttributes = serializedAttributes != null ?
-                    serializedAttributes.stream()
-                            .filter(Attribute.class::isInstance) // Ensure it's an instance of Attribute
-                            .map(Attribute.class::cast) // Cast to Attribute
-                            .collect(Collectors.toList())
-                    : Collections.emptyList();
-
+            List<Serializable> deserializedAttributes = SerializableUtils.deserializeNullableList(input);
+            signatureAttributes = deserializedAttributes != null && deserializedAttributes.size() == 1 ? (List<Attribute>) deserializedAttributes.get(0) : Collections.emptyList();
             documentSignatureAttributes = new HashMap<>();
             int docSigAttrsSize = input.readInt();
             for (int i = 0; i < docSigAttrsSize; i++) {
-                String serializedKey = SerializableUtils.deserializeNullableString(input);
-                List<Serializable> serializedList = SerializableUtils.deserializeNullableList(input);
-
-                List<Attribute> attributeList = serializedList != null ?
-                        serializedList.stream()
-                                .filter(Attribute.class::isInstance) // Ensure it's an instance of Attribute
-                                .map(Attribute.class::cast) // Cast to Attribute
-                                .collect(Collectors.toList())
-                        : Collections.emptyList();
-
-                documentSignatureAttributes.put(serializedKey, attributeList);
+                String deserializedKey = SerializableUtils.deserializeNullableString(input);
+                List<Serializable> deserializedDocumentAttributes = SerializableUtils.deserializeNullableList(input);
+                documentSignatureAttributes.put(deserializedKey,
+                        deserializedDocumentAttributes != null && deserializedDocumentAttributes.size() == 1 ? (List<Attribute>) deserializedDocumentAttributes.get(0) : Collections.emptyList()
+                );
             }
         }
     }
