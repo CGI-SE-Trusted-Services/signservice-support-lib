@@ -55,6 +55,26 @@ public class AvailableSignatureAttributes {
     public static final String VISIBLE_SIGNATURE_LOGO_IMAGE = "visible_signature_logo_image";
 
     /**
+     * ServiceName.
+     */
+    public static final String ATTRIBUTE_SERVICE_NAME = "service_name";
+
+    /**
+     * Preferred Lang.
+     */
+    public static final String ATTRIBUTE_PREFERRED_LANG = "preferred_lang";
+
+    /**
+     * AuthContextClassRef
+     */
+    public static final String ATTRIBUTE_AUTH_CONTEXT_CLASS_REF = "auth_context_class_ref";
+
+    /**
+     * SignServiceRequestURL
+     */
+    public static final String ATTRIBUTE_SIGNSERVICE_REQUEST_URL = "signservice_request_url";
+
+    /**
      * Default value for visible signature X-position.
      */
     public static final String DEFAULT_VISIBLE_SIGNATURE_POSITION_X = "20";
@@ -78,26 +98,6 @@ public class AvailableSignatureAttributes {
      * Default value for visible signature page.
      */
     public static final String DEFAULT_VISIBLE_SIGNATURE_PAGE = "1";
-
-    /**
-     * ServiceName.
-     */
-    public static final String ATTRIBUTE_SERVICE_NAME = "service_name";
-
-    /**
-     * Preferred Lang.
-     */
-    public static final String ATTRIBUTE_PREFERRED_LANG = "preferred_lang";
-
-    /**
-     * AuthContextClassRef
-     */
-    public static final String ATTRIBUTE_AUTH_CONTEXT_CLASS_REF = "auth_context_class_ref";
-
-    /**
-     * SignServiceRequestURL
-     */
-    public static final String ATTRIBUTE_SIGNSERVICE_REQUEST_URL = "signservice_request_url";
 
     /**
      * Array of signature attributes that are allowed to be specified per document.
