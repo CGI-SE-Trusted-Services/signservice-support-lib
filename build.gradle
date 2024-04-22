@@ -42,11 +42,11 @@ dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:$dssVersion"
     api "org.apache.pdfbox:pdfbox:2.0.27"
     api "org.apache.santuario:xmlsec:2.3.4"
-    api "org.slf4j:slf4j-api:2.0.9"
+    api "org.slf4j:slf4j-api:1.7.36"
     api("org.json:json:20240205") {
         exclude group: 'cn.hutool', module: 'hutool-json'
     }
-    api "org.slf4j:slf4j-simple:2.0.9"
+    api "org.slf4j:slf4j-simple:1.7.36"
     api "org.apache.httpcomponents:httpclient:4.5.14"
     api "org.bouncycastle:bcprov-jdk15on:1.70"
     api("org.springframework:spring-context:5.3.34") {
