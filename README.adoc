@@ -12,30 +12,36 @@ and how to use it to implement digital signature workflow in an existing web app
 
 === Maven Dependency
 The library can be used within a maven project by adding the following dependency:
-```
+
+[source]
+----
 <dependency>
     <groupId>se.signatureservice.support</groupId>
     <artifactId>signservice-support-lib</artifactId>
     <version>2401.1</version>
 </dependency>
-```
+----
 === Gradle Dependency
 The library can be used within a Gradle project by adding the following dependency:
-```
+
+[source]
+----
 implementation 'se.signatureservice.support:signservice-support-lib:2401.1'
-```
+----
 == Usage Guide
 
 === Initializing the Library
 The library is configured and initialized using builder pattern. The following gives a basic example of how to build
 an instance of the API:
-```
+
+[source]
+----
 SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
     .messageSecurityProvider(messageSecurityProvider)
     .cacheProvider(cacheProvider)
     .trustStore(trustedCertificateSource)
     .build();
-```
+----
 NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
 within this document.
 
@@ -45,7 +51,9 @@ message security provider is used when signing signature requests and when verif
 A custom message security provider can be created by implementing `org.certificateservices.messages.MessageSecurityProvider`.
 It is also possible to use a build-in simple message security provider. The following gives an example of how to
 create a simple message security provider:
-```
+
+[source]
+----
 // Initialize XML security library. This is needed before creating the
 // message security provider.
 Init.init();
@@ -57,34 +65,40 @@ MessageSecurityProvider messageSecurityProvider = SupportLibraryUtils.createSimp
     "/path/to/truststore.jks",
     "truststore_password"
 );
-```
+----
 ==== Cache Provider
 The API also requires a cache provider that will be used when storing transaction state information that needs
 to be kept after creating a signature request and until processing the signature response. A custom cache provider
 can be created by implementing `se.signatureservice.support.common.cache.CacheProvider` . It is also possible to use
 a built-in simple cache provider that stores everything in memory. The following gives an example of how to create
 a simple cache provider:
-```
+
+[source]
+----
     CacheProvider cacheProvider = new SimpleCacheProvider();
-```
+----
 ==== Trusted Certificate Source
 The API needs a source of trusted certificates that will be used when validating signed documents. A custom implementation
 of a trusted certificate source can be created by implementing `eu.europa.esig.dss.spi.x509.CertificateSource`. It is also
 possible to use the existing KeyStoreCertificateSource that loads trusted certificates from a keystore file (JKS or PKCS#12):
-```
+
+[source]
+----
     CertificateSource certificateSource = new KeyStoreCertificateSource(
         "/path/to/keystore.p12",
         "PKCS12",
         "somepassword"
     )
-```
+----
 === Using the library
 The API will be used to create signature requests that then needs to be sent to the central signature service
 through an `HTTP POST` through the user browser. The central signature service will the re-direct the user to the
 identity provider, and after successful authentication the user will be re-directed to a pre-determined consumer URL
 through an `HTTP POST` with the signature request as parameter. The following gives an overview how the API is used
 during these steps:
-```
+
+[source]
+----
 // Create user that is going to sign the document(s)
 User user = new User.Builder()
     // Specify user ID (required)
@@ -118,7 +132,7 @@ PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature
     // No attributes.
     null
 );
-```
+----
 The `PreparedSignatureResponse` received from a successful call to prepareSignature contains the following information:
 
 * `signRequest` - Base64 encoded signature request data.
@@ -133,7 +147,9 @@ be generated using a helper:
 
 After a successful signature flow the signature response will be sent to the consumer URL. The library can then
 be used to create the complete signed document(s), shown through the following example:
-```
+
+[source]
+----
 // Process the sign response using the support service API.
 CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignature(
     profileConfig,
@@ -144,11 +160,13 @@ CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignatur
 // Retrieve the signed document
 Document signedDocument = (Document)completeSignature
     .getDocuments().getDocuments().get(0);
-```
+----
 ==== Verifying a document
 The API can be used in order to verify a signed document and to assure that the document has not been altered. The
 following example shows how to verify a signed document using the API:
-```
+
+[source]
+----
 VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(
     profileConfig,
     signedDocument
@@ -159,7 +177,7 @@ if(verifiedDocument.isVerifies()) {
 } else {
     // Document verification failed.
 }
-```
+----
 
 The validation report is available within the `verifiedDocument.getReportData()`.
 
@@ -167,7 +185,9 @@ The validation report is available within the `verifiedDocument.getReportData()`
 When using the API a profile configuration instance (`se.signatureservice.support.system.SupportAPIProfile`) needs to be created and provided. The profile configuration contains
 a lot of settings to control how the request is created and how the signature is performed. Profile configuration is
 created using builder pattern. The following gives a basic example of how to create a profile configuration:
-```
+
+[source]
+----
 SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
     // Entity ID of central signature service to use.
     .signServiceId("https://sign.someorg.com/signservice-frontend/metadata")
@@ -201,7 +221,7 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
 
     // Finally build the profile.
     .build();
-```
+----
 NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
 within this document.
 
@@ -221,7 +241,9 @@ from a time stamp server. This applies for the following signature levels:
 
 Time stamp configuration is performed by specifying `timeStamp` when building a profile _(Only relevant parts are
 included in the example)_:
-```
+
+[source]
+----
 // Create instance of timestamp configuration
 TimeStampConfig timeStampConfig = new TimeStampConfig();
 timeStampConfig.setUrl("http://timestamp.digicert.com");
@@ -232,7 +254,7 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
 
         // Build the profile.
         .build();
-```
+----
 The following table shows available settings that can be used. Each field
 within the table is specified using its setter.
 |===
@@ -315,7 +337,8 @@ been signed, as it is easy to forge.
 
 Visible signatures are enabled by specifying a `VisibleSignatureConfig` when building a profile _(Only relevant parts are included in the example)_:
 
-```
+[source]
+----
 // Create instance of visible signature configuration
 VisibleSignatureConfig visibleSignatureConfig = new VisibleSignatureConfig()
 visibleSignatureConfig.setEnable(true);
@@ -326,7 +349,7 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
 
         // Build the profile.
         .build();
-```
+----
 The following table shows available settings that can be used. Each field
 within the table is specified using its setter.
 
@@ -396,9 +419,10 @@ will be used in order to create the text element rendered within a visible signa
 within the template must be specified using curly-bracket syntax, ex. `{signerName}`, and is case
 sensitive. The following gives an example of a signature text template.
 
-```
+[source]
+----
 "Document signed by: {signerName}\nTime: {timestamp}"
-```
+----
 The following table shows supported template variables that can be used.
 
 |===
@@ -714,15 +738,19 @@ For each entry the following configuration keys are used:
 * **certAttributeRef** - To which the samlAttributeName will be mapped to.
 
 *Example configuration 1:*
-```
+
+[source]
+----
  metadataCustomCertAttribute:
    givenName:
      samlAttributeName: "http://sambi.se/attributes/1/givenName"
      certAttributeRef: "2.5.4.42"
-```
+----
 
 *Example configuration 2:*
-```
+
+[source]
+----
 metadataCustomCertAttribute:
   surName:
    samlAttributeName:
@@ -731,7 +759,7 @@ metadataCustomCertAttribute:
     certAttributeRef: "2.5.4.4"
     certNameType: "sda"
     required: true
-```
+----
 
 ===== Configuration value: signerAttributes
 Map containing attributes to be included in the signer element within the sign request,
@@ -746,7 +774,9 @@ For each entry the following configuration keys are used:
 If set to false the signer attribute is set only if the user attribute exists.
 
 Example configuration:
-```
+
+[source]
+----
 signerAttributes {
     orgAffiliation {
         samlAttributeName = "urn:oid:1.2.752.201.3.1"
@@ -754,7 +784,7 @@ signerAttributes {
         required = true
     }
 }
-```
+----
 
 ===== Configuration value: trustedAuthenticationServices
 Map containing trusted authentication services/identity providers that  can be used for the given profile.
@@ -763,7 +793,9 @@ Corresponding metadata for each trusted service must also be available in the me
 NOTE: defaultDisplayName will be used if display name is not available in metadata.
 
 Example configuration:
-```
+
+[source]
+----
 trustedAuthenticationServices {
     iDPTest {
         entityId = "https://idptest.someservice.se/samlv2/idp/metadata"
@@ -772,14 +804,16 @@ trustedAuthenticationServices {
         userIdAttributeMapping = "urn:oid:1.2.752.29.4.13"
     }
 }
-```
+----
 
 ===== Configuration value: requestedCertAttributes
 Map containing Requests for subject attributes in a signer certificate that is associated with the signer of the
 generated signature as a result of the sign request.
 
 Example configuration:
-```
+
+[source]
+----
 requestedCertAttributes {
     givenName {
         samlAttributeName = "urn:oid:2.5.4.42"
@@ -787,4 +821,4 @@ requestedCertAttributes {
         required = true
     }
 }
-```
+----
