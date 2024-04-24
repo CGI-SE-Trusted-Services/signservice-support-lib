@@ -17,9 +17,12 @@ import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.enumerations.*;
-import eu.europa.esig.dss.jaxb.common.SchemaFactoryBuilder;
-import eu.europa.esig.dss.jaxb.common.XmlDefinerUtils;
+import eu.europa.esig.dss.xml.common.SchemaFactoryBuilder;
+import eu.europa.esig.dss.xml.common.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -472,7 +475,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     } else {
                         response.setReportData(reports.getXmlDetailedReport().getBytes(StandardCharsets.UTF_8));
                     }
-                    response.setReportMimeType(MimeType.XML.getMimeTypeString());
+                    response.setReportMimeType(MimeTypeEnum.XML.getMimeTypeString());
                 } else {
                     response.setReportData(null);
                 }
@@ -1072,7 +1075,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 proxyProperties.setPort(config.getProxyPort());
                 proxyProperties.setScheme(config.getProxyScheme());
                 proxyProperties.setUser(config.getProxyUser());
-                proxyProperties.setPassword(config.getProxyPassword());
+                proxyProperties.setPassword(config.getProxyPassword().toCharArray());
 
                 if(config.getProxyExcludedHosts() != null){
                     List<String> excludedHosts = new ArrayList<>();
@@ -1091,14 +1094,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if(config.getKeyStorePath() != null && config.getKeyStorePassword() != null){
                 log.debug("Using keystore for time stamp source: " + config.getTrustStorePath());
                 dataLoader.setSslKeystore(DSSLibraryUtils.createDSSDocument(config.getKeyStorePath()));
-                dataLoader.setSslKeystorePassword(config.getKeyStorePassword());
+                dataLoader.setSslKeystorePassword(config.getKeyStorePassword().toCharArray());
                 dataLoader.setSslKeystoreType(config.getKeyStoreType());
             }
 
             if(config.getTrustStorePath() != null && config.getTrustStorePassword() != null){
                 log.debug("Using truststore for time stamp source: " + config.getTrustStorePath());
                 dataLoader.setSslTruststore(DSSLibraryUtils.createDSSDocument(config.getTrustStorePath()));
-                dataLoader.setSslTruststorePassword(config.getTrustStorePassword());
+                dataLoader.setSslTruststorePassword(config.getTrustStorePassword().toCharArray());
                 dataLoader.setSslTruststoreType(config.getTrustStoreType());
             }
 
@@ -1107,7 +1110,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     log.debug("Using username/password authentication for time stamp source");
                     URL tspUrl = new URL(config.getUrl());
                     final HostConnection hostConnection = new HostConnection(tspUrl.getHost(), tspUrl.getPort(), tspUrl.toURI().getScheme());
-                    final UserCredentials userCredentials = new UserCredentials(config.getUsername(), config.getPassword());
+                    final UserCredentials userCredentials = new UserCredentials(config.getUsername(), config.getPassword().toCharArray());
                     dataLoader.addAuthentication(hostConnection, userCredentials);
                 } catch(Exception e){
                     log.error("Failed to configure username/password authentication for time stamp source: " + e.getMessage());
@@ -1671,9 +1674,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Signature type ("XML", "PDF" or "CMS") for given mime type.
      */
     protected String getSigTypeFromMimeType(String mimeType) {
-        if (mimeType.equals(MimeType.XML.getMimeTypeString())) {
+        if (mimeType.equals(MimeTypeEnum.XML.getMimeTypeString())) {
             return SigType.XML.name();
-        } else if (mimeType.equals(MimeType.PDF.getMimeTypeString())) {
+        } else if (mimeType.equals(MimeTypeEnum.PDF.getMimeTypeString())) {
             return SigType.PDF.name();
         }
 
@@ -2197,7 +2200,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             if (password != null) {
-                proxyProperties.setPassword(password);
+                proxyProperties.setPassword(password.toCharArray());
             }
 
             if (excludedHosts != null) {

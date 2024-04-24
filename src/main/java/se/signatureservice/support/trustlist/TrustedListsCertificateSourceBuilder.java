@@ -228,7 +228,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      */
     public CertificateSource officialJournalContentKeyStore() {
         try {
-            return new KeyStoreCertificateSource(TrustedListsCertificateSourceBuilder.class.getResourceAsStream("lotl/oj-keystore.p12"), "PKCS12", "dss-password");
+            return new KeyStoreCertificateSource(TrustedListsCertificateSourceBuilder.class.getResourceAsStream("lotl/oj-keystore.p12"), "PKCS12", "dss-password".toCharArray());
         } catch (NullPointerException e) {
             throw new DSSException("Unable to load the keystore", e);
         }
@@ -243,7 +243,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         try {
             log.info("Using KeyStoreCertificateSource for LOTL/TL validation. Keystore: " + certificateSourceKeyStore +
                     ", KeyStoreType: " + certificateSourceKeyStoreType + ", KeyStorePassword: " + certificateSourceKeyStorePassword);
-            return new KeyStoreCertificateSource(certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
+            return new KeyStoreCertificateSource(certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword.toCharArray());
         } catch (IOException e) {
             throw new DSSException("Unable to load the keystore", e);
         }

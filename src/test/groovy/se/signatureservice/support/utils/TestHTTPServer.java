@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -149,7 +150,7 @@ public class TestHTTPServer {
         return new HttpServlet() {
             @Override
             protected void service(HttpServletRequest baseRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
-                String request = IOUtils.toString(baseRequest.getInputStream());
+                String request = IOUtils.toString(baseRequest.getInputStream(), StandardCharsets.UTF_8);
                 System.out.println("INCOMING REQUEST: " + request);
                 String matchId = null;
 
