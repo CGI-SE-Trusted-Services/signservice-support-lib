@@ -1080,23 +1080,23 @@ class V2SupportServiceAPISpec extends Specification {
         crlProxyConfig.httpsProperties.host == "proxy.test.com"
         crlProxyConfig.httpsProperties.port == 1234
         crlProxyConfig.httpsProperties.user == "user"
-        crlProxyConfig.httpsProperties.password == "pass"
+        crlProxyConfig.httpsProperties.password == "pass".toCharArray()
         crlProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         crlProxyConfig.httpProperties.host == "proxy.test.com"
         crlProxyConfig.httpProperties.port == 1234
         crlProxyConfig.httpProperties.user == "user"
-        crlProxyConfig.httpProperties.password == "pass"
+        crlProxyConfig.httpProperties.password == "pass".toCharArray()
         crlProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig != null
         ocspProxyConfig.httpsProperties.host == "proxy.test.com"
         ocspProxyConfig.httpsProperties.port == 1234
         ocspProxyConfig.httpsProperties.user == "user"
-        ocspProxyConfig.httpsProperties.password == "pass"
+        ocspProxyConfig.httpsProperties.password == "pass".toCharArray()
         ocspProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig.httpProperties.host == "proxy.test.com"
         ocspProxyConfig.httpProperties.port == 1234
         ocspProxyConfig.httpProperties.user == "user"
-        ocspProxyConfig.httpProperties.password == "pass"
+        ocspProxyConfig.httpProperties.password == "pass".toCharArray()
         ocspProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
     }
 

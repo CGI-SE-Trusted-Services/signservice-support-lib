@@ -60,9 +60,9 @@ public abstract class BaseSignatureAttributePreProcessor implements SignatureAtt
             doPreProcess(preProcessedAttributes, document);
         } catch(Exception e){
             if(log.isDebugEnabled()){
-                log.error("Failed to pre-process signature attributes: " + e.getMessage(), e);
+                log.error("Failed to pre-process signature attributes: {}", e.getMessage(), e);
             } else {
-                log.error("Failed to pre-process signature attributes: " + e.getMessage());
+                log.error("Failed to pre-process signature attributes: {}", e.getMessage());
             }
         }
         return preProcessedAttributes;

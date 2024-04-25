@@ -37,8 +37,15 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
      */
     private PdfObjectModificationsFinder pdfObjectModificationsFinder;
 
+    private PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker;
+
     public PdfBoxSupportObjectFactory(){
         super();
+        pdfSignatureFieldPositionChecker = new PdfSignatureFieldPositionChecker();
+        // Disable errors for visible signatures covering text within PDF. It is not a good user experience
+        // if application crashes because signature image covers text slightly. We trust the user this case.
+        pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
+        pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
     }
 
     @Override
@@ -67,22 +74,9 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
         if (pdfObjectModificationsFinder != null) {
             pdfSignatureService.setPdfObjectModificationsFinder(pdfObjectModificationsFinder);
         }
-
-        // Disable errors for visible signatures covering text within PDF. It is not a good user experience
-        // if application crashes because signature image covers text slightly. We trust the user this case.
-        //if(pdfSignatureService instanceof AbstractPDFSignatureService){
-        //    ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
-        //    ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
-        //}
-
-        ////PdfBoxSupportObjectFactory
-        //IPdfObjFactory pdfObjFactory = new ServiceLoaderPdfObjFactory();
-        //PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker = new PdfSignatureFieldPositionChecker();
-        //pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
-        //pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
-        //pdfObjFactory.setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
-
-        //pdfSignatureService.setPdfObjFactory(pdfObjFactory);
+        if (pdfSignatureService instanceof AbstractPDFSignatureService) {
+            ((AbstractPDFSignatureService) pdfSignatureService).setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
+        }
 
         return pdfSignatureService;
     }

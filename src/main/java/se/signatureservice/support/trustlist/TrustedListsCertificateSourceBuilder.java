@@ -106,7 +106,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         this.job = validationJob();
         this.trustedListsCertificateSource = new TrustedListsCertificateSource();
         job.setTrustedListCertificateSource(trustedListsCertificateSource);
-        log.info("Using " + (useOfflineLoader ? "OfflineLoader." : "OnlineLoader."));
+        log.info("Using {}", useOfflineLoader ? "OfflineLoader." : "OnlineLoader.");
         if (this.useOfflineLoader) {
             job.offlineRefresh();
         } else {
@@ -213,7 +213,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
         }
 
         if (ojURL != null) {
-            log.info("Setting CertificatesAnnouncementPredicate with: " + ojURL);
+            log.info("Setting CertificatesAnnouncementPredicate with: {}", ojURL);
             lotlSource.setSigningCertificatesAnnouncementPredicate(new OfficialJournalSchemeInformationURI(ojURL));
         }
         lotlSource.setPivotSupport(true);
@@ -241,8 +241,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      */
     private CertificateSource certificateSourceKeyStore() {
         try {
-            log.info("Using KeyStoreCertificateSource for LOTL/TL validation. Keystore: " + certificateSourceKeyStore +
-                    ", KeyStoreType: " + certificateSourceKeyStoreType + ", KeyStorePassword: " + certificateSourceKeyStorePassword);
+            log.info("Using KeyStoreCertificateSource for LOTL/TL validation. Keystore: {}, KeyStoreType: {}, KeyStorePassword: {}", certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword);
             return new KeyStoreCertificateSource(certificateSourceKeyStore, certificateSourceKeyStoreType, certificateSourceKeyStorePassword.toCharArray());
         } catch (IOException e) {
             throw new DSSException("Unable to load the keystore", e);

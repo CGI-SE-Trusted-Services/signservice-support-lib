@@ -78,14 +78,14 @@ public class DSSLibraryUtils {
                     try {
                         bytes = Files.readAllBytes(file.toPath());
                     } catch(IOException e){
-                        log.error("Failed to read file: " + path);
+                        log.error("Failed to read file: {}", path);
                     }
                 }
             } else {
                 try {
                     bytes = IOUtils.toByteArray(fileStream);
                 } catch(IOException e){
-                    log.error("Failed to read file stream: " + path);
+                    log.error("Failed to read file stream: {}", path);
                 }
             }
 

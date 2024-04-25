@@ -118,12 +118,7 @@ public enum ErrorCode {
      * @return true if new language was set successfully, otherwise false.
      */
     public static synchronized boolean setErrorLanguage(String language){
-        Locale locale = new Locale(language);
-        try {
-            errorLocale = locale;
-        } catch(MissingResourceException e){
-            return false;
-        }
+        errorLocale = new Locale(language);
         return true;
     }
 

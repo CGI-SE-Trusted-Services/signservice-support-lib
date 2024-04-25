@@ -1,7 +1,7 @@
 package se.signatureservice.support.utils
 
+import eu.europa.esig.dss.enumerations.MimeTypeEnum
 import eu.europa.esig.dss.model.InMemoryDocument
-import eu.europa.esig.dss.model.MimeType
 import se.signatureservice.support.api.v2.AbstractDocument
 import spock.lang.Specification
 
@@ -22,7 +22,7 @@ class DSSLibraryUtilsSpec extends Specification {
         then:
         dssDocument != null
         dssDocument.name == "testdocument.bin"
-        dssDocument.mimeType == MimeType.BINARY
+        dssDocument.mimeType == MimeTypeEnum.BINARY
         dssDocument.bytes == [1,2,3,4,5,6,5,4,3,2,1] as byte[]
     }
 
