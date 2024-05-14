@@ -606,8 +606,9 @@ String userIdAttributeMapping)
 | List of SAML Attribute names that will map against user ID if not specified in the identity provider configuration (trustedAuthenticationServices).
 
 | enableAuthnProfile(boolean enableAuthnProfile)
-| Flag indicating if AuthnProfile element should be used or not in the generated sign request. If enable the AuthnProfile
-will be set to the related signature profile that was being used when generating the signature request.
+| Flag indicating if AuthnProfile element should be used or not in the generated sign request.
+If enable the AuthnProfile will be set to either, if set, the value of 'service_name'
+via Signature Attributes or to the related signature profile that was being used when generating the signature request.
 
 | enableAutomaticValidation(boolean enableAutomaticValidation)
 | Flag indicating if signed documents should be automatically validated before returned from the support service.

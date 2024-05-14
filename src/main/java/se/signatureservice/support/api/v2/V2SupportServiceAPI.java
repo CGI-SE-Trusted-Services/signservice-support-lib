@@ -537,8 +537,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         signRequestExtensionType.setRequestedSignatureAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getUri());
         signRequestExtensionType.getCertRequestProperties().setRequestedCertAttributes(sweEid2ObjectFactory.createRequestedAttributesType());
 
+        String serviceName = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, AvailableSignatureAttributes.ATTRIBUTE_SERVICE_NAME);
+
         if (config.isEnableAuthnProfile()) {
-            signRequestExtensionType.setAuthnProfile(config.getRelatedProfile());
+            if (serviceName != null) {
+                signRequestExtensionType.setAuthnProfile(serviceName);
+            } else {
+                signRequestExtensionType.setAuthnProfile(config.getRelatedProfile());
+            }
         }
 
         if(config.getRequestedCertAttributes() != null) {
