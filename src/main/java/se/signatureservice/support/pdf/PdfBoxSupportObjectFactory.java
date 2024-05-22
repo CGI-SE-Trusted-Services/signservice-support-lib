@@ -39,7 +39,7 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
 
     private PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker;
 
-    public PdfBoxSupportObjectFactory(){
+    public PdfBoxSupportObjectFactory() {
         super();
         pdfSignatureFieldPositionChecker = new PdfSignatureFieldPositionChecker();
         // Disable errors for visible signatures covering text within PDF. It is not a good user experience
@@ -75,7 +75,7 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
             pdfSignatureService.setPdfObjectModificationsFinder(pdfObjectModificationsFinder);
         }
         if (pdfSignatureService instanceof AbstractPDFSignatureService) {
-            ((AbstractPDFSignatureService) pdfSignatureService).setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
+            pdfSignatureService.setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
         }
 
         return pdfSignatureService;
