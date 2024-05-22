@@ -242,7 +242,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             if (cacheProvider.getBinary(transactionId) != null) {
-                log.error("Transaction ID has already been used (Transaction ID: " + transactionId + ")");
+                log.error("Transaction ID has already been used (Transaction ID: {})", transactionId);
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Transaction ID has already been used", messageSource);
             }
 
@@ -288,7 +288,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         currentTime = System.currentTimeMillis();
         operationTime = (int) (currentTime - operationStart);
-        log.info("Sign request successfully generated (" + operationTime + " ms)");
+        log.info("Sign request successfully generated ({} ms)", operationTime);
 
         return preparedSignature;
     }
@@ -313,12 +313,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         try {
             transactionState = fetchTransactionState(transactionId);
             if (transactionState == null) {
-                log.error("Could not find any transaction related to transaction ID " + transactionId);
+                log.error("Could not find any transaction related to transaction ID {}", transactionId);
                 throw (ClientErrorException) ErrorCode.UNKNOWN_TRANSACTION.toException("Could not find transaction", messageSource);
             }
 
             if (transactionState.isCompleted()) {
-                log.error("Transaction has already been completed (TransactionID: " + transactionId + ")");
+                log.error("Transaction has already been completed (TransactionID: {})", transactionId);
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Transaction has already been completed", messageSource);
             }
 
@@ -326,7 +326,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             SignResponse response = (SignResponse) synchronizedParseMessage(context, Base64.decode(signResponse.getBytes(StandardCharsets.UTF_8)), true);
 
             if (!response.getResult().getResultMajor().contains("Success")) {
-                throw (ServerErrorException) ErrorCode.SIGN_RESPONSE_FAILED.toException("Sign response failed with error message: " + response.getResult().getResultMessage().getValue());
+                String errorMessage = "Sign response failed with error message: ";
+                String resultMessageValue = (response.getResult().getResultMessage() != null
+                        && response.getResult().getResultMessage().getValue() != null)
+                        ? response.getResult().getResultMessage().getValue()
+                        : "No detailed error message available. It's possible that the authentication was canceled by the user.";
+                errorMessage += resultMessageValue;
+                throw (ServerErrorException) ErrorCode.SIGN_RESPONSE_FAILED.toException(errorMessage);
             }
             if (!response.getRequestID().equals(transactionId)) {
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Sign response transaction ID does not match the sign request transaction ID.");
@@ -359,7 +365,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             documentResponses.documents.addAll(signedDocuments);
             signatureResponse.setDocuments(documentResponses);
         } catch (Exception e) {
-            log.error("Error while processing sign response: " + e.getMessage());
+            log.error("Error while processing sign response: {}", e.getMessage());
 
             if (e instanceof ServerErrorException) {
                 throw (ServerErrorException) e;
@@ -379,7 +385,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         currentTime = System.currentTimeMillis();
         operationTime = (int) (currentTime - operationStart);
-        log.info("Sign response successfully processed (" + operationTime + " ms)");
+        log.info("Sign response successfully processed ({} ms)", operationTime);
 
         return signatureResponse;
     }
@@ -407,7 +413,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             try {
                 validator = SignedDocumentValidator.fromDocument(dssDocument);
             } catch (Exception e) {
-                log.error("Failed to create signed document validator: " + e.getMessage());
+                log.error("Failed to create signed document validator: {}", e.getMessage());
                 response.setVerifies(false);
                 response.setSignatures(new Signatures());
                 return response;
@@ -485,7 +491,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             response.setSignatures(new Signatures(signatures));
 
         } catch (Exception e) {
-            log.error("Error while verifying signed document: " + e.getMessage());
+            log.error("Error while verifying signed document: {}", e.getMessage());
 
             if (e instanceof ServerErrorException) {
                 throw (ServerErrorException) e;
@@ -690,7 +696,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     VerifyDocumentResponse validationInfo = verifyDocument(config, signedDocument);
                     signedDocument.setValidationInfo(validationInfo);
                 } catch (Exception e) {
-                    log.error("Error while performing automatic validation of document: " + e.getMessage() + ")");
+                    log.error("Error while performing automatic validation of document: {})", e.getMessage());
                 }
             }
 
@@ -756,11 +762,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 policy = Files.newInputStream(policyPath.toFile().toPath());
             }
         } catch (Exception e) {
-            log.error("Error while reading policy file: " + e.getMessage());
+            log.error("Error while reading policy file: {}", e.getMessage());
         }
 
         if (policy == null) {
-            log.error("Could not load validation policy from path: " + policyPath);
+            log.error("Could not load validation policy from path: {}", policyPath);
         }
 
         return policy;
@@ -798,7 +804,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 if(apiConfig.isIgnoreMissingRevocationData()) {
                     certificateVerifier.setAlertOnMissingRevocationData(alert -> {
-                        log.warn("Ignoring missing revocation data: " + alert.getMessage() + ", error: " + alert.getErrorString());
+                        log.warn("Ignoring missing revocation data: {}, error: {}", alert.getMessage(), alert.getErrorString());
                     });
                 }
             } else {
@@ -826,7 +832,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         cacheDataLoader.setFileCacheDirectory(new File(System.getProperty("java.io.tmpdir")));
 
         long cacheExpirationTime = apiConfig.getValidationCacheExpirationTimeMS();
-        log.info("Setting validation cache expiration time to " + cacheExpirationTime + " ms");
+        log.info("Setting validation cache expiration time to {} ms", cacheExpirationTime);
         cacheDataLoader.setCacheExpirationTime(cacheExpirationTime);
         return cacheDataLoader;
     }
@@ -1068,11 +1074,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         TSPSource tspSource = onlineTSPSources.get(config.getUrl());
         if (tspSource == null) {
-            log.debug("Creating new time stamp source: " + config.getUrl());
+            log.debug("Creating new time stamp source: {}", config.getUrl());
             CommonsDataLoader dataLoader = new CommonsDataLoader();
 
             if(config.getProxyHost() != null){
-                log.debug("Using proxy for time stamp source: " + config.getProxyHost());
+                log.debug("Using proxy for time stamp source: {}", config.getProxyHost());
                 ProxyProperties proxyProperties = new ProxyProperties();
                 proxyProperties.setHost(config.getProxyHost());
                 proxyProperties.setPort(config.getProxyPort());
@@ -1095,14 +1101,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
 
             if(config.getKeyStorePath() != null && config.getKeyStorePassword() != null){
-                log.debug("Using keystore for time stamp source: " + config.getTrustStorePath());
+                log.debug("Using keystore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslKeystore(DSSLibraryUtils.createDSSDocument(config.getKeyStorePath()));
                 dataLoader.setSslKeystorePassword(config.getKeyStorePassword());
                 dataLoader.setSslKeystoreType(config.getKeyStoreType());
             }
 
             if(config.getTrustStorePath() != null && config.getTrustStorePassword() != null){
-                log.debug("Using truststore for time stamp source: " + config.getTrustStorePath());
+                log.debug("Using truststore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslTruststore(DSSLibraryUtils.createDSSDocument(config.getTrustStorePath()));
                 dataLoader.setSslTruststorePassword(config.getTrustStorePassword());
                 dataLoader.setSslTruststoreType(config.getTrustStoreType());
@@ -1116,14 +1122,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     final UserCredentials userCredentials = new UserCredentials(config.getUsername(), config.getPassword());
                     dataLoader.addAuthentication(hostConnection, userCredentials);
                 } catch(Exception e){
-                    log.error("Failed to configure username/password authentication for time stamp source: " + e.getMessage());
+                    log.error("Failed to configure username/password authentication for time stamp source: {}", e.getMessage());
                 }
             }
 
             tspSource = new OnlineTSPSource(config.getUrl(), dataLoader);
             onlineTSPSources.put(config.getUrl(), tspSource);
         } else {
-            log.debug("Using cached time stamp source: " + config.getUrl());
+            log.debug("Using cached time stamp source: {}", config.getUrl());
         }
 
         return tspSource;
@@ -1193,7 +1199,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         transactionState.getSigningTime().put(document.referenceId, dssParameters.bLevel().getSigningDate());
         storeTransactionState(transactionId, transactionState);
 
-        log.debug("Generated ToBeSignedBytes (" + sigType.name() + ") = " + new String(Base64.encode(signTask.getToBeSignedBytes())));
+        log.debug("Generated ToBeSignedBytes ({}) = {}", sigType.name(), new String(Base64.encode(signTask.getToBeSignedBytes())));
         return signTask.getToBeSignedBytes();
     }
 
@@ -1240,11 +1246,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         List<String> authnContextClassRefs = getAuthnContextClassRefs(authenticationServiceId, config);
 
         if (attributeValue == null) {
-            log.debug("No value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ". Setting certification request properties from list of AuthnContextClassRefs: " + authnContextClassRefs + ". Given authenticationServiceId: " + authenticationServiceId);
+            log.debug("No value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ". Setting certification request properties from list of AuthnContextClassRefs: {}. Given authenticationServiceId: {}", authnContextClassRefs, authenticationServiceId);
             signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
             signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().addAll(authnContextClassRefs);
         } else if (authnContextClassRefs.contains(attributeValue)) {
-            log.debug("Value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + " matches an existing request property in list of AuthnContextClassRefs: " + authnContextClassRefs + ". Setting it for authenticationServiceId: " + authenticationServiceId);
+            log.debug("Value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": {} matches an existing request property in list of AuthnContextClassRefs: {}. Setting it for authenticationServiceId: {}", attributeValue, authnContextClassRefs, authenticationServiceId);
             signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
             signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().add(attributeValue);
         } else {
@@ -1288,13 +1294,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     if (logoStream == null) {
                         File file = new File(config.getVisibleSignature().getLogoImage());
                         if (!file.exists() || !file.isFile() || !file.canRead()) {
-                            log.error("The provided logo image path for visible signature is not valid (" + config.getVisibleSignature().getLogoImage() + "). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.");
+                            log.error("The provided logo image path for visible signature is not valid ({}). Check if the provided path points to an existing file and it has read permission. Logo image will not be used.", config.getVisibleSignature().getLogoImage());
                         } else {
-                            log.debug("Using logo image from file system: " + config.getVisibleSignature().getLogoImage());
+                            log.debug("Using logo image from file system: {}", config.getVisibleSignature().getLogoImage());
                             logoDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
                         }
                     } else {
-                        log.debug("Using logo image from classpath: " + config.getVisibleSignature().getLogoImage());
+                        log.debug("Using logo image from classpath: {}", config.getVisibleSignature().getLogoImage());
                         logoDocument = new InMemoryDocument(logoStream, null);
                     }
                 }
@@ -1358,13 +1364,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 if (fontStream == null) {
                     File file = new File(config.getVisibleSignature().getFont());
                     if (!file.exists() || !file.isFile() || !file.canRead()) {
-                        log.error("The provided font file path for visible signature is not valid (" + config.getVisibleSignature().getFont() + "). Check if the provided path points to an existing file and it has read permission.");
+                        log.error("The provided font file path for visible signature is not valid ({}). Check if the provided path points to an existing file and it has read permission.", config.getVisibleSignature().getFont());
                     } else {
-                        log.debug("Using font file from file system: " + config.getVisibleSignature().getFont());
+                        log.debug("Using font file from file system: {}", config.getVisibleSignature().getFont());
                         fontDocument = new InMemoryDocument(Files.newInputStream(file.toPath()));
                     }
                 } else {
-                    log.debug("Using font file from classpath: " + config.getVisibleSignature().getFont());
+                    log.debug("Using font file from classpath: {}", config.getVisibleSignature().getFont());
                     fontDocument = new InMemoryDocument(fontStream, null);
                 }
 
@@ -1377,7 +1383,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             imageParameters.setTextParameters(textParameters);
             parameters.setImageParameters(imageParameters);
         } catch (Exception e) {
-            log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: " + e.getMessage());
+            log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: {}", e.getMessage());
             throw ErrorCode.SIGN_REQUEST_FAILED.toException(e, messageSource);
         }
     }
@@ -1564,7 +1570,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     } else if (Objects.equals(it.getKey(), VISIBLE_SIGNATURE_PAGE)) {
                         fieldParameters.setPage(getAttributeAsIntAndStoreInCache(contextId, it.getKey(), it.getValue(), null));
                     } else {
-                        log.info("Ignore attribute: " + it.getKey() + " for visible signature image settings.");
+                        log.info("Ignore attribute: {} for visible signature image settings.", it.getKey());
                     }
                 }
 
@@ -1586,7 +1592,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
             return imageParameters;
         } catch (Exception e) {
-            log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: " + e.getMessage());
+            log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: {}", e.getMessage());
             throw ErrorCode.INVALID_VISIBLE_SIGNATURE_ATTRIBUTE.toException(e, messageSource);
         }
     }
@@ -1701,7 +1707,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         if (configuredMimeType != null && EnumUtils.isValidEnum(SignMessageMimeType.class, configuredMimeType.toUpperCase())) {
             mimeType = SignMessageMimeType.valueOf(configuredMimeType.toUpperCase());
         } else {
-            log.error("Invalid mimetype for sign messages specified in configuration: " + config.getSignMessageMimeType() + ". Using 'text' as fallback.");
+            log.error("Invalid mimetype for sign messages specified in configuration: {}. Using 'text' as fallback.", config.getSignMessageMimeType());
             mimeType = SignMessageMimeType.TEXT;
         }
 
@@ -1850,19 +1856,19 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private String getSignServiceRequestURL(SupportAPIProfile profileConfig, List<Attribute> signatureAttributes) {
         String fromAttributes = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, ATTRIBUTE_SIGNSERVICE_REQUEST_URL);
         if (fromAttributes != null && !fromAttributes.isEmpty()) {
-            log.info("Setting SignServiceRequestURL from SOAP API SignatureAttributes Parameter " + ATTRIBUTE_SIGNSERVICE_REQUEST_URL + ": " + fromAttributes);
+            log.info("Setting SignServiceRequestURL from SOAP API SignatureAttributes Parameter " + ATTRIBUTE_SIGNSERVICE_REQUEST_URL + ": {}", fromAttributes);
             return fromAttributes;
         }
 
         String fromProfile = profileConfig.getSignServiceRequestURL();
         if (fromProfile != null) {
-            log.info("Setting SignServiceRequestURL from Profile Configuration: " + fromProfile);
+            log.info("Setting SignServiceRequestURL from Profile Configuration: {}", fromProfile);
             return fromProfile;
         }
 
         String fallbackUrl = profileConfig.getSignServiceId();
         if (fallbackUrl != null) {
-            log.info("Setting SignServiceRequestURL from SignServiceId: " + fallbackUrl + " to " + fallbackUrl.replace("/metadata/", "/request/"));
+            log.info("Setting SignServiceRequestURL from SignServiceId: {} to {}", fallbackUrl, fallbackUrl.replace("/metadata/", "/request/"));
             return fallbackUrl.replace("/metadata/", "/request/");
         }
         log.warn("Unable to set any SignServiceRequestURL");
