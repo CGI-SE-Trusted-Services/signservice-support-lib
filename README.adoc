@@ -87,7 +87,7 @@ possible to use the existing KeyStoreCertificateSource that loads trusted certif
     CertificateSource certificateSource = new KeyStoreCertificateSource(
         "/path/to/keystore.p12",
         "PKCS12",
-        "somepassword".toCharArray()
+        "somepassword"
     )
 ----
 === Using the library

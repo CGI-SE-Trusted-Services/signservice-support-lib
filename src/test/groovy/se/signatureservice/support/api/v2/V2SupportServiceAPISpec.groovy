@@ -96,7 +96,7 @@ class V2SupportServiceAPISpec extends Specification {
             ))
             .cacheProvider(new SimpleCacheProvider())
             .addSignMessageRecipient("https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7", testRecipientCert)
-            .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123".toCharArray()))
+            .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123"))
             .build() as V2SupportServiceAPI
 
         testDocuments.add(new DocumentSigningRequest(referenceId: "123456", type: "application/pdf", name: "testdocument.pdf", data: new File("src/test/resources/testdocument.pdf").bytes))
@@ -1081,23 +1081,23 @@ class V2SupportServiceAPISpec extends Specification {
         crlProxyConfig.httpsProperties.host == "proxy.test.com"
         crlProxyConfig.httpsProperties.port == 1234
         crlProxyConfig.httpsProperties.user == "user"
-        crlProxyConfig.httpsProperties.password == "pass".toCharArray()
+        crlProxyConfig.httpsProperties.password == "pass"
         crlProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         crlProxyConfig.httpProperties.host == "proxy.test.com"
         crlProxyConfig.httpProperties.port == 1234
         crlProxyConfig.httpProperties.user == "user"
-        crlProxyConfig.httpProperties.password == "pass".toCharArray()
+        crlProxyConfig.httpProperties.password == "pass"
         crlProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig != null
         ocspProxyConfig.httpsProperties.host == "proxy.test.com"
         ocspProxyConfig.httpsProperties.port == 1234
         ocspProxyConfig.httpsProperties.user == "user"
-        ocspProxyConfig.httpsProperties.password == "pass".toCharArray()
+        ocspProxyConfig.httpsProperties.password == "pass"
         ocspProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig.httpProperties.host == "proxy.test.com"
         ocspProxyConfig.httpProperties.port == 1234
         ocspProxyConfig.httpProperties.user == "user"
-        ocspProxyConfig.httpProperties.password == "pass".toCharArray()
+        ocspProxyConfig.httpProperties.password == "pass"
         ocspProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
     }
 
