@@ -20,9 +20,6 @@ import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.jaxb.common.SchemaFactoryBuilder;
 import eu.europa.esig.dss.jaxb.common.XmlDefinerUtils;
 import eu.europa.esig.dss.model.*;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -214,14 +211,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * along with the transaction state that needs to be persisted and supplied
      * to processSignResponse in order to obtain the final signed document(s).
      *
-     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
-     * @param documents Documents to generate sign request for.
-     * @param transactionId Transaction ID to use or null to let the library generate one automatically.
-     * @param signMessage Signature message to include in the request or null if no signature message should be used.
-     * @param user Information about the signatory.
-     * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
-     * @param consumerURL Return URL that the user should be redirected to in the end of the signature flow.
-     * @param signatureAttributes Optional attributes to use when signing documents.
+     * @param profileConfig               Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents                   Documents to generate sign request for.
+     * @param transactionId               Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage                 Signature message to include in the request or null if no signature message should be used.
+     * @param user                        Information about the signatory.
+     * @param authenticationServiceId     Authentication service (identity provider) to use when signing the document.
+     * @param consumerURL                 Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes         Optional attributes to use when signing documents.
      * @param documentSignatureAttributes Optional attributes to use for individual documents. Mapping key is document
      *                                    referenceId and mapping value is list of signature attributes that will
      *                                    override signatureAttributes for given document.
@@ -522,7 +519,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     protected synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
                                                       String signMessage, User user, String authenticationServiceId, String consumerURL,
-                                                      SupportAPIProfile config, List<Attribute> signatureAttributes, Map<String,List<Attribute>> documentSignatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+                                                      SupportAPIProfile config, List<Attribute> signatureAttributes, Map<String, List<Attribute>> documentSignatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
 
         GregorianCalendar requestTime = new GregorianCalendar();
         requestTime.setTime(new Date());
@@ -553,7 +550,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             }
         }
 
-        if(config.getRequestedCertAttributes() != null) {
+        if (config.getRequestedCertAttributes() != null) {
             for (Map.Entry<String, Map<String, Object>> entry : config.getRequestedCertAttributes().entrySet()) {
                 signRequestExtensionType.getCertRequestProperties().getRequestedCertAttributes().getRequestedCertAttribute().add(
                         generateRequestedAttribute(entry.getKey(), entry.getValue(), config.getRelatedProfile())
@@ -805,7 +802,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     }
                 }
 
-                if(apiConfig.isIgnoreMissingRevocationData()) {
+                if (apiConfig.isIgnoreMissingRevocationData()) {
                     certificateVerifier.setAlertOnMissingRevocationData(alert -> {
                         log.warn("Ignoring missing revocation data: {}, error: {}", alert.getMessage(), alert.getErrorString());
                     });
@@ -1067,8 +1064,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return TSP source using the given timestamp configuration.
      */
     private TSPSource getTspSource(TimeStampConfig config) throws ServerErrorException {
-        if(config.getUrl() == null){
-            if(apiConfig.getDefaultTimeStampSource() != null){
+        if (config.getUrl() == null) {
+            if (apiConfig.getDefaultTimeStampSource() != null) {
                 log.debug("Using default time stamp source");
                 return apiConfig.getDefaultTimeStampSource();
             }
@@ -1080,7 +1077,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             log.debug("Creating new time stamp source: {}", config.getUrl());
             CommonsDataLoader dataLoader = new CommonsDataLoader();
 
-            if(config.getProxyHost() != null){
+            if (config.getProxyHost() != null) {
                 log.debug("Using proxy for time stamp source: {}", config.getProxyHost());
                 ProxyProperties proxyProperties = new ProxyProperties();
                 proxyProperties.setHost(config.getProxyHost());
@@ -1089,9 +1086,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 proxyProperties.setUser(config.getProxyUser());
                 proxyProperties.setPassword(config.getProxyPassword());
 
-                if(config.getProxyExcludedHosts() != null){
+                if (config.getProxyExcludedHosts() != null) {
                     List<String> excludedHosts = new ArrayList<>();
-                    for(String host : config.getProxyExcludedHosts().split(",")){
+                    for (String host : config.getProxyExcludedHosts().split(",")) {
                         excludedHosts.add(host.trim());
                     }
                     proxyProperties.setExcludedHosts(excludedHosts);
@@ -1103,28 +1100,28 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 dataLoader.setProxyConfig(proxyConfig);
             }
 
-            if(config.getKeyStorePath() != null && config.getKeyStorePassword() != null){
+            if (config.getKeyStorePath() != null && config.getKeyStorePassword() != null) {
                 log.debug("Using keystore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslKeystore(DSSLibraryUtils.createDSSDocument(config.getKeyStorePath()));
                 dataLoader.setSslKeystorePassword(config.getKeyStorePassword());
                 dataLoader.setSslKeystoreType(config.getKeyStoreType());
             }
 
-            if(config.getTrustStorePath() != null && config.getTrustStorePassword() != null){
+            if (config.getTrustStorePath() != null && config.getTrustStorePassword() != null) {
                 log.debug("Using truststore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslTruststore(DSSLibraryUtils.createDSSDocument(config.getTrustStorePath()));
                 dataLoader.setSslTruststorePassword(config.getTrustStorePassword());
                 dataLoader.setSslTruststoreType(config.getTrustStoreType());
             }
 
-            if(config.getUsername() != null && config.getPassword() != null){
+            if (config.getUsername() != null && config.getPassword() != null) {
                 try {
                     log.debug("Using username/password authentication for time stamp source");
                     URL tspUrl = new URL(config.getUrl());
                     final HostConnection hostConnection = new HostConnection(tspUrl.getHost(), tspUrl.getPort(), tspUrl.toURI().getScheme());
                     final UserCredentials userCredentials = new UserCredentials(config.getUsername(), config.getPassword());
                     dataLoader.addAuthentication(hostConnection, userCredentials);
-                } catch(Exception e){
+                } catch (Exception e) {
                     log.error("Failed to configure username/password authentication for time stamp source: {}", e.getMessage());
                 }
             }
@@ -1278,7 +1275,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if (config.getVisibleSignature().isShowLogo()) {
                 DSSDocument logoDocument = null;
 
-                if(signatureAttributes != null) {
+                if (signatureAttributes != null) {
                     for (Attribute signatureAttribute : signatureAttributes) {
                         if (Objects.equals(signatureAttribute.getKey(), VISIBLE_SIGNATURE_LOGO_IMAGE)) {
                             log.info("Using logo image specified as signature attribute");
@@ -1292,7 +1289,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     }
                 }
 
-                if(logoDocument == null) {
+                if (logoDocument == null) {
                     InputStream logoStream = this.getClass().getResourceAsStream(config.getVisibleSignature().getLogoImage());
                     if (logoStream == null) {
                         File file = new File(config.getVisibleSignature().getLogoImage());
@@ -1313,11 +1310,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
             }
 
-            if(cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null){
+            if (cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null) {
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat(config.getVisibleSignature().getTimeStampFormat());
                     cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(parameters.bLevel().getSigningDate()));
-                } catch(Exception e) {
+                } catch (Exception e) {
                     throw ErrorCode.INVALID_CONFIGURATION.toException("Invalid configuration value for timeStampFormat: " + config.getVisibleSignature().getTimeStampFormat() + " (" + e.getMessage() + ")");
                 }
             }
@@ -1325,13 +1322,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             StringBuilder signatureText = new StringBuilder();
             String signatureTextTemplate = config.getVisibleSignature().getSignatureTextTemplate();
 
-            if(signatureTextTemplate != null){
+            if (signatureTextTemplate != null) {
                 log.debug("Generating visible signature using signature text template");
-                Map<String,String> signatureTextValues = new HashMap<>();
+                Map<String, String> signatureTextValues = new HashMap<>();
                 signatureTextValues.put(AvailableTemplateVariables.HEADLINE, config.getVisibleSignature().getHeadlineText());
                 signatureTextValues.put(AvailableTemplateVariables.SIGNER_NAME, signerName);
                 signatureTextValues.put(AvailableTemplateVariables.TIMESTAMP, cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME));
-                if(signatureAttributes != null) {
+                if (signatureAttributes != null) {
                     for (Attribute signatureAttribute : signatureAttributes) {
                         signatureTextValues.put(AvailableTemplateVariables.SIGNATURE_ATTRIBUTE_PREFIX + signatureAttribute.getKey(), signatureAttribute.getValue());
                     }
@@ -1824,7 +1821,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * It defaults to the profile configuration if no specific mapping is provided.
      *
      * @param authenticationServiceId The ID of the authentication service.
-     * @param config The profile configuration.
+     * @param config                  The profile configuration.
      * @return The determined user ID attribute mapping.
      */
     private String getUserIdAttributeMapping(String authenticationServiceId, SupportAPIProfile config) {
@@ -1852,8 +1849,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * Retrieves the SignService request URL from the provided signature attributes if available;
      * otherwise, falls back to the URL from the profile configuration, or constructs a fallback URL using the SignServiceId.
      *
-     * @param profileConfig        the profile configuration containing the default SignServiceRequestURL and the SignServiceId.
-     * @param signatureAttributes  list of attributes from which to extract the SignServiceRequestURL.
+     * @param profileConfig       the profile configuration containing the default SignServiceRequestURL and the SignServiceId.
+     * @param signatureAttributes list of attributes from which to extract the SignServiceRequestURL.
      * @return the SignServiceRequestURL found in signature attributes, the default from profileConfig, or a fallback URL constructed from the SignServiceId if not found.
      */
     private String getSignServiceRequestURL(SupportAPIProfile profileConfig, List<Attribute> signatureAttributes) {
@@ -1881,7 +1878,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     /**
      * Creates a SAML2 AttributeType with the given name and value.
      *
-     * @param name The attribute name.
+     * @param name  The attribute name.
      * @param value The attribute value.
      * @return A populated AttributeType object.
      */
@@ -1956,10 +1953,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ClientErrorException if given attribute mapping contains invalid entries.
      */
     private void validateDocumentSignatureAttributes(Map<String, List<Attribute>> attributes) throws ClientErrorException {
-        if(attributes != null){
-            for(String key : attributes.keySet()){
-                for(Attribute attribute : attributes.get(key)){
-                    if(!AvailableSignatureAttributes.isAllowedPerDocument(attribute.getKey())){
+        if (attributes != null) {
+            for (String key : attributes.keySet()) {
+                for (Attribute attribute : attributes.get(key)) {
+                    if (!AvailableSignatureAttributes.isAllowedPerDocument(attribute.getKey())) {
                         throw (ClientErrorException) ErrorCode.INVALID_SIGNATURE_ATTRIBUTE.toException("The provided signature attribute (" + attribute.getKey() + ") is not allowed to be specified per document");
                     }
                 }
@@ -2271,7 +2268,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          * @param ignoreMissingRevocationData If missing revocation data should be ignored.
          * @return Updated builder.
          */
-        public Builder ignoreMissingRevocationData(boolean ignoreMissingRevocationData){
+        public Builder ignoreMissingRevocationData(boolean ignoreMissingRevocationData) {
             config.setIgnoreMissingRevocationData(ignoreMissingRevocationData);
             return this;
         }
@@ -2345,12 +2342,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 addAuthContextMapping("smartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "http://id.elegnamnden.se/loa/1.0/loa4");
             }
 
-            if(config.getCacheProvider() == null){
+            if (config.getCacheProvider() == null) {
                 log.info("No cache provider specified, using in-memory cache.");
                 cacheProvider(new SimpleCacheProvider());
             }
 
-            if(config.getMessageSecurityProvider() == null){
+            if (config.getMessageSecurityProvider() == null) {
                 throw new SupportServiceLibraryException("No message security provider specified.");
             }
 

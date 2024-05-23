@@ -13,7 +13,8 @@
 package se.signatureservice.support.pdf;
 
 import eu.europa.esig.dss.alert.SilentOnStatusAlert;
-import eu.europa.esig.dss.pdf.*;
+import eu.europa.esig.dss.pdf.AbstractPDFSignatureService;
+import eu.europa.esig.dss.pdf.PDFSignatureService;
 import eu.europa.esig.dss.pdf.modifications.PdfDifferencesFinder;
 import eu.europa.esig.dss.pdf.modifications.PdfObjectModificationsFinder;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
@@ -37,15 +38,8 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
      */
     private PdfObjectModificationsFinder pdfObjectModificationsFinder;
 
-    private PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker;
-
-    public PdfBoxSupportObjectFactory() {
+    public PdfBoxSupportObjectFactory(){
         super();
-        pdfSignatureFieldPositionChecker = new PdfSignatureFieldPositionChecker();
-        // Disable errors for visible signatures covering text within PDF. It is not a good user experience
-        // if application crashes because signature image covers text slightly. We trust the user this case.
-        pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
-        pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
     }
 
     @Override
@@ -74,8 +68,12 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
         if (pdfObjectModificationsFinder != null) {
             pdfSignatureService.setPdfObjectModificationsFinder(pdfObjectModificationsFinder);
         }
-        if (pdfSignatureService instanceof AbstractPDFSignatureService) {
-            pdfSignatureService.setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
+
+        // Disable errors for visible signatures covering text within PDF. It is not a good user experience
+        // if application crashes because signature image covers text slightly. We trust the user this case.
+        if(pdfSignatureService instanceof AbstractPDFSignatureService){
+            ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
+            ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
         }
 
         return pdfSignatureService;
