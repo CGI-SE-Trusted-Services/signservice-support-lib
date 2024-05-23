@@ -330,7 +330,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 String resultMessageValue = (response.getResult().getResultMessage() != null
                         && response.getResult().getResultMessage().getValue() != null)
                         ? response.getResult().getResultMessage().getValue()
-                        : "No detailed error message available. It's possible that the authentication was canceled by the user.";
+                        : "No detailed error message available. It's possible the authentication was canceled by the user.";
                 errorMessage += resultMessageValue;
                 throw (ServerErrorException) ErrorCode.SIGN_RESPONSE_FAILED.toException(errorMessage);
             }

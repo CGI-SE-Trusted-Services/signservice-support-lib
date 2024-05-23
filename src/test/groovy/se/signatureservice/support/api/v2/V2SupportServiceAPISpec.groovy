@@ -27,17 +27,18 @@ import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
 import org.certificateservices.messages.ContextMessageSecurityProvider
 import org.certificateservices.messages.MessageSecurityProvider
+import org.certificateservices.messages.dss1.core.jaxb.Result
+import org.certificateservices.messages.dss1.core.jaxb.SignResponse
 import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType
+import org.certificateservices.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser
 import org.certificateservices.messages.utils.CertUtils
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.Minutes
 import org.joda.time.format.DateTimeFormatter
 import org.joda.time.format.ISODateTimeFormat
-import org.w3c.dom.Attr
 import se.signatureservice.configuration.support.system.Constants
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig
-import se.signatureservice.support.api.AvailableSignatureAttributes
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
@@ -1143,6 +1144,31 @@ class V2SupportServiceAPISpec extends Specification {
         response != null
         supportServiceAPI.onlineTSPSources.get("http://timestamp.digicert.com") != null
         println new String(Base64.decode(response), "UTF-8")
+    }
+
+    def "test completeSignature with unsuccessful sign response"(){
+        setup:
+        supportServiceAPI.sweEID2DSSExtensionsMessageParser = Mock(SweEID2DSSExtensionsMessageParser)
+        def supportServiceAPISpy = Spy(supportServiceAPI)
+        supportServiceAPISpy.fetchTransactionState(_) >> Mock(TransactionState)
+        supportServiceAPI.sweEID2DSSExtensionsMessageParser.parseMessage(_, _, _) >> new SignResponse(result: new Result(resultMajor: "urn:oasis:names:tc:dss:1.0:resultmajor:RequesterError"))
+        def exception
+
+        when:
+        try {
+            supportServiceAPISpy.completeSignature(
+                    new SupportAPIProfile(),
+                    "c2lnblJlc3BvbnNl",
+                    "123456"
+            )
+        } catch (ServerErrorException e) {
+            exception = e
+        }
+
+        then:
+        exception != null
+        exception.code == "10012"
+        exception.detailMessage == "Sign response failed with error message: No detailed error message available. It's possible the authentication was canceled by the user."
     }
 
     static int getMinutesBetween(String a, String b) {
