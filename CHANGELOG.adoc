@@ -3,6 +3,13 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2405.1
+
+=== Improvements and bug fixes
+* Fixed bug NullPointerException bug when authentication was canceled by the user.
+* Fixed bug related to serialization of signature attributes.
+* Fixed bug when adding individual signer attribute using support library.
+
 == Version 2403.2
 
 === Improvements and bug fixes
