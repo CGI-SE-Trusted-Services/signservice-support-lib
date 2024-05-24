@@ -324,7 +324,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             SignResponse response = (SignResponse) synchronizedParseMessage(context, Base64.decode(signResponse.getBytes(StandardCharsets.UTF_8)), true);
 
             if (!response.getResult().getResultMajor().contains("Success")) {
-                throw (ServerErrorException) ErrorCode.SIGN_RESPONSE_FAILED.toException("Sign response failed with error message: " + response.getResult().getResultMessage().getValue());
+                String errorMessage = "Sign response failed with error message: ";
+                String resultMessageValue = (response.getResult().getResultMessage() != null
+                        && response.getResult().getResultMessage().getValue() != null)
+                        ? response.getResult().getResultMessage().getValue()
+                        : "No detailed error message available. It's possible the authentication was canceled by the user.";
+                errorMessage += resultMessageValue;
+                throw (ServerErrorException) ErrorCode.SIGN_RESPONSE_FAILED.toException(errorMessage);
             }
             if (!response.getRequestID().equals(transactionId)) {
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_TRANSACTION_ID.toException("Sign response transaction ID does not match the sign request transaction ID.");
