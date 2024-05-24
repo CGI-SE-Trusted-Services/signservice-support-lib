@@ -406,7 +406,7 @@ public class SignTaskHelper {
      * @param prefix Prefix to use for resulting deterministic ID.
      * @return Deterministic ID
      */
-    private static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix){
+    public static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix){
         return generateDeterministicId(x509Certificate, signingTime, prefix, null);
     }
 
@@ -420,7 +420,7 @@ public class SignTaskHelper {
      * @param suffix Suffix to use for resulting deterministic ID.
      * @return Deterministic ID
      */
-    private static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix, String suffix){
+    public static String generateDeterministicId(X509Certificate x509Certificate, Date signingTime, String prefix, String suffix){
         String deterministicId;
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

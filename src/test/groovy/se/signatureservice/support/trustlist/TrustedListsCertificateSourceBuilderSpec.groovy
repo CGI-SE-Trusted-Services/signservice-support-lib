@@ -337,7 +337,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer != null
             response.signatures.signer.size() == 1
             response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
-            response.signatures.signer.get(0).signerId == "195207092072"
+            response.signatures.signer.get(0).signerId == expectedSignerId
             response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
             response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
             response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
@@ -346,10 +346,10 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-            testDocument          | documentType | expectedSignatureFormat
-            testSignedXMLDocument | "XML"        | "XAdES-BES"
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"
+            testDocument          | documentType | expectedSignatureFormat | expectedSignerId
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"
     }
 
     @Unroll
@@ -439,7 +439,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
         then:
             !response.verifies
-            xmlReport.Signature[0].@SignatureFormat == "XAdES-BES"
+            xmlReport.Signature[0].@SignatureFormat == "XAdES-BASELINE-B"
             xmlReport.Signature[0].Indication == "TOTAL_FAILED"
             xmlReport.Signature[0].SubIndication == "SIG_CRYPTO_FAILURE"
             xmlReport.Signature[0].AdESValidationDetails.Error == "The signature is not intact!"
@@ -491,7 +491,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
         where:
             testDocument                | expectedSignatureFormat    | issuerId                                 | documentType
-            testSignedXMLDocument       | "XAdES-BES"                | "CN=sub Network - Development"           | "XML"
+            testSignedXMLDocument       | "XAdES-BASELINE-B"         | "CN=sub Network - Development"           | "XML"
             testSignedPDFDocument       | "PAdES-BASELINE-B"         | "CN=sub Network - Development"           | "PDF"
             testSignedCMSDocument       | "CAdES-BASELINE-B"         | "CN=sub Network - Development"           | "CMS"
             euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
@@ -540,7 +540,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer != null
             response.signatures.signer.size() == 1
             response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
-            response.signatures.signer.get(0).signerId == "195207092072"
+            response.signatures.signer.get(0).signerId == expectedSignerId
             response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
             response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
             response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
@@ -552,13 +552,13 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             new File("build/tmp/TrustedListsCertificateSourceBuilderSpec/cacheTest").deleteDir()
 
         where:
-            testDocument          | documentType | expectedSignatureFormat  | useOfflineLoader  | expirationTimeOnlineLoader    | expirationTimeOfflineLoader
-            testSignedXMLDocument | "XML"        | "XAdES-BES"              | false             | -1                            | -1
-            testSignedXMLDocument | "XML"        | "XAdES-BES"              | true              | 0                             | -1
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | false             | -1                            | -1
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | true              | 0                             | -1
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | false             | -1                            | -1
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | true              | 0                             | -1
+            testDocument          | documentType | expectedSignatureFormat  | useOfflineLoader  | expirationTimeOnlineLoader    | expirationTimeOfflineLoader | expectedSignerId
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | false             | -1                            | -1                          | "PNOSE-195207092072"
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | true              | 0                             | -1                          | "PNOSE-195207092072"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | false             | -1                            | -1                          | "195207092072"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | true              | 0                             | -1                          | "195207092072"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | false             | -1                            | -1                          | "195207092072"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | true              | 0                             | -1                          | "195207092072"
     }
 
     @Unroll

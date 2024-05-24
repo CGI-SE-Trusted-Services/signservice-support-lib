@@ -96,7 +96,7 @@ class V2SupportServiceAPISpec extends Specification {
             ))
             .cacheProvider(new SimpleCacheProvider())
             .addSignMessageRecipient("https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7", testRecipientCert)
-            .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123"))
+            .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123".toCharArray()))
             .build() as V2SupportServiceAPI
 
         testDocuments.add(new DocumentSigningRequest(referenceId: "123456", type: "application/pdf", name: "testdocument.pdf", data: new File("src/test/resources/testdocument.pdf").bytes))
@@ -985,7 +985,7 @@ class V2SupportServiceAPISpec extends Specification {
         response.signatures.signer != null
         response.signatures.signer.size() == 1
         response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
-        response.signatures.signer.get(0).signerId == "195207092072"
+        response.signatures.signer.get(0).signerId == expectedSignerId
         response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
         response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
         response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
@@ -994,10 +994,10 @@ class V2SupportServiceAPISpec extends Specification {
         response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-        testDocument            | documentType | expectedSignatureFormat
-        testSignedXMLDocument   | "XML"        | "XAdES-BES"
-        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"
-        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"
+        testDocument            | documentType | expectedSignatureFormat | expectedSignerId
+        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072"
+        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"
+        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"
     }
 
     @Unroll
@@ -1081,23 +1081,23 @@ class V2SupportServiceAPISpec extends Specification {
         crlProxyConfig.httpsProperties.host == "proxy.test.com"
         crlProxyConfig.httpsProperties.port == 1234
         crlProxyConfig.httpsProperties.user == "user"
-        crlProxyConfig.httpsProperties.password == "pass"
+        crlProxyConfig.httpsProperties.password == "pass".toCharArray()
         crlProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         crlProxyConfig.httpProperties.host == "proxy.test.com"
         crlProxyConfig.httpProperties.port == 1234
         crlProxyConfig.httpProperties.user == "user"
-        crlProxyConfig.httpProperties.password == "pass"
+        crlProxyConfig.httpProperties.password == "pass".toCharArray()
         crlProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig != null
         ocspProxyConfig.httpsProperties.host == "proxy.test.com"
         ocspProxyConfig.httpsProperties.port == 1234
         ocspProxyConfig.httpsProperties.user == "user"
-        ocspProxyConfig.httpsProperties.password == "pass"
+        ocspProxyConfig.httpsProperties.password == "pass".toCharArray()
         ocspProxyConfig.httpsProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
         ocspProxyConfig.httpProperties.host == "proxy.test.com"
         ocspProxyConfig.httpProperties.port == 1234
         ocspProxyConfig.httpProperties.user == "user"
-        ocspProxyConfig.httpProperties.password == "pass"
+        ocspProxyConfig.httpProperties.password == "pass".toCharArray()
         ocspProxyConfig.httpProperties.excludedHosts.containsAll(["google.com", "ikea.se"])
     }
 

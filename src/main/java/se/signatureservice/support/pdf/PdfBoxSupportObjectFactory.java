@@ -15,6 +15,7 @@ package se.signatureservice.support.pdf;
 import eu.europa.esig.dss.alert.SilentOnStatusAlert;
 import eu.europa.esig.dss.pdf.AbstractPDFSignatureService;
 import eu.europa.esig.dss.pdf.PDFSignatureService;
+import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import eu.europa.esig.dss.pdf.modifications.PdfDifferencesFinder;
 import eu.europa.esig.dss.pdf.modifications.PdfObjectModificationsFinder;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
@@ -72,8 +73,10 @@ public class PdfBoxSupportObjectFactory extends PdfBoxDefaultObjectFactory {
         // Disable errors for visible signatures covering text within PDF. It is not a good user experience
         // if application crashes because signature image covers text slightly. We trust the user this case.
         if(pdfSignatureService instanceof AbstractPDFSignatureService){
-            ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
-            ((AbstractPDFSignatureService) pdfSignatureService).setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
+            PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker = new PdfSignatureFieldPositionChecker();
+            pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOverlap(new SilentOnStatusAlert());
+            pdfSignatureFieldPositionChecker.setAlertOnSignatureFieldOutsidePageDimensions(new SilentOnStatusAlert());
+            pdfSignatureService.setPdfSignatureFieldPositionChecker(pdfSignatureFieldPositionChecker);
         }
 
         return pdfSignatureService;
