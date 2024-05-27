@@ -3,6 +3,31 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2401.2
+
+=== Improvements and bug fixes
+* DSS library dependency has been upgraded to 5.13.
+* Improved error handling when authentication was canceled by the user.
+
+=== Upgrade notes
+New version of DSS library contains the following upgraded dependencies:
+
+|===
+| Group ID | Artifact ID | Version
+
+| org.apache.httpcomponents.client5
+| httpclient5
+| 5.3
+
+| org.apache.httpcomponents.core5
+| httpcore5
+| 5.2.1
+|===
+
+This might cause problems if an application using this library depends on older version of these dependencies, or using
+other libraries that in turn depends on older versions of these dependencies. To resolve this issue make sure to use the
+specific versions specified in above table within _build.gradle_ or _pom.xml_.
+
 == Version 2401.1
 
 === New features
