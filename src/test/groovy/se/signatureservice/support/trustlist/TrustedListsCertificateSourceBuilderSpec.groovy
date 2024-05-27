@@ -452,7 +452,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
     def "Test verifyDocument on #documentType document, using both official LOTL and custom KeystoreCertificateSource certificates parsed."() {
         setup:
             TrustedListsCertificateSourceBuilder trustedListsCertificateSourceBuilder1 =
-                    new TrustedListsCertificateSourceBuilder("https://ec.europa.eu/tools/lotl/eu-lotl.xml", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2019.276.01.0001.01.ENG", false, false, false, "build/tmp/TrustedListsCertificateSourceBuilderSpec/cache", 0, -1, "src/test/resources/oj-keystore.p12", "PKCS12", "dss-password", new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123"))
+                    new TrustedListsCertificateSourceBuilder("https://ec.europa.eu/tools/lotl/eu-lotl.xml", "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2019.276.01.0001.01.ENG", false, false, false, "build/tmp/TrustedListsCertificateSourceBuilderSpec/cache", 0, -1, "src/test/resources/oj-keystore.p12", "PKCS12", "dss-password", new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "jks", "foo123".toCharArray()))
             V2SupportServiceAPI supportServiceAPI1 = new V2SupportServiceAPI.Builder()
                     .messageSecurityProvider(SupportLibraryUtils.createSimpleMessageSecurityProvider(
                             "src/test/resources/keystore.jks",
@@ -588,13 +588,13 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getSequenceNumber() == 316
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getVersion() == 5
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTerritory() == "EU"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getLocation() == "http://localhost:${mockedServer.port}/"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getCertificates().get(0).getCertificate().getIssuerDN().toString() == "CN=Mock Issuing CA,O=Mockasiner AB,C=SE"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getCertificates().get(0).getCertificate().getSubjectDN().toString() == "CN=Signature Support Service Dev,O=Mockasiner AB,C=SE"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getCertificates().get(0).getCertificate().getSigAlgName() == "SHA256WITHRSA"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getLocation() == "http://localhost:${mockedServerSE.port}/"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getCertificates().get(0).getCertificate().getIssuerDN().toString() == "CN=Mock Issuing CA,O=Mockasiner AB,C=SE"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getCertificates().get(0).getCertificate().getSigAlgName() == "SHA256WITHRSA"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getTSLLocation() == "http://localhost:${mockedServer.port}/"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getSdiCertificates().get(0).getCertificate().getIssuerDN().toString() == "CN=Mock Issuing CA,O=Mockasiner AB,C=SE"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getSdiCertificates().get(0).getCertificate().getSubjectDN().toString() == "CN=Signature Support Service Dev,O=Mockasiner AB,C=SE"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getLotlOtherPointers().get(0).getSdiCertificates().get(0).getCertificate().getSigAlgName() == "SHA256WITHRSA"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getTSLLocation() == "http://localhost:${mockedServerSE.port}/"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getSdiCertificates().get(0).getCertificate().getIssuerDN().toString() == "CN=Mock Issuing CA,O=Mockasiner AB,C=SE"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().getTlOtherPointers().get(0).getSdiCertificates().get(0).getCertificate().getSigAlgName() == "SHA256WITHRSA"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().cacheState.toString() == "SYNCHRONIZED"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getValidationCacheInfo().getIndication().name() == "INDETERMINATE"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getValidationCacheInfo().getSubIndication().name() == "NO_CERTIFICATE_CHAIN_FOUND"
