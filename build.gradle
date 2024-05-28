@@ -5,8 +5,6 @@ apply plugin: "java-library"
 
 pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
     certserviceSettings {
-        signjar = true
-        signjarFolder = "/tmp"
         useMavenCentral = true
         licenseName = "GNU Lesser General Public License v3.0 or later"
         licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
