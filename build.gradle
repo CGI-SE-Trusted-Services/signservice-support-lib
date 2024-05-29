@@ -52,7 +52,7 @@ dependencies {
     api("org.springframework:spring-context:5.3.35") {
         exclude module: "spring-beans"
     }
-    api("org.certificateservices.messages:certservice-messages:v2402.1") {
+    api("org.certificateservices.messages:certservice-messages:2404.1") {
         // certservice-messages is using a newer version of xmlsec and bouncy castle
         // which is not compatible with the current version of DSS library.
         exclude(module: "xmlsec")
