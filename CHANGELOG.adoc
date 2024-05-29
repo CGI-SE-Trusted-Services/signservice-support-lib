@@ -9,6 +9,29 @@ of the Signature Service Support Library.
 * Fixed bug NullPointerException bug when authentication was canceled by the user.
 * Fixed bug related to serialization of signature attributes.
 * Fixed bug when adding individual signer attribute using support library.
+* Improved error handling when authentication was canceled by the user.
+* DSS library dependency has been upgraded to 5.13.
+
+=== Upgrade notes
+Smaller improvements to logging. Now logging statements are using parameterized messages for improved performance.
+Improvements to resource management by converting existing code to use try-with-resources for automatic closure.
+New version of DSS library contains the following upgraded dependencies:
+
+|===
+| Group ID | Artifact ID | Version
+
+| org.apache.httpcomponents.client5
+| httpclient5
+| 5.3
+
+| org.apache.httpcomponents.core5
+| httpcore5
+| 5.2.4
+|===
+
+This might cause problems if an application using this library depends on older version of these dependencies, or using
+other libraries that in turn depends on older versions of these dependencies. To resolve this issue make sure to use the
+specific versions specified in above table within _build.gradle_ or _pom.xml_.
 
 == Version 2403.2
 

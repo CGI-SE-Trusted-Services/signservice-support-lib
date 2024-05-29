@@ -18,6 +18,7 @@ import se.signatureservice.support.utils.SupportLibraryUtils;
 
 import javax.xml.bind.annotation.*;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +85,7 @@ public class DocumentRequests implements Externalizable {
 
         public Builder addCMSDocument(String filePath) throws IOException {
             File file = new File(filePath);
-            return addDocument(file.getName(), "application/octet-stream", new FileInputStream(file), SupportLibraryUtils.generateReferenceId());
+            return addDocument(file.getName(), "application/octet-stream", Files.newInputStream(file.toPath()), SupportLibraryUtils.generateReferenceId());
         }
 
         public Builder addPDFDocument(String fileName, FileInputStream fileStream) throws IOException {
@@ -93,7 +94,7 @@ public class DocumentRequests implements Externalizable {
 
         public Builder addPDFDocument(String filePath) throws IOException {
             File file = new File(filePath);
-            return addDocument(file.getName(), "application/pdf", new FileInputStream(file), SupportLibraryUtils.generateReferenceId());
+            return addDocument(file.getName(), "application/pdf", Files.newInputStream(file.toPath()), SupportLibraryUtils.generateReferenceId());
         }
 
         public Builder addXMLDocument(String fileName, FileInputStream fileStream) throws IOException {
@@ -102,7 +103,7 @@ public class DocumentRequests implements Externalizable {
 
         public Builder addXMLDocument(String filePath) throws IOException {
             File file = new File(filePath);
-            return addDocument(file.getName(), "text/xml", new FileInputStream(file), SupportLibraryUtils.generateReferenceId());
+            return addDocument(file.getName(), "text/xml", Files.newInputStream(file.toPath()), SupportLibraryUtils.generateReferenceId());
         }
 
         public Builder addDocument(String fileName, String fileType, InputStream fileData, String referenceId) throws IOException {
