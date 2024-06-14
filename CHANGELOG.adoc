@@ -11,10 +11,22 @@ of the Signature Service Support Library.
 * Fixed bug when adding individual signer attribute using support library.
 * Improved error handling when authentication was canceled by the user.
 * DSS library dependency has been upgraded to 5.13.
+* Bump Apache PDFBox to 2.0.31.
+* Bump SLF4J Simple Provider to 2.0.13.
+* Bump SLF4J API Module to 2.0.13.
+* Bump JSON In Java to 20240303.
+* Bump Spring Context to 5.3.37.
+* Bump org.certificateservices.messages:certservice-messages to 2405.1.
+* Bump se.signatureservice.configuration:signservice-java-configuration to 2405.1.
+* Bump Joda Time to 2.10.14.
+* Bump Jackson Databind to 2.17.1.
+* Bump OkHttp to 4.12.0.
+* Upgraded Apache Groovy XML/YAML to 3.0.21.
 
 === Upgrade notes
 Smaller improvements to logging. Now logging statements are using parameterized messages for improved performance.
 Improvements to resource management by converting existing code to use try-with-resources for automatic closure.
+
 New version of DSS library contains the following upgraded dependencies:
 
 |===
