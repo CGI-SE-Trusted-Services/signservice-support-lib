@@ -21,7 +21,7 @@ of the Signature Service Support Library.
 * Bump Joda Time to 2.10.14.
 * Bump Jackson Databind to 2.17.1.
 * Bump OkHttp to 4.12.0.
-* Upgraded Apache Groovy XML/YAML to 3.0.21.
+* Bump Apache Groovy XML/YAML to 3.0.21.
 
 === Upgrade notes
 Smaller improvements to logging. Now logging statements are using parameterized messages for improved performance.
