@@ -3,6 +3,16 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2409.1
+
+=== Improvements and bug fixes
+* Bump SLF4J API Module to 2.0.16.
+* Bump SLF4J Simple Provider to 2.0.16.
+* Bump Jackson Databind to 2.17.2.
+* Bump Apache PDFBox to 2.0.32.
+
+=== Upgrade notes
+
 == Version 2405.1
 
 === Improvements and bug fixes
