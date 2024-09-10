@@ -11,6 +11,7 @@ of the Signature Service Support Library.
 * Bump Jackson Databind to 2.17.2.
 * Bump Apache PDFBox to 2.0.32.
 * Bump Spring Context to 5.3.39.
+* Upgraded Gradle build tool to version 7.6.4.
 
 === Upgrade notes
 This release contains no breaking changes.
