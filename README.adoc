@@ -18,7 +18,7 @@ The library can be used within a maven project by adding the following dependenc
 <dependency>
     <groupId>se.signatureservice.support</groupId>
     <artifactId>signservice-support-lib</artifactId>
-    <version>2405.1</version>
+    <version>2408.1</version>
 </dependency>
 ----
 === Gradle Dependency
