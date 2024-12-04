@@ -3,6 +3,19 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2411.1
+
+=== Improvements and bug fixes
+* Upgraded Gradle to 7.6.4 in wrapper.
+* Upgraded Grails from 6.2.0 to 6.2.2.
+* Upgraded Grails Gradle Plugin from 6.2.0 to 6.2.3.
+* Upgraded Groovy to 3.0.23.
+* Upgraded Tomcat to 9.0.97.
+* Upgraded Jackson Databind from 2.17.2 to 2.17.3.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
 == Version 2408.1
 
 === Improvements and bug fixes
