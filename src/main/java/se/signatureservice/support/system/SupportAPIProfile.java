@@ -840,6 +840,11 @@ public class SupportAPIProfile implements SupportProfile {
             return this;
         }
 
+        public Builder padesContentSize(int padesContentSize) {
+            config.setPadesContentSize(padesContentSize);
+            return this;
+        }
+
         public Builder cadesSignatureLevel(String cadesSignatureLevel) {
             config.setCadesSignatureLevel(cadesSignatureLevel);
             return this;

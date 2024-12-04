@@ -647,6 +647,9 @@ This is a complex setting that is described in a separate section below _(Config
 | relatedProfile(String relatedProfile)
 | The name of the related profile, set automatically by configuration manager.
 
+| padesContentSize(int padesContentSize)
+| Reserved signature content size for PAdES. Signature profiles differ in size, LTA-level signatures requires more space then B-level signatures. Default value is 9472 (0x2500).
+
 | requestedCertAttributes(Map<String,Map<String,Object>> requestedCertAttributes)
 | Map containing Requests for subject attributes in a signer certificate that is associated with the signer
 of the generated signature as a result of the sign request. This is a complex setting that is described in a separate
@@ -822,4 +825,39 @@ requestedCertAttributes {
         required = true
     }
 }
+----
+
+== Troubleshooting
+
+=== Error While Signing Document: Unable to Save Document
+
+When attempting to sign a document, most likely LTA, you might encounter the following error:
+
+----
+se.signatureservice.support.api.v2.ServerErrorException: Error while signing document: Unable to save a document. Reason: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize)
+----
+
+This error occurs because there isn't enough reserved space in the PDF document to accommodate the digital signature.
+By default, `0x2500` bytes (9472 bytes in decimal) is reserved for the signature.
+If the signature data exceeds this size, the signing process cannot complete.
+
+==== Solution
+
+To resolve this issue, set the profile-specific option `padesContentSize` to increase the reserved signature space.
+
+**Steps:**
+
+1. **Determine the Required Signature Size:**
+
+- Higher-level PAdES signatures (like LTA-level) require more space due to additional validation data.
+- Estimate the required size based on your signature level;
+
+2. **Set the `padesContentSize` Parameter:**
+
+- In your profile configuration, set the `padesContentSize` option to the desired value.
+
+For example:
+[source, yaml]
+----
+   padesContentSize: 30000
 ----
