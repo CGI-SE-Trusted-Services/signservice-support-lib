@@ -51,7 +51,7 @@ import java.util.UUID;
 public class SupportLibraryUtils {
     public static final String OID_AUTHCONTEXT_EXTENTION = "1.2.752.201.5.1";
 
-    private static final Logger log = LoggerFactory.getLogger(V2SupportServiceAPI.class);
+    private static final Logger log = LoggerFactory.getLogger(SupportLibraryUtils.class);
 
     /**
      * Create a simple message security provider.
