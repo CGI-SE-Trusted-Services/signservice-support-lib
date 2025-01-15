@@ -15,6 +15,10 @@ of the Signature Service Support Library.
 * Bump JSON In Java from 20240303 to 20250107.
 * Bump org.certificateservices.messages:certservice-messages to 2411.1.
 * Bump se.signatureservice.configuration:signservice-java-configuration to 2501.1.
+* Updated README with some troubleshooting related to padesContentSize.
+* Fixed bug where Redis was unable to parse YAML config file.
+
+    java.lang.NoSuchMethodError: 'void org.yaml.snakeyaml.parser.ParserImpl.<init>(org.yaml.snakeyaml.reader.StreamReader)'
 
 === Upgrade notes
 This release contains no breaking changes.
