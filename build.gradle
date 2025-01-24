@@ -52,7 +52,7 @@ dependencies {
     api("org.springframework:spring-context:5.3.39") {
         exclude module: "spring-beans"
     }
-    api("org.certificateservices.messages:certservice-messages:2411.1")
+    api("org.certificateservices.messages:certservice-messages:2411.2")
     if (project.rootProject.name == "signservice") {
         api project(":signservice-java-configuration")
     } else {
