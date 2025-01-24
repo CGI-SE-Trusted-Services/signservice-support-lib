@@ -3,6 +3,15 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2502.1
+
+=== Improvements and bug fixes
+* Reformatted build.gradle to adopt the modern plugin application syntax.
+* Bump se.signatureservice.configuration:signservice-java-configuration to 2502.1.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
 == Version 2501.1
 
 === Improvements and bug fixes

@@ -24,13 +24,14 @@ import java.net.ServerSocket;
 public class ConnectionUtils {
     /**
      * Method that creates a ServerSocket with an automatically selected free port
+     *
      * @return port number
      */
     public static int getUnusedPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
-            int localPort = socket.getLocalPort();
-            socket.close();
-            return localPort;
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to find an available port", e);
         }
     }
 }
