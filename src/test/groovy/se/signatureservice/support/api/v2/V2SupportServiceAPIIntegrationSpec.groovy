@@ -1,5 +1,6 @@
 package se.signatureservice.support.api.v2
 
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import org.certificateservices.messages.MessageSecurityProvider
@@ -41,8 +42,7 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
         supportServiceAPI = new V2SupportServiceAPI.Builder()
                 .messageSecurityProvider(messageSecurityProvider)
                 .cacheProvider(new SimpleCacheProvider())
-                .trustStore("src/test/resources/validation-truststore.jks")
-                .trustStorePassword("foo123")
+                .trustedCertificateSource(new KeyStoreCertificateSource("src/test/resources/validation-truststore.jks", "JKS", "foo123".toCharArray()))
                 .build()
 
         // Create profile configuration to use for the transaction. This can be re-used if needed.
