@@ -51,21 +51,22 @@ import org.apache.xml.security.Init;
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
 import org.bouncycastle.util.encoders.Base64;
-import org.certificateservices.messages.ContextMessageSecurityProvider;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.authcontsaci1.AuthContSaciMessageParser;
-import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
-import org.certificateservices.messages.csmessages.manager.MessageSecurityProviderManager;
-import org.certificateservices.messages.dss1.core.jaxb.SignResponse;
-import org.certificateservices.messages.saml2.assertion.jaxb.*;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.AdESType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*;
-import org.certificateservices.messages.utils.CertUtils;
+import org.signatureservice.messages.ContextMessageSecurityProvider;
+import org.signatureservice.messages.MessageContentException;
+import org.signatureservice.messages.MessageProcessingException;
+import org.signatureservice.messages.MessageSecurityProvider;
+import org.signatureservice.messages.authcontsaci1.AuthContSaciMessageParser;
+import org.signatureservice.messages.authcontsaci1.jaxb.SAMLAuthContextType;
+import org.signatureservice.messages.csmessages.manager.MessageSecurityProviderManager;
+import org.signatureservice.messages.dss1.core.jaxb.SignResponse;
+import org.signatureservice.messages.saml2.assertion.jaxb.*;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.AdESType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SigType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.*;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory;
+import org.signatureservice.messages.utils.CertUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -139,8 +140,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
     private SweEID2DSSExtensionsMessageParser sweEID2DSSExtensionsMessageParser;
     private AuthContSaciMessageParser authContSaciMessageParser;
-    private org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory sweEid2ObjectFactory;
-    private org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
+    private ObjectFactory sweEid2ObjectFactory;
+    private org.signatureservice.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
     private final TemplateProcessor templateProcessor;
 
@@ -165,8 +166,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             try {
                 Init.init();
                 MessageSecurityProviderManager.initMessageSecurityProvider(apiConfig.getMessageSecurityProvider());
-                sweEid2ObjectFactory = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
-                saml2ObjectFactory = new org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory();
+                sweEid2ObjectFactory = new ObjectFactory();
+                saml2ObjectFactory = new org.signatureservice.messages.saml2.assertion.jaxb.ObjectFactory();
                 sweEID2DSSExtensionsMessageParser = new SweEID2DSSExtensionsMessageParser();
                 authContSaciMessageParser = new AuthContSaciMessageParser();
                 sweEID2DSSExtensionsMessageParser.init(apiConfig.getMessageSecurityProvider(), null);
@@ -893,7 +894,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws MessageContentException    If error occurred when parsing the message content.
      * @throws MessageProcessingException If error occurred when processing the message.
      */
-    private synchronized Object synchronizedParseMessage(org.certificateservices.messages.ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException {
+    private synchronized Object synchronizedParseMessage(ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException {
         return sweEID2DSSExtensionsMessageParser.parseMessage(context, message, requireSignature);
     }
 

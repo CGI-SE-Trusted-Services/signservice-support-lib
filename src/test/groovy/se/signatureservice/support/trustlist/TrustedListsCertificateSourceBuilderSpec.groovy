@@ -32,7 +32,7 @@ import eu.europa.esig.trustedlist.jaxb.tsl.*
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservices.messages.utils.CertUtils
+import org.signatureservice.messages.utils.CertUtils
 import se.signatureservice.support.api.v2.Document
 import se.signatureservice.support.api.v2.DocumentSigningRequest
 import se.signatureservice.support.api.v2.V2SupportServiceAPI

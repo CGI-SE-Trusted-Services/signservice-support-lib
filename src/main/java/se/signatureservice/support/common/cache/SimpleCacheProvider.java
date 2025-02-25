@@ -12,8 +12,8 @@
  *************************************************************************/
 package se.signatureservice.support.common.cache;
 
-import org.certificateservices.messages.utils.DefaultSystemTime;
-import org.certificateservices.messages.utils.SystemTime;
+import org.signatureservice.messages.utils.DefaultSystemTime;
+import org.signatureservice.messages.utils.SystemTime;
 import se.signatureservice.configuration.common.InternalErrorException;
 import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.configuration.common.cache.CacheProvider;
