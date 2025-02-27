@@ -23,7 +23,7 @@ import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry
 import eu.europa.esig.dss.token.JKSSignatureToken
-import eu.europa.esig.dss.validation.CommonCertificateVerifier
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier
 import eu.europa.esig.dss.xades.TrustedListSignatureParametersBuilder
 import eu.europa.esig.dss.xades.XAdESSignatureParameters
 import eu.europa.esig.dss.xades.signature.XAdESService
@@ -45,10 +45,10 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import javax.servlet.ServletException
-import javax.servlet.http.HttpServlet
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import jakarta.servlet.ServletException
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import javax.xml.datatype.DatatypeFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -58,7 +58,7 @@ import java.security.KeyStore
 import java.security.Security
 import java.security.cert.X509Certificate
 
-import static javax.servlet.http.HttpServletResponse.*
+import static jakarta.servlet.http.HttpServletResponse.*
 
 /**
  * Unit test for TrustedListsCertificateSourceBuilder.

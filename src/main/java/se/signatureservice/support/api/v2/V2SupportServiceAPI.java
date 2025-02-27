@@ -12,7 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
-import eu.europa.esig.dss.AbstractSignatureParameters;
+import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
@@ -35,8 +35,8 @@ import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
-import eu.europa.esig.dss.validation.CertificateVerifier;
-import eu.europa.esig.dss.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
@@ -96,7 +96,7 @@ import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -1478,6 +1478,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 CAdESSignatureParameters cp = new CAdESSignatureParameters();
                 cp.setSignatureLevel(SignatureLevel.valueByName(config.getCadesSignatureLevel()));
                 cp.setSignaturePackaging(SignaturePackaging.valueOf(config.getCadesSignaturePacking()));
+                cp.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
                 parameters = cp;
                 break;
             case XML:
@@ -1493,6 +1494,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             case PDF:
                 PAdESSignatureParameters pp = new PAdESSignatureParameters();
                 pp.setSignatureLevel(SignatureLevel.valueByName(config.getPadesSignatureLevel()));
+                pp.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
                 parameters = pp;
                 break;
             default:
@@ -1543,11 +1545,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             parameters.bLevel().setSigningDate(SignTaskHelper.getXadesSigningTime(signTask));
         } else {
             parameters.bLevel().setSigningDate(relatedTransaction.getSigningTime().get(relatedDocument.referenceId));
-        }
-
-        parameters.setSignWithExpiredCertificate(config.isAllowSignWithExpiredCertificate());
-        if (parameters.isSignWithExpiredCertificate()) {
-            log.warn("Signing with expired certificate is enabled in profile. Make sure this is a conscious choice.");
         }
 
         return parameters;

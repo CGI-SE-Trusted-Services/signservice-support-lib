@@ -12,7 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 /**
  * Created by philip on 2017-04-13.

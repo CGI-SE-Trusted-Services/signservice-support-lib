@@ -40,8 +40,8 @@ import org.xml.sax.SAXException;
 import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.support.common.keygen.SignAlgorithm;
 
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
