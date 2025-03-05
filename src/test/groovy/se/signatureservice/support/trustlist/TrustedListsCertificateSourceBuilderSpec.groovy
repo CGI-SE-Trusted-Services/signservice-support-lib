@@ -473,9 +473,18 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
 
         then:
-            response.verifies // Usually when it fails it's on https://ec.europa.eu/tools/lotl/eu-lotl.xml part. Wait and test again.
+            // Usually when it fails it's on https://ec.europa.eu/tools/lotl/eu-lotl.xml part. Wait and test again.
+
+            //  For euDSSTestSignedXMLDocument, the corresponding test in the eu-lib, DSS2058Test, gets INDETERMINATE indication
+            if (testDocument == euDSSTestSignedXMLDocument) {
+                !response.verifies
+                xmlReport.Signature[0].Indication == "INDETERMINATE"
+            } else {
+                response.verifies
+                xmlReport.Signature[0].Indication == "TOTAL_PASSED"
+            }
+
             xmlReport.Signature[0].@SignatureFormat == expectedSignatureFormat
-            xmlReport.Signature[0].Indication == "TOTAL_PASSED"
             response.reportData != null
             response.reportMimeType == "text/xml"
             response.referenceId == testDocument.referenceId
