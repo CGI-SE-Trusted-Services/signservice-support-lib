@@ -3,6 +3,11 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2503.1
+
+=== Upgrade notes
+Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
+
 == Version 2502.1
 
 === Improvements and bug fixes
