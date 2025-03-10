@@ -6,7 +6,12 @@ of the Signature Service Support Library.
 == Version 2503.1
 
 === Upgrade notes
-Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
+This release contains breaking changes.
+
+=== Changes
+* Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
+* Upgraded eu.europa.ec.joinup.sd-dss to version 6.2
+* No long possible to use config parameter allowSignWithExpiredCertificate
 
 == Version 2502.1
 
