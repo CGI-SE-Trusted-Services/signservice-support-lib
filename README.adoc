@@ -575,9 +575,6 @@ attribute (see defaultUserIdAttributeMapping) that is always included as a signe
 String userIdAttributeMapping)
 | Add trusted authentication services/identity providers that can be used for the given profile.
 
-| allowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate)
-| Flag indicating if it should be possible to create a signed document using an expired certificate.
-
 | authorizedCentralServiceEntityIds(java.util.List<String> authorizedCentralServiceEntityIds)
 | Specify list of meta Data entity Id of all trusted central services that might send signature responses to the library.
 
