@@ -1478,7 +1478,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 CAdESSignatureParameters cp = new CAdESSignatureParameters();
                 cp.setSignatureLevel(SignatureLevel.valueByName(config.getCadesSignatureLevel()));
                 cp.setSignaturePackaging(SignaturePackaging.valueOf(config.getCadesSignaturePacking()));
-                cp.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
                 parameters = cp;
                 break;
             case XML:
@@ -1494,12 +1493,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             case PDF:
                 PAdESSignatureParameters pp = new PAdESSignatureParameters();
                 pp.setSignatureLevel(SignatureLevel.valueByName(config.getPadesSignatureLevel()));
-                pp.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
+                pp.setSignaturePackaging(SignaturePackaging.valueOf(config.getPadesSignaturePacking()));
                 parameters = pp;
                 break;
             default:
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_SIGNATURE_TYPE.toException("Signature type not supported (" + sigType.name() + ")");
         }
+
+        parameters.setEncryptionAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getEncryptionAlgorithm());
+        parameters.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
         return parameters;
     }
 
@@ -1518,8 +1520,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.bLevel().setSigningDate(DateUtils.round(new Date(), Calendar.SECOND));
-        parameters.setEncryptionAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getEncryptionAlgorithm());
-        parameters.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
         return parameters;
     }
 
