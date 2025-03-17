@@ -1537,7 +1537,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private AbstractSignatureParameters getSignatureParameters(SignTaskDataType signTask, SigType sigType, CertificateToken signatureToken, List<CertificateToken> signatureTokenChain,
                                                                DocumentSigningRequest relatedDocument, TransactionState relatedTransaction, SupportAPIProfile config) throws ClientErrorException, ParserConfigurationException, IOException, SAXException {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
+        var exactEncryptionAlgo = parameters.getEncryptionAlgorithm();
         parameters.setSigningCertificate(signatureToken);
+        if(signatureToken.getPublicKey().getAlgorithm() == "RSA") {
+            // In order to enforce a specific encryption algorithm (when supported by the key),
+            // please execute AbstractSignatureParameters.setEncryptionAlgorithm method
+            // after AbstractSignatureParameters.setSigningCertificate method.
+            parameters.setEncryptionAlgorithm(exactEncryptionAlgo);
+        }
         parameters.setCertificateChain(signatureTokenChain);
         parameters.setSignedData(signTask.getToBeSignedBytes());
 
