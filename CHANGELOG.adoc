@@ -11,7 +11,8 @@ This release contains breaking changes.
 === Changes
 * Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
 * Upgraded eu.europa.ec.joinup.sd-dss to version 6.2
-* No long possible to use config parameter allowSignWithExpiredCertificate
+* No longer possible to use config parameter allowSignWithExpiredCertificate
+* Bundled validation policy now accepts the RSASSA-PSS algorithm for signatures, and on signing certificate
 
 == Version 2502.1
 
