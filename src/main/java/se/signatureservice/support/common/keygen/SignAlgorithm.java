@@ -62,7 +62,7 @@ public enum SignAlgorithm {
         RSA_SHA512.sigAlgo = ALG_URI_RSA_SHA512;
         RSA_SHA512.messageDigestName = "SHA-512";
         RSA_SHA512.digestAlgOid = "2.16.840.1.101.3.4.2.3";
-        RSA_SHA512.signAlgOid = "1.2.840.113549.1.1.11";
+        RSA_SHA512.signAlgOid = "1.2.840.113549.1.1.13";
 
         RSA_SSA_PSS_SHA512_MGF1.digestAlgo = HASH_ALG_SHA512;
         RSA_SSA_PSS_SHA512_MGF1.sigAlgo = ALG_URI_RSA_SSA_PSS_SHA512_MGF1;

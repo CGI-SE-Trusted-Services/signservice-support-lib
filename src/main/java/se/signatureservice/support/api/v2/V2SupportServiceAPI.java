@@ -1539,10 +1539,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         var exactEncryptionAlgo = parameters.getEncryptionAlgorithm();
         parameters.setSigningCertificate(signatureToken);
-        if(signatureToken.getPublicKey().getAlgorithm() == "RSA") {
-            // In order to enforce a specific encryption algorithm (when supported by the key),
-            // please execute AbstractSignatureParameters.setEncryptionAlgorithm method
-            // after AbstractSignatureParameters.setSigningCertificate method.
+
+        // BC RSA Public keys will report "algorithm", either "RSASSA-PSS" or "RSA"
+        // In our specific case always "RSA", since we have not actively specified any algorithmIdentifier.
+        // In case the signing algorithm is RSASSA-PSS (the default), we need to re-set it on the parameters object,
+        // See comment from the eu lib on method AbstractSignatureParameters.setSigningCertificate
+        if(signatureToken.getPublicKey().getAlgorithm().startsWith("RSA")) {
             parameters.setEncryptionAlgorithm(exactEncryptionAlgo);
         }
         parameters.setCertificateChain(signatureTokenChain);
