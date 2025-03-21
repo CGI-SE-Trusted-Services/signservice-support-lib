@@ -13,6 +13,8 @@ This release contains breaking changes.
 * Upgraded eu.europa.ec.joinup.sd-dss to version 6.2
 * No longer possible to use config parameter allowSignWithExpiredCertificate
 * Bundled validation policy now accepts the RSASSA-PSS algorithm for signatures, and on signing certificate
+* Support-lib: Fixed issue with `Missing TSPSource` when handling multi-instance signing setups.
+setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
 
 == Version 2502.1
 
