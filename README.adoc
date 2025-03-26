@@ -26,7 +26,7 @@ The library can be used within a Gradle project by adding the following dependen
 
 [source]
 ----
-implementation 'se.signatureservice.support:signservice-support-lib:2405.1'
+implementation 'se.signatureservice.support:signservice-support-lib:2503.1'
 ----
 == Usage Guide
 
