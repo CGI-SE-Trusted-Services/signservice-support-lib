@@ -17,6 +17,7 @@ This release contains breaking changes.
 setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
 * Upgraded Joda Time from 2.10.14 to 2.13.1.
 * Upgraded Jackson to 2.18.3.
+* Smaller optimizations for SimpleCacheProvider.
 
 == Version 2502.1
 
