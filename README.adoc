@@ -497,7 +497,7 @@ be used.
 | cacheProvider(se.signatureservice.configuration.common.cache.CacheProvider cacheProvider)
 | Specify cache provider to use for temporary storage.
 
-| certificateVerifier(eu.europa.esig.dss.validation.CertificateVerifier certificateVerifier)
+| certificateVerifier(eu.europa.esig.dss.spi.validation.CertificateVerifier certificateVerifier)
 | Specify certificate verifier to use when verifying certificates.
 
 | defaultTimeStampSource(eu.europa.esig.dss.spi.x509.tsp.TSPSource timeStampSource)
