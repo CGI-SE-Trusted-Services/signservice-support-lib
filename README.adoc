@@ -48,7 +48,7 @@ within this document.
 ==== Message Security Provider
 When creating an instance of the support service API a message security provider must be provided. The
 message security provider is used when signing signature requests and when verifying signature responses.
-A custom message security provider can be created by implementing `org.signatureservice.messages.MessageSecurityProvider`.
+A custom message security provider can be created by implementing `se.signatureservice.messages.MessageSecurityProvider`.
 It is also possible to use a build-in simple message security provider. The following gives an example of how to
 create a simple message security provider:
 

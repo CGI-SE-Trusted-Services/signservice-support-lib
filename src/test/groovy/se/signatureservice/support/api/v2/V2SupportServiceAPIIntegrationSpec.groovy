@@ -3,7 +3,7 @@ package se.signatureservice.support.api.v2
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
-import org.signatureservice.messages.MessageSecurityProvider
+import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.support.api.SupportServiceAPI
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.system.SupportAPIProfile
