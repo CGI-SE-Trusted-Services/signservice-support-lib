@@ -12,7 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.common.keygen;
 
-import org.signatureservice.messages.MessageProcessingException;
+import se.signatureservice.messages.MessageProcessingException;
 import se.signatureservice.configuration.common.InvalidArgumentException;
 
 /**
