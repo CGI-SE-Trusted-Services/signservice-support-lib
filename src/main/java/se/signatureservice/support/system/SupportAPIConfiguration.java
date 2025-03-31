@@ -16,7 +16,7 @@ import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
-import org.signatureservice.messages.MessageSecurityProvider;
+import se.signatureservice.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
 import se.signatureservice.configuration.common.cache.CacheProvider;
 import se.signatureservice.configuration.support.system.Constants;
