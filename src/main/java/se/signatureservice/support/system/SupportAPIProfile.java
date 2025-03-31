@@ -368,13 +368,6 @@ public class SupportAPIProfile implements SupportProfile {
     private boolean enableAutomaticValidation = false;
 
     /**
-     * Flag indicating if it should be possible to create a signed document using
-     * an expired certificate.
-     * Default value: false
-     */
-    private boolean allowSignWithExpiredCertificate = false;
-
-    /**
      * Setting indicating the version that should be set in the SignRequestExtension. Default is "1.5" that
      * supports multiple authn context class references.
      */
@@ -752,14 +745,6 @@ public class SupportAPIProfile implements SupportProfile {
         this.enableAutomaticValidation = enableAutomaticValidation;
     }
 
-    public boolean isAllowSignWithExpiredCertificate(){
-        return allowSignWithExpiredCertificate;
-    }
-
-    public void setAllowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate){
-        this.allowSignWithExpiredCertificate = allowSignWithExpiredCertificate;
-    }
-
     public String getSignRequestExtensionVersion() {
         return signRequestExtensionVersion;
     }
@@ -1105,11 +1090,6 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder enableAutomaticValidation(boolean enableAutomaticValidation) {
             config.setEnableAutomaticValidation(enableAutomaticValidation);
-            return this;
-        }
-
-        public Builder allowSignWithExpiredCertificate(boolean allowSignWithExpiredCertificate){
-            config.setAllowSignWithExpiredCertificate(allowSignWithExpiredCertificate);
             return this;
         }
 

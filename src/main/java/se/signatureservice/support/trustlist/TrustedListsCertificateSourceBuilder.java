@@ -15,6 +15,7 @@ package se.signatureservice.support.trustlist;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
 import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader;
+import eu.europa.esig.dss.spi.client.http.DSSCacheFileLoader;
 import eu.europa.esig.dss.spi.client.http.DSSFileLoader;
 import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
@@ -254,7 +255,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      *
      * @return DSSFileLoader which can access to Internet.
      */
-    private DSSFileLoader offlineLoader() {
+    private DSSCacheFileLoader offlineLoader() {
         FileCacheDataLoader offlineFileLoader = new FileCacheDataLoader();
         offlineFileLoader.setCacheExpirationTime(expirationTimeOfflineLoader < 0 ? -1 : expirationTimeOfflineLoader * 60000);
         offlineFileLoader.setDataLoader(new IgnoreDataLoader()); // do not download from Internet
@@ -268,7 +269,7 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      *
      * @return DSSFileLoader which can access to Internet.
      */
-    private DSSFileLoader onlineLoader() {
+    private DSSCacheFileLoader onlineLoader() {
         FileCacheDataLoader onlineFileLoader = new FileCacheDataLoader();
         onlineFileLoader.setCacheExpirationTime(expirationTimeOnlineLoader < 0 ? -1 : expirationTimeOnlineLoader * 60000);
         onlineFileLoader.setDataLoader(new CommonsDataLoader()); // instance of DataLoader which can access to Internet (proxy,...)

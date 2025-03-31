@@ -230,7 +230,7 @@ class SupportAPIProfileSpec extends Specification {
         profile.cadesSignaturePacking == "ENVELOPING"
         profile.signatureValidityOverlapMinutes == 0
         profile.signatureValidityMinutes == 5
-        profile.signatureAlgorithm == "SHA256withRSA"
+        profile.signatureAlgorithm == "SHA512withRSAandMGF1"
         profile.encryptionAlgorithmScheme == "RSA_PKCS1_5_WITH_AES256"
         !profile.useEncryptedSignMessage
         !profile.signMessageMustShow

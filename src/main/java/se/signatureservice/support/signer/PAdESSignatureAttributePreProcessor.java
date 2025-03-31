@@ -12,6 +12,7 @@
  *************************************************************************/
 package se.signatureservice.support.signer;
 
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public class PAdESSignatureAttributePreProcessor extends BaseSignatureAttributeP
      */
     @Override
     protected void doPreProcess(List<Attribute> signatureAttributes, DocumentSigningRequest document) throws IOException {
-        try (PDDocument pdDocument = PDDocument.load(document.getData())) {
+        try (PDDocument pdDocument = Loader.loadPDF(document.getData())) {
             for (Attribute attribute : signatureAttributes) {
                 if (Objects.equals(attribute.getKey(), AvailableSignatureAttributes.VISIBLE_SIGNATURE_PAGE)) {
                     if (Integer.parseInt(attribute.getValue()) > pdDocument.getNumberOfPages()) {

@@ -3,6 +3,22 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2503.1
+
+=== Upgrade notes
+This release contains *breaking changes*.
+
+=== Changes
+* Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
+* Upgraded eu.europa.ec.joinup.sd-dss to version 6.2
+* No longer possible to use config parameter allowSignWithExpiredCertificate
+* Bundled validation policy now accepts the RSASSA-PSS algorithm for signatures, and on signing certificate
+* Support-lib: Fixed issue with `Missing TSPSource` when handling multi-instance signing setups.
+setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
+* Upgraded Joda Time from 2.10.14 to 2.13.1.
+* Upgraded Jackson to 2.18.3.
+* Smaller optimizations for SimpleCacheProvider.
+
 == Version 2502.1
 
 === Improvements and bug fixes

@@ -12,12 +12,14 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
-import eu.europa.esig.dss.AbstractSignatureParameters;
 import eu.europa.esig.dss.cades.CAdESSignatureParameters;
 import eu.europa.esig.dss.cades.signature.CAdESService;
 import eu.europa.esig.dss.diagnostic.CertificateWrapper;
 import eu.europa.esig.dss.enumerations.*;
-import eu.europa.esig.dss.model.*;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.DSSException;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -27,7 +29,10 @@ import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
 import eu.europa.esig.dss.service.http.proxy.ProxyProperties;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.signature.AbstractSignatureParameters;
 import eu.europa.esig.dss.spi.client.http.DataLoader;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
@@ -35,14 +40,13 @@ import eu.europa.esig.dss.spi.x509.aia.DefaultAIASource;
 import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
-import eu.europa.esig.dss.validation.CertificateVerifier;
-import eu.europa.esig.dss.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
 import eu.europa.esig.dss.xml.common.SchemaFactoryBuilder;
 import eu.europa.esig.dss.xml.common.XmlDefinerUtils;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,21 +55,22 @@ import org.apache.xml.security.Init;
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
 import org.bouncycastle.util.encoders.Base64;
-import org.certificateservices.messages.ContextMessageSecurityProvider;
-import org.certificateservices.messages.MessageContentException;
-import org.certificateservices.messages.MessageProcessingException;
-import org.certificateservices.messages.MessageSecurityProvider;
-import org.certificateservices.messages.authcontsaci1.AuthContSaciMessageParser;
-import org.certificateservices.messages.authcontsaci1.jaxb.SAMLAuthContextType;
-import org.certificateservices.messages.csmessages.manager.MessageSecurityProviderManager;
-import org.certificateservices.messages.dss1.core.jaxb.SignResponse;
-import org.certificateservices.messages.saml2.assertion.jaxb.*;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.AdESType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SigType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
-import org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.*;
-import org.certificateservices.messages.utils.CertUtils;
+import org.signatureservice.messages.ContextMessageSecurityProvider;
+import org.signatureservice.messages.MessageContentException;
+import org.signatureservice.messages.MessageProcessingException;
+import org.signatureservice.messages.MessageSecurityProvider;
+import org.signatureservice.messages.authcontsaci1.AuthContSaciMessageParser;
+import org.signatureservice.messages.authcontsaci1.jaxb.SAMLAuthContextType;
+import org.signatureservice.messages.csmessages.manager.MessageSecurityProviderManager;
+import org.signatureservice.messages.dss1.core.jaxb.SignResponse;
+import org.signatureservice.messages.saml2.assertion.jaxb.*;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.AdESType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SigType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SignMessageMimeType;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory;
+import org.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.*;
+import org.signatureservice.messages.utils.CertUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -95,7 +100,6 @@ import se.signatureservice.support.utils.DSSLibraryUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -112,6 +116,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*;
 
@@ -139,11 +144,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
     private SweEID2DSSExtensionsMessageParser sweEID2DSSExtensionsMessageParser;
     private AuthContSaciMessageParser authContSaciMessageParser;
-    private org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory sweEid2ObjectFactory;
-    private org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
+    private ObjectFactory sweEid2ObjectFactory;
+    private org.signatureservice.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
     private final TemplateProcessor templateProcessor;
-
 
     /**
      * Create an instance of the support service library.
@@ -165,8 +169,8 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             try {
                 Init.init();
                 MessageSecurityProviderManager.initMessageSecurityProvider(apiConfig.getMessageSecurityProvider());
-                sweEid2ObjectFactory = new org.certificateservices.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory();
-                saml2ObjectFactory = new org.certificateservices.messages.saml2.assertion.jaxb.ObjectFactory();
+                sweEid2ObjectFactory = new ObjectFactory();
+                saml2ObjectFactory = new org.signatureservice.messages.saml2.assertion.jaxb.ObjectFactory();
                 sweEID2DSSExtensionsMessageParser = new SweEID2DSSExtensionsMessageParser();
                 authContSaciMessageParser = new AuthContSaciMessageParser();
                 sweEID2DSSExtensionsMessageParser.init(apiConfig.getMessageSecurityProvider(), null);
@@ -178,7 +182,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             pAdESService = new PAdESService(getCertificateVerifier());
             cAdESService = new CAdESService(getCertificateVerifier());
 
-            onlineTSPSources = new HashMap<>();
+            onlineTSPSources = new ConcurrentHashMap<>();
             templateProcessor = new DefaultTemplateProcessor();
         } catch (Exception e) {
             throw new SupportServiceLibraryException("Error while creating Support Service API: " + e.getMessage());
@@ -365,7 +369,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             documentResponses.documents.addAll(signedDocuments);
             signatureResponse.setDocuments(documentResponses);
         } catch (Exception e) {
-            log.error("Error while processing sign response: {}", e.getMessage());
+            log.error("Error while processing sign response: {}", e.getMessage(), e);
 
             if (e instanceof ServerErrorException) {
                 throw (ServerErrorException) e;
@@ -491,7 +495,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             response.setSignatures(new Signatures(signatures));
 
         } catch (Exception e) {
-            log.error("Error while verifying signed document: {}", e.getMessage());
+            log.error("Error while verifying signed document: {}", e.getMessage(), e);
 
             if (e instanceof ServerErrorException) {
                 throw (ServerErrorException) e;
@@ -633,6 +637,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 case XML:
                     XAdESSignatureParameters xAdESParameters = (XAdESSignatureParameters) signatureParameters;
                     xAdESParameters.setSignedAdESObject(signTask.getAdESObject().getAdESObjectBytes());
+                    if (!config.getXadesSignatureLevel().equals(SignatureLevel.XAdES_BASELINE_B.toString())) {
+                        xAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
+                    }
                     dssSignedDocument = xAdESService.signDocument(dssDocument, (XAdESSignatureParameters) signatureParameters, signatureValue);
                     break;
                 case PDF:
@@ -652,9 +659,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                                     AvailableSignatureAttributes.VISIBLE_SIGNATURE_HEIGHT);
                         }
                     }
+                    if (!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())) {
+                        pAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
+                    }
                     dssSignedDocument = pAdESService.signDocument(dssDocument, pAdESParameters, signatureValue);
                     break;
                 case CMS:
+                    if (!config.getCadesSignatureLevel().equals(SignatureLevel.CAdES_BASELINE_B.toString())) {
+                        cAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
+                    }
                     dssSignedDocument = cAdESService.signDocument(dssDocument, (CAdESSignatureParameters) signatureParameters, signatureValue);
                     break;
                 default:
@@ -697,7 +710,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     VerifyDocumentResponse validationInfo = verifyDocument(config, signedDocument);
                     signedDocument.setValidationInfo(validationInfo);
                 } catch (Exception e) {
-                    log.error("Error while performing automatic validation of document: {})", e.getMessage());
+                    log.error("Error while performing automatic validation of document: {})", e.getMessage(), e);
                 }
             }
 
@@ -893,7 +906,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws MessageContentException    If error occurred when parsing the message content.
      * @throws MessageProcessingException If error occurred when processing the message.
      */
-    private synchronized Object synchronizedParseMessage(org.certificateservices.messages.ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException {
+    private synchronized Object synchronizedParseMessage(ContextMessageSecurityProvider.Context context, byte[] message, boolean requireSignature) throws MessageContentException, MessageProcessingException {
         return sweEID2DSSExtensionsMessageParser.parseMessage(context, message, requireSignature);
     }
 
@@ -1064,7 +1077,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param config Timestamp configuration
      * @return TSP source using the given timestamp configuration.
      */
-    private TSPSource getTspSource(TimeStampConfig config) throws ServerErrorException {
+    private TSPSource getOrCreateTspSource(TimeStampConfig config) throws ServerErrorException {
         if (config.getUrl() == null) {
             if (apiConfig.getDefaultTimeStampSource() != null) {
                 log.debug("Using default time stamp source");
@@ -1162,27 +1175,26 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         switch (sigType) {
             case XML:
                 if (!config.getXadesSignatureLevel().equals(SignatureLevel.XAdES_BASELINE_B.toString())) {
-                    xAdESService.setTspSource(getTspSource(config.getTimeStamp()));
+                    xAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
                 }
                 signTask.setToBeSignedBytes(xAdESService.getDataToSign(dssDocument, (XAdESSignatureParameters) dssParameters).getBytes());
                 break;
             case PDF:
-                if (!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())) {
-                    pAdESService.setTspSource(getTspSource(config.getTimeStamp()));
-                }
                 PAdESSignatureParameters pAdESParameters = (PAdESSignatureParameters) dssParameters;
                 pAdESParameters.setSignerName(signingId);
                 pAdESParameters.setContentSize(config.getPadesContentSize());
                 if (config.getVisibleSignature().isEnable()) {
                     setVisibleSignature(config, pAdESParameters, signingId, SupportLibraryUtils.generateStrongReferenceId(transactionId, document.getReferenceId()), signatureAttributes);
                 }
-
                 pAdESService.setPdfObjFactory(new PdfBoxSupportObjectFactory());
+                if (!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())) {
+                    pAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
+                }
                 signTask.setToBeSignedBytes(pAdESService.getDataToSign(dssDocument, pAdESParameters).getBytes());
                 break;
             case CMS:
                 if (!config.getCadesSignatureLevel().equals(SignatureLevel.CAdES_BASELINE_B.toString())) {
-                    cAdESService.setTspSource(getTspSource(config.getTimeStamp()));
+                    cAdESService.setTspSource(getOrCreateTspSource(config.getTimeStamp()));
                 }
                 signTask.setToBeSignedBytes(cAdESService.getDataToSign(dssDocument, (CAdESSignatureParameters) dssParameters).getBytes());
                 break;
@@ -1492,11 +1504,15 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             case PDF:
                 PAdESSignatureParameters pp = new PAdESSignatureParameters();
                 pp.setSignatureLevel(SignatureLevel.valueByName(config.getPadesSignatureLevel()));
+                pp.setSignaturePackaging(SignaturePackaging.valueOf(config.getPadesSignaturePacking()));
                 parameters = pp;
                 break;
             default:
                 throw (ClientErrorException) ErrorCode.UNSUPPORTED_SIGNATURE_TYPE.toException("Signature type not supported (" + sigType.name() + ")");
         }
+
+        parameters.setEncryptionAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getEncryptionAlgorithm());
+        parameters.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
         return parameters;
     }
 
@@ -1515,8 +1531,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
         parameters.setGenerateTBSWithoutCertificate(true);
         parameters.bLevel().setSigningDate(DateUtils.round(new Date(), Calendar.SECOND));
-        parameters.setEncryptionAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getEncryptionAlgorithm());
-        parameters.setDigestAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getDigestAlgorithm());
         return parameters;
     }
 
@@ -1534,7 +1548,16 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private AbstractSignatureParameters getSignatureParameters(SignTaskDataType signTask, SigType sigType, CertificateToken signatureToken, List<CertificateToken> signatureTokenChain,
                                                                DocumentSigningRequest relatedDocument, TransactionState relatedTransaction, SupportAPIProfile config) throws ClientErrorException, ParserConfigurationException, IOException, SAXException {
         AbstractSignatureParameters parameters = getBaseSignatureParameters(sigType, config);
+        var exactEncryptionAlgo = parameters.getEncryptionAlgorithm();
         parameters.setSigningCertificate(signatureToken);
+
+        // BC RSA Public keys will report "algorithm", either "RSASSA-PSS" or "RSA"
+        // In our specific case always "RSA", since we have not actively specified any algorithmIdentifier.
+        // In case the signing algorithm is RSASSA-PSS (the default), we need to re-set it on the parameters object,
+        // See comment from the eu lib on method AbstractSignatureParameters.setSigningCertificate
+        if (signatureToken.getPublicKey().getAlgorithm().startsWith("RSA")) {
+            parameters.setEncryptionAlgorithm(exactEncryptionAlgo);
+        }
         parameters.setCertificateChain(signatureTokenChain);
         parameters.setSignedData(signTask.getToBeSignedBytes());
 
@@ -1542,11 +1565,6 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             parameters.bLevel().setSigningDate(SignTaskHelper.getXadesSigningTime(signTask));
         } else {
             parameters.bLevel().setSigningDate(relatedTransaction.getSigningTime().get(relatedDocument.referenceId));
-        }
-
-        parameters.setSignWithExpiredCertificate(config.isAllowSignWithExpiredCertificate());
-        if (parameters.isSignWithExpiredCertificate()) {
-            log.warn("Signing with expired certificate is enabled in profile. Make sure this is a conscious choice.");
         }
 
         return parameters;

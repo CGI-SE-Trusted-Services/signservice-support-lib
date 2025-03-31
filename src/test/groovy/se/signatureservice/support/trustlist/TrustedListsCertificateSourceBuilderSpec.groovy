@@ -23,7 +23,7 @@ import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry
 import eu.europa.esig.dss.token.JKSSignatureToken
-import eu.europa.esig.dss.validation.CommonCertificateVerifier
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier
 import eu.europa.esig.dss.xades.TrustedListSignatureParametersBuilder
 import eu.europa.esig.dss.xades.XAdESSignatureParameters
 import eu.europa.esig.dss.xades.signature.XAdESService
@@ -32,7 +32,7 @@ import eu.europa.esig.trustedlist.jaxb.tsl.*
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.certificateservices.messages.utils.CertUtils
+import org.signatureservice.messages.utils.CertUtils
 import se.signatureservice.support.api.v2.Document
 import se.signatureservice.support.api.v2.DocumentSigningRequest
 import se.signatureservice.support.api.v2.V2SupportServiceAPI
@@ -45,10 +45,10 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import javax.servlet.ServletException
-import javax.servlet.http.HttpServlet
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import jakarta.servlet.ServletException
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import javax.xml.datatype.DatatypeFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -58,7 +58,7 @@ import java.security.KeyStore
 import java.security.Security
 import java.security.cert.X509Certificate
 
-import static javax.servlet.http.HttpServletResponse.*
+import static jakarta.servlet.http.HttpServletResponse.*
 
 /**
  * Unit test for TrustedListsCertificateSourceBuilder.
@@ -473,9 +473,18 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
 
         then:
-            response.verifies // Usually when it fails it's on https://ec.europa.eu/tools/lotl/eu-lotl.xml part. Wait and test again.
+            // Usually when it fails it's on https://ec.europa.eu/tools/lotl/eu-lotl.xml part. Wait and test again.
+
+            //  For euDSSTestSignedXMLDocument, the corresponding test in the eu-lib, DSS2058Test, gets INDETERMINATE indication
+            if (testDocument == euDSSTestSignedXMLDocument) {
+                !response.verifies
+                xmlReport.Signature[0].Indication == "INDETERMINATE"
+            } else {
+                response.verifies
+                xmlReport.Signature[0].Indication == "TOTAL_PASSED"
+            }
+
             xmlReport.Signature[0].@SignatureFormat == expectedSignatureFormat
-            xmlReport.Signature[0].Indication == "TOTAL_PASSED"
             response.reportData != null
             response.reportMimeType == "text/xml"
             response.referenceId == testDocument.referenceId

@@ -18,8 +18,8 @@
 // Generated on: 2016.05.23 at 04:03:45 PM CEST 
 //
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "v2.api.support.signatureservice.se",
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "v2.api.support.signatureservice.se",
 xmlns = {   
-		@javax.xml.bind.annotation.XmlNs(namespaceURI = "v2.api.support.signatureservice.se", prefix = "api")},
-	    elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+		@jakarta.xml.bind.annotation.XmlNs(namespaceURI = "v2.api.support.signatureservice.se", prefix = "api")},
+	    elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package se.signatureservice.support.api.v2;
