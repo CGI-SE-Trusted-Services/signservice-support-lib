@@ -109,7 +109,16 @@ public class SignTaskHelper {
     private static final String DSS_CERTIFICATETOKEN_XMLID_PREFIX = "C-";
 
     private static DocumentBuilderFactory documentBuilderFactory;
-    private static SystemTime systemTime;
+    private final SystemTime systemTime;
+
+    /**
+     * SignTaskHelper Constructor.
+     *
+     * @param systemTime SystemTime to use, or null to use default.
+     */
+    public SignTaskHelper(SystemTime systemTime) {
+        this.systemTime = Objects.requireNonNullElseGet(systemTime, DefaultSystemTime::new);
+    }
 
     /**
      * Create new XaDES-object from scratch that will be used during the signature process for
@@ -117,9 +126,9 @@ public class SignTaskHelper {
      * @param signTask Sign task to update with new XAdES-object
      * @param signTransformation Signature transformation that is used.
      * @param signingCertificate Signature certificate that will be used to sign the ToBeSignedBytes
-     * @param signingTime Signing time to use or null to use the current system time.
+     * @param explicitSigningTime Signing time to use or null to use the current system time.
      */
-    public static void createNewXadesObject(SignTaskDataType signTask, String signTransformation, X509Certificate signingCertificate, Date signingTime) throws MessageProcessingException, IOException, SAXException, ParserConfigurationException, TransformerException, InvalidCanonicalizerException, CertificateEncodingException, NoSuchAlgorithmException, CanonicalizationException {
+    public void createNewXadesObject(SignTaskDataType signTask, String signTransformation, X509Certificate signingCertificate, Date explicitSigningTime) throws MessageProcessingException, IOException, SAXException, ParserConfigurationException, TransformerException, InvalidCanonicalizerException, CertificateEncodingException, NoSuchAlgorithmException, CanonicalizationException {
         SignAlgorithm signAlgorithm = SignAlgorithm.getAlgoByJavaName(signTransformation);
         DocumentBuilder documentBuilder = getSignedInfoDocumentBuilder();
         org.w3c.dom.Document signedInfo = documentBuilder.parse(new ByteArrayInputStream(signTask.getToBeSignedBytes()));
@@ -133,9 +142,9 @@ public class SignTaskHelper {
             canonicalizationMethod = canonicalizationMethodElement.getAttribute(XML_ATTRIBUTE_ALGORITHM);
         }
 
-
+        Date signingTime = explicitSigningTime;
         if(signingTime == null){
-            signingTime = DateUtils.round(getSystemTime().getSystemTime(), Calendar.SECOND);
+            signingTime = DateUtils.round(this.systemTime.getSystemTime(), Calendar.SECOND);
         }
 
         String signedPropertiesId = getSignedPropertiesId(signTask, signingTime, signingCertificate);
@@ -247,19 +256,6 @@ public class SignTaskHelper {
      */
     private static DocumentBuilder getSignedInfoDocumentBuilder() throws ParserConfigurationException {
         return getSignedInfoDocumentBuilderFactory().newDocumentBuilder();
-    }
-
-    /**
-     * Get system time instance.
-     *
-     * @return System time instance.
-     */
-    private static SystemTime getSystemTime() {
-        if(systemTime == null){
-            systemTime = new DefaultSystemTime();
-        }
-
-        return systemTime;
     }
 
     /**

@@ -55,6 +55,18 @@ import org.apache.xml.security.Init;
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
 import org.bouncycastle.util.encoders.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.xml.sax.SAXException;
+import se.signatureservice.configuration.common.InternalErrorException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
+import se.signatureservice.configuration.common.cache.CacheProvider;
+import se.signatureservice.configuration.common.cache.MetaData;
+import se.signatureservice.configuration.common.utils.ColorParser;
+import se.signatureservice.configuration.common.utils.ConfigUtils;
+import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.configuration.support.system.TimeStampConfig;
 import se.signatureservice.messages.ContextMessageSecurityProvider;
 import se.signatureservice.messages.MessageContentException;
 import se.signatureservice.messages.MessageProcessingException;
@@ -71,18 +83,6 @@ import se.signatureservice.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensio
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.*;
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.ObjectFactory;
 import se.signatureservice.messages.utils.CertUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.xml.sax.SAXException;
-import se.signatureservice.configuration.common.InternalErrorException;
-import se.signatureservice.configuration.common.InvalidArgumentException;
-import se.signatureservice.configuration.common.cache.CacheProvider;
-import se.signatureservice.configuration.common.cache.MetaData;
-import se.signatureservice.configuration.common.utils.ColorParser;
-import se.signatureservice.configuration.common.utils.ConfigUtils;
-import se.signatureservice.configuration.support.system.Constants;
-import se.signatureservice.configuration.support.system.TimeStampConfig;
 import se.signatureservice.support.api.AvailableSignatureAttributes;
 import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
@@ -1099,7 +1099,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 proxyProperties.setScheme(config.getProxyScheme());
                 proxyProperties.setUser(config.getProxyUser());
 
-                if(config.getProxyPassword() != null){
+                if (config.getProxyPassword() != null) {
                     proxyProperties.setPassword(config.getProxyPassword().toCharArray());
                 }
 
@@ -1120,7 +1120,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if (config.getKeyStorePath() != null && config.getKeyStorePassword() != null) {
                 log.debug("Using keystore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslKeystore(DSSLibraryUtils.createDSSDocument(config.getKeyStorePath()));
-                if(config.getKeyStorePassword() != null){
+                if (config.getKeyStorePassword() != null) {
                     dataLoader.setSslKeystorePassword(config.getKeyStorePassword().toCharArray());
                 }
                 dataLoader.setSslKeystoreType(config.getKeyStoreType());
@@ -1129,7 +1129,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if (config.getTrustStorePath() != null && config.getTrustStorePassword() != null) {
                 log.debug("Using truststore for time stamp source: {}", config.getTrustStorePath());
                 dataLoader.setSslTruststore(DSSLibraryUtils.createDSSDocument(config.getTrustStorePath()));
-                if(config.getTrustStorePassword() != null){
+                if (config.getTrustStorePassword() != null) {
                     dataLoader.setSslTruststorePassword(config.getTrustStorePassword().toCharArray());
                 }
                 dataLoader.setSslTruststoreType(config.getTrustStoreType());
@@ -1208,7 +1208,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         // XAdES is the only signature type that has a separate AdES-object.
         if (adESType == AdESType.BES && sigType == SigType.XML) {
-            SignTaskHelper.createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
+            new SignTaskHelper(null).createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
         }
 
         // Store signing time in cache
