@@ -52,6 +52,11 @@ dependencies {
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
     implementation 'jakarta.activation:jakarta.activation-api:2.1.3'
 
+    // To fix vulnerability CVE-2025-27820 derived from eu.europa.ec.joinup.sd-dss:dss-service
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.3.4'
+
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
     testImplementation 'com.squareup.okhttp3:okhttp:4.12.0'
