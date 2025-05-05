@@ -46,7 +46,6 @@ dependencies {
         api("se.signatureservice.messages:signservice.messages:2505.1")
         api("se.signatureservice.configuration:signservice-java-configuration:2505.1")
     }
-    implementation "joda-time:joda-time:2.14.0"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.19.0"
 
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'

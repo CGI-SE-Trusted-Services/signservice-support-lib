@@ -1208,7 +1208,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
         // XAdES is the only signature type that has a separate AdES-object.
         if (adESType == AdESType.BES && sigType == SigType.XML) {
-            new SignTaskHelper(null).createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
+            new SignTaskHelper().createNewXadesObject(signTask, config.getSignatureAlgorithm(), null, dssParameters.bLevel().getSigningDate());
         }
 
         // Store signing time in cache

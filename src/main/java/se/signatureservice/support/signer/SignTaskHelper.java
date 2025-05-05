@@ -121,6 +121,13 @@ public class SignTaskHelper {
     }
 
     /**
+     * SignTaskHelper Constructor.
+     */
+    public SignTaskHelper() {
+        this(null);
+    }
+
+    /**
      * Create new XaDES-object from scratch that will be used during the signature process for
      * advanced XML signatures (XAdES).
      * @param signTask Sign task to update with new XAdES-object
