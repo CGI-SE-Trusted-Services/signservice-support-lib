@@ -3,6 +3,14 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2505.1
+
+=== Upgrade notes
+Changes in preparation for moving to java 21 in Q4 2025
+
+=== Changes
+* Removed old test library org.codehaus.groovy.modules.http-builder:http-builder
+
 == Version 2503.1
 
 === Upgrade notes
