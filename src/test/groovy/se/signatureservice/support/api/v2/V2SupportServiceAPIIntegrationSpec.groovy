@@ -1,8 +1,10 @@
 package se.signatureservice.support.api.v2
 
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
+import groovy.xml.XmlSlurper
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody
 import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.support.api.SupportServiceAPI
@@ -246,23 +248,23 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
         RequestBody formBody = new FormBody.Builder()
                 .add("EidSignRequest", signRequest)
                 .add("RelayState", relayState)
-                .build();
+                .build()
 
-        def request = new okhttp3.Request.Builder()
+        def request = new Request.Builder()
                 .url(actionURL)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .post(formBody)
                 .build()
 
-        def res = client.newCall(request).execute()
-
-        def bodyString = new String(res.body().bytes())
-        def xml = toXml(bodyString)
-
-        result.put("ActionURL", xml.body.form.@action.toString())
-        result.put("SAMLRequest", xml.body.form.div.input.find { it.@name == "SAMLRequest" }.@value.toString())
-        result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
-        result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("SAMLRequest", xml.body.form.div.input.find { it.@name == "SAMLRequest" }.@value.toString())
+            result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
+            result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
+        }
         return result
     }
 
@@ -273,21 +275,22 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
                 .add("SAMLRequest", authnRequest)
                 .add("RelayState", relayState)
                 .add("PersonalNumber", userId)
-                .build();
+                .build()
 
-        def request = new okhttp3.Request.Builder()
+        def request = new Request.Builder()
                 .url(actionURL)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .post(formBody)
                 .build()
 
-        def res = client.newCall(request).execute()
-
-        def bodyString = new String(res.body().bytes())
-        def xml = toXml(bodyString)
-        result.put("ActionURL", xml.body.form.@action.toString())
-        result.put("SAMLResponse", xml.body.form.input.find { it.@name == "SAMLResponse" }.@value.toString())
-        result.put("RelayState", xml.body.form.input.find { it.@name == "RelayState" }.@value.toString())
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("SAMLResponse", xml.body.form.input.find { it.@name == "SAMLResponse" }.@value.toString())
+            result.put("RelayState", xml.body.form.input.find { it.@name == "RelayState" }.@value.toString())
+        }
         return result
     }
 
@@ -298,30 +301,30 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
         RequestBody formBody = new FormBody.Builder()
                 .add("SAMLResponse", authnResponse)
                 .add("RelayState", relayState)
-                .build();
+                .build()
 
-        def request = new okhttp3.Request.Builder()
+        def request = new Request.Builder()
                 .url(actionURL)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .post(formBody)
                 .build()
 
-        def res = client.newCall(request).execute()
-
-        def bodyString = new String(res.body().bytes())
-        def xml = toXml(bodyString)
-        result.put("ActionURL", xml.body.form.@action.toString())
-        result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
-        result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
+            result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
+        }
         return result
     }
 
-    private static toXml(String input) {
-        def reader = SAXParserFactory.newInstance()
-        // Disable DTD fetching and external entities
-        reader.setFeature("http://xml.org/sax/features/external-general-entities", false)
-        reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-        return new XmlSlurper(reader.newSAXParser()).parseText(input)
+    private static parseXmlStream(Reader reader) {
+        def factory = SAXParserFactory.newInstance()
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        return new XmlSlurper(factory.newSAXParser()).parse(reader)
     }
 }

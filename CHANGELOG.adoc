@@ -43,6 +43,20 @@ setTspSource is now also called during the CompleteSignature step to prevent Nul
 * Upgraded Jackson to 2.18.3.
 * Smaller optimizations for SimpleCacheProvider.
 
+== Version 2502.3
+
+=== Improvements and bug fixes
+* Changed to signservice-java-configuration to 2502.3.
+
+== Version 2502.2
+
+=== Improvements and bug fixes
+* Support-lib: Fixed issue with `Missing TSPSource` when handling multi-instance signing setups.
+setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
 == Version 2502.1
 
 === Improvements and bug fixes
