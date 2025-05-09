@@ -1,0 +1,73 @@
+plugins {
+    id("groovy")
+    id("java-library")
+}
+
+group "se.signatureservice.support"
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    integrationTestCompileClasspath.extendsFrom testCompileClasspath
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+configurations.configureEach {
+    exclude group: 'xerces'
+}
+
+dependencies {
+    api "eu.europa.ec.joinup.sd-dss:dss-xades:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-cades:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-pades:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-pades-pdfbox:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-service:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-utils:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-crl-parser-x509crl:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-diagnostic-jaxb:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-validation:${dssVersion}"
+    api "org.apache.santuario:xmlsec:2.3.5"
+    api "org.slf4j:slf4j-api:2.0.17"
+    api "org.slf4j:slf4j-simple:2.0.17"
+    api("org.json:json:20250107") {
+        exclude group: 'cn.hutool', module: 'hutool-json'
+    }
+    api("org.springframework:spring-context:5.3.39") {
+        exclude module: "spring-beans"
+    }
+    if (project.rootProject.name == "signservice") {
+        api project(":signservice-messages")
+        api project(":signservice-java-configuration")
+    } else {
+        api("se.signatureservice.messages:signservice.messages:2505.1")
+        api("se.signatureservice.configuration:signservice-java-configuration:2505.1")
+    }
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.19.0"
+
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
+    implementation 'jakarta.activation:jakarta.activation-api:2.1.3'
+
+    // To fix vulnerability CVE-2025-27820 derived from eu.europa.ec.joinup.sd-dss:dss-service
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.3.4'
+
+    testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
+    testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
+    testImplementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.40"
+    testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
+    testImplementation "org.codehaus.groovy:groovy-xml:3.0.24"
+    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.24"
+
+    testImplementation platform("org.spockframework:spock-bom:2.3-groovy-3.0")
+    testImplementation "org.spockframework:spock-core"
+}
+
+test {
+    useJUnitPlatform()
+}
