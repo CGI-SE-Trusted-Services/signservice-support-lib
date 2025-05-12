@@ -1,0 +1,13 @@
+#  Mix of single and multiple values for authcontextclassrefs
+
+relatedProfile: "testProfile8"
+signatureAlgorithm: "SHA256withRSA"
+enableAuthnProfile: true
+authorizedConsumerURLs:
+  - "https://localhost"
+  - "http://localhost"
+defaultAuthnContextClassRef: "Ref:A"
+trustedAuthenticationServices:
+  testIdp1:
+    entityId: "https://testidp1"
+    authnContextClassRef: "Ref:B"
