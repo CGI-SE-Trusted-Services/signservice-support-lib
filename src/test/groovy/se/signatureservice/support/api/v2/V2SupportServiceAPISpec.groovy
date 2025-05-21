@@ -128,6 +128,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile1,
                 null,
@@ -160,7 +161,11 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.OptionalInputs.SignRequestExtension.RequestedSignatureAlgorithm == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties != null
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.@CertType == "QC/SSCD"
-        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef == "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == 1
+        authnContextClassRefs.contains("urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI")
+
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 8
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
@@ -215,6 +220,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile2,
                 null,
@@ -247,7 +253,11 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.OptionalInputs.SignRequestExtension.RequestedSignatureAlgorithm == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties != null
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.@CertType == "QC/SSCD"
-        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef == "urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos"
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == 1
+        authnContextClassRefs.contains("urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos")
+
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 8
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
@@ -303,6 +313,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7",
+                null,
                 "https://localhost:8080/response",
                 testProfile3,
                 null,
@@ -348,6 +359,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile4,
             null,
@@ -387,6 +399,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile5,
             null,
@@ -413,6 +426,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile6,
             null,
@@ -440,6 +454,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile7,
             null,
@@ -557,7 +572,7 @@ class V2SupportServiceAPISpec extends Specification {
 
     def "test getAuthnContextClassRefs"() {
         when:
-        List<String> accRefs = supportServiceAPI.getAuthnContextClassRefs(authServiceId, profile)
+        List<String> accRefs = supportServiceAPI.getAuthnContextClassRefs(authServiceId, profile, null)
 
         then:
         accRefs == expectedAccRefs
@@ -594,6 +609,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 authenticationServiceId,
+                null,
                 "https://localhost:8080/response",
                 testProfile9,
                 signatureAttributes,
@@ -624,7 +640,7 @@ class V2SupportServiceAPISpec extends Specification {
             signatureAttributes = [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: signatureAttributeValue)]
         }
         when:
-        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, authenticationServiceId, testProfile9, signatureAttributes)
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, authenticationServiceId, testProfile9, signatureAttributes, null)
 
         then:
         signRequestExtensionType.certRequestProperties.authnContextClassRef.containsAll(authnContextClassRefsResult)
@@ -644,7 +660,7 @@ class V2SupportServiceAPISpec extends Specification {
         def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
 
         when:
-        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10, [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")])
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10, [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")], null)
 
         then:
         def error = thrown(ClientErrorException)
@@ -952,6 +968,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile1,
                 signatureAttributes,
@@ -1134,6 +1151,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile11,
                 null,
