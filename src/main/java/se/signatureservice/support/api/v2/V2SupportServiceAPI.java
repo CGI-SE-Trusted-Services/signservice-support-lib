@@ -1380,7 +1380,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
             signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().add(attributeValue);
         } else {
-            throw ErrorCode.INVALID_AUTH_CONTEXT_CLASS_REF.toException("Value specified in Signature Request 'signatureAttributes' for attribute '" + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + "' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: " + authnContextClassRefs + " for authenticationServiceId: " + authenticationServiceId);
+            throw ErrorCode.INVALID_AUTH_CONTEXT_CLASS_REF.toException("Value specified in Signature Request 'signatureAttributes' for attribute '" + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + "' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: " + authnContextClassRefs + " for authenticationServiceId: " + authenticationServiceId + ", nor set in AuthnContextClassRefs override " + overridingAuthnContextClassRefs);
         }
     }
 
