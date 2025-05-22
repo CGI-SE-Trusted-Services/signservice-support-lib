@@ -1,10 +1,9 @@
 /************************************************************************
  *                                                                       *
- *  Signservice Support Lib                                              *
+ *  Signature Service - Support Service Library                          *
  *                                                                       *
  *  This software is free software; you can redistribute it and/or       *
  *  modify it under the terms of the GNU Lesser General Public License   *
- *  (LGPL-3.0-or-later)                                                  *
  *  License as published by the Free Software Foundation; either         *
  *  version 3 of the License, or any later version.                      *
  *                                                                       *
@@ -25,6 +24,8 @@ import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
 import org.bouncycastle.util.encoders.Base64
+import se.signatureservice.configuration.support.system.Constants
+import se.signatureservice.configuration.support.system.VisibleSignatureConfig
 import se.signatureservice.messages.ContextMessageSecurityProvider
 import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.messages.dss1.core.jaxb.Result
@@ -32,13 +33,6 @@ import se.signatureservice.messages.dss1.core.jaxb.SignResponse
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.SigType
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser
 import se.signatureservice.messages.utils.CertUtils
-import org.joda.time.DateTime
-import org.joda.time.DateTimeZone
-import org.joda.time.Minutes
-import org.joda.time.format.DateTimeFormatter
-import org.joda.time.format.ISODateTimeFormat
-import se.signatureservice.configuration.support.system.Constants
-import se.signatureservice.configuration.support.system.VisibleSignatureConfig
 import se.signatureservice.support.common.cache.SimpleCacheProvider
 import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
@@ -46,9 +40,15 @@ import se.signatureservice.support.system.TransactionState
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Specification
 import spock.lang.Unroll
+
 import java.security.cert.X509Certificate
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 import static se.signatureservice.support.api.AvailableSignatureAttributes.*
 
@@ -1172,17 +1172,18 @@ class V2SupportServiceAPISpec extends Specification {
     }
 
     static int getMinutesBetween(String a, String b) {
-        DateTimeFormatter timeFormater = ISODateTimeFormat.dateTime().withZone(DateTimeZone.getDefault())
-        def aDate = timeFormater.parseDateTime(a as String)
-        def bDate = timeFormater.parseDateTime(b as String)
-        return Minutes.minutesBetween(aDate, bDate).minutes
+        OffsetDateTime aDate = OffsetDateTime.parse(a as String, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        OffsetDateTime bDate = OffsetDateTime.parse(b as String, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        Duration duration = Duration.between(aDate, bDate)
+        return Math.abs(duration.toMinutes())
     }
 
     static int getMinutesBetween(String a, Date b) {
-        DateTimeFormatter timeFormater = ISODateTimeFormat.dateTime().withZone(DateTimeZone.getDefault())
-        def aDate = timeFormater.parseDateTime(a as String)
-        def bDate = new DateTime(b)
-        return Minutes.minutesBetween(aDate, bDate).minutes
+        OffsetDateTime aDate = OffsetDateTime.parse(a as String, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        def bInstant = b.toInstant()
+        ZonedDateTime bDate = ZonedDateTime.ofInstant(bInstant, ZoneId.systemDefault())
+        Duration duration = Duration.between(aDate, bDate)
+        return Math.abs(duration.toMinutes())
     }
 
     static SupportAPIProfile getProfile(Map profileData){

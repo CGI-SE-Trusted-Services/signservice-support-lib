@@ -1,8 +1,23 @@
+/************************************************************************
+ *                                                                       *
+ *  Signature Service - Support Service Library                          *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Lesser General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3 of the License, or any later version.                      *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
 package se.signatureservice.support.api.v2
 
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
+import groovy.xml.XmlSlurper
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
 import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.support.api.SupportServiceAPI
 import se.signatureservice.support.common.cache.SimpleCacheProvider
@@ -10,6 +25,8 @@ import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Ignore
 import spock.lang.Specification
+
+import javax.xml.parsers.SAXParserFactory
 
 /**
  * Special test that should be run manually with a dummy-idp and related systems up and running.
@@ -59,6 +76,7 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
                 .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
                 .addAuthorizedConsumerURL("http://localhost")
                 .signRequester("http://localhost:9090/signservice-support/metadata")
+                .signatureAlgorithm("SHA256withRSA")
                 .relatedProfile("rsaProfile")
                 .enableAuthnProfile(true)
                 .build()
@@ -238,44 +256,87 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
         Map<String,String> result = [:]
         String relayState = UUID.randomUUID().toString()
 
-        def http = new HTTPBuilder(actionURL)
-        def postParameters = [RelayState: relayState, EidSignRequest: signRequest]
-        http.post(body: postParameters, requestContentType: ContentType.URLENC) { resp, html ->
-            def form = html.BODY.FORM
-            result.put("ActionURL", form.@action)
-            result.put("SAMLRequest", form.DIV.INPUT.find { it.@name == "SAMLRequest" }.@value)
-            result.put("RelayState", form.DIV.INPUT.find { it.@name == "RelayState" }.@value)
-            result.put("EidSignResponse", form.DIV.INPUT.find { it.@name == "EidSignResponse" }.@value)
-        }
+        def client = new OkHttpClient()
+        RequestBody formBody = new FormBody.Builder()
+                .add("EidSignRequest", signRequest)
+                .add("RelayState", relayState)
+                .build()
 
+        def request = new Request.Builder()
+                .url(actionURL)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .post(formBody)
+                .build()
+
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("SAMLRequest", xml.body.form.div.input.find { it.@name == "SAMLRequest" }.@value.toString())
+            result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
+            result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
+        }
         return result
     }
 
     private Map<String,String> processAuthnRequest(String authnRequest, String relayState, String actionURL, String userId) {
         Map<String,String> result = [:]
-        def http = new HTTPBuilder(actionURL)
-        def postParameters = [SAMLRequest: authnRequest, RelayState: relayState, PersonalNumber: userId]
-        http.post(body: postParameters, requestContentType: ContentType.URLENC) { resp, html ->
-            def form = html.BODY.FORM
-            result.put("ActionURL", form.@action)
-            result.put("SAMLResponse", form.INPUT.find { it.@name == "SAMLResponse" }?.@value)
-            result.put("RelayState", form.INPUT.find { it.@name == "RelayState" }?.@value)
-        }
+        def client = new OkHttpClient()
+        RequestBody formBody = new FormBody.Builder()
+                .add("SAMLRequest", authnRequest)
+                .add("RelayState", relayState)
+                .add("PersonalNumber", userId)
+                .build()
 
+        def request = new Request.Builder()
+                .url(actionURL)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .post(formBody)
+                .build()
+
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("SAMLResponse", xml.body.form.input.find { it.@name == "SAMLResponse" }.@value.toString())
+            result.put("RelayState", xml.body.form.input.find { it.@name == "RelayState" }.@value.toString())
+        }
         return result
     }
 
     private Map<String,String> processAuthnResponse(String authnResponse, String relayState, String actionURL) {
         Map<String,String> result = [:]
-        def http = new HTTPBuilder(actionURL)
-        def postParameters = [RelayState: relayState, SAMLResponse: authnResponse]
-        http.post(body: postParameters, requestContentType: ContentType.URLENC) { resp, html ->
-            def form = html.BODY.FORM
-            result.put("ActionURL", form.@action)
-            result.put("EidSignResponse", form.DIV.INPUT.find { it.@name == "EidSignResponse" }?.@value)
-            result.put("RelayState", form.DIV.INPUT.find { it.@name == "RelayState" }?.@value)
-        }
 
+        def client = new OkHttpClient()
+        RequestBody formBody = new FormBody.Builder()
+                .add("SAMLResponse", authnResponse)
+                .add("RelayState", relayState)
+                .build()
+
+        def request = new Request.Builder()
+                .url(actionURL)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .post(formBody)
+                .build()
+
+        client.newCall(request).execute().withCloseable { resp ->
+            def xml = resp.body().charStream().withReader { reader ->
+                return parseXmlStream(reader)
+            }
+            result.put("ActionURL", xml.body.form.@action.toString())
+            result.put("EidSignResponse", xml.body.form.div.input.find { it.@name == "EidSignResponse" }.@value.toString())
+            result.put("RelayState", xml.body.form.div.input.find { it.@name == "RelayState" }.@value.toString())
+        }
         return result
+    }
+
+    private static parseXmlStream(Reader reader) {
+        def factory = SAXParserFactory.newInstance()
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        return new XmlSlurper(factory.newSAXParser()).parse(reader)
     }
 }
