@@ -52,6 +52,7 @@ class ErrorCodeSpec extends Specification {
         ErrorCode.INVALID_SIGN_RESPONSE      | "se.signatureservice.support.api.v2.ClientErrorException" | "10018"      | "error.invalid.sign.response"
         ErrorCode.SIGN_REQUEST_FAILED        | "se.signatureservice.support.api.v2.ServerErrorException" | "10019"      | "error.sign.request.failed"
         ErrorCode.VERIFY_DOCUMENT_FAILED     | "se.signatureservice.support.api.v2.ServerErrorException" | "10020"      | "error.verify.document.failed"
+        ErrorCode.INVALID_PARAMETER_VALUE    | "se.signatureservice.support.api.v2.ClientErrorException" | "10026"      | "error.invalid.parameter.value"
     }
 
     @Unroll

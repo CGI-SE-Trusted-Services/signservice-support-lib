@@ -1900,8 +1900,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param overridingAuthnContextClassRefs   List that will override any profile settings for authnContextClassRefs
      * @return List of AuthnContextClassRefs to request.
      */
-    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportAPIProfile config, List<String> overridingAuthnContextClassRefs) {
+    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportAPIProfile config, List<String> overridingAuthnContextClassRefs) throws BaseAPIException {
         if(overridingAuthnContextClassRefs != null) {
+            if (overridingAuthnContextClassRefs.isEmpty()) {
+                throw ErrorCode.INVALID_PARAMETER_VALUE.toException("If a authnContextClassRefs list is supplied to override the profile settings, it must be non-empty");
+            }
             return overridingAuthnContextClassRefs;
         }
 

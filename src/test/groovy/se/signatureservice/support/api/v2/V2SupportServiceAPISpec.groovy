@@ -245,7 +245,6 @@ class V2SupportServiceAPISpec extends Specification {
         where:
         overrideAuthnContextClassRefs          | expectedAuthnContextClassRefs
         null                                   | ["urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"]
-        []                                     | []
         ["Ref:A", "Ref:B"]                     | ["Ref:A", "Ref:B"]
     }
 
@@ -632,7 +631,6 @@ class V2SupportServiceAPISpec extends Specification {
         testProfile10 | "https://testidp1" | null                                    | ["Ref:C", "Ref:D"]
         testProfile10 | "https://testidpX" | null                                    | ["Ref:A", "Ref:B"]
         testProfile10 | "https://testidp2" | null                                    | ["Ref:B"]
-        testProfile10 | "https://testidp1" | []                                      | []
         testProfile10 | "https://testidpX" | ["Ref:S"]                               | ["Ref:S"]
         testProfile10 | "https://testidp2" | ["Ref:S", "Ref:T"]                      | ["Ref:S", "Ref:T"]
     }
@@ -677,7 +675,6 @@ class V2SupportServiceAPISpec extends Specification {
         ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | null
         ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
         ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
-        []                          | null                    | "https://testidpX"                                                                      | []
         ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"                                                                      | ["Ref:B"]
     }
 
@@ -703,7 +700,6 @@ class V2SupportServiceAPISpec extends Specification {
         ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | null
         ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
         ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
-        []                          | null                    | "https://testidp1"                                                                      | []
         ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | ["Ref:D"]
     }
 
@@ -725,6 +721,20 @@ class V2SupportServiceAPISpec extends Specification {
                 null,
                 ["Ref:C", "Ref:D"]
         ]
+    }
+
+    def "test setCertRequestProperties with empty overrideAuthnContextClassRefs list, exception is thrown"() {
+        setup:
+        def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
+
+        when:
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10,
+                [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")], [])
+
+        then:
+        def error = thrown(ClientErrorException)
+        error.code == "10026"
+        error.message.contains("If a authnContextClassRefs list is supplied to override the profile settings, it must be non-empty")
     }
 
     def "test setVisibleSignature with all kinds of invalid attributes"(){
