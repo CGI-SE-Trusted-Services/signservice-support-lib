@@ -51,19 +51,6 @@ public class DateUtils {
     }
 
     /**
-     * Create Date from XMLGregorianCalendar object.
-     * @param calendar calendar object to get Date from
-     * @return Given gregorian calendar represented as a Date object.
-     */
-    public static Date createDateFromXMLGregorianCalendar(XMLGregorianCalendar calendar){
-        if(calendar == null){
-            return null;
-        }
-
-        return calendar.toGregorianCalendar().getTime();
-    }
-
-    /**
      * Parse XML date into Date object
      * @param xmlDate XML date string to parse
      * @return Date object based on the given XML date string

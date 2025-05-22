@@ -16,7 +16,6 @@ import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
 import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader;
 import eu.europa.esig.dss.spi.client.http.DSSCacheFileLoader;
-import eu.europa.esig.dss.spi.client.http.DSSFileLoader;
 import eu.europa.esig.dss.spi.client.http.IgnoreDataLoader;
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
@@ -157,15 +156,6 @@ public class TrustedListsCertificateSourceBuilder extends CommonCertificateSourc
      */
     private TrustedListsCertificateSource trustedCertificateSource() {
         return new TrustedListsCertificateSource();
-    }
-
-    /**
-     * Method to get the instance of this class TLValidationJob.
-     *
-     * @return TLValidationJob.
-     */
-    public TLValidationJob getTLValidationJob() {
-        return this.job;
     }
 
     /**
