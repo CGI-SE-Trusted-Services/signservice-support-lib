@@ -506,7 +506,7 @@ be used.
 | ignoreMissingRevocationData(boolean ignoreMissingRevocationData)
 | Specify if missing revocation data should be ignored during validation.
 
-| messageSecurityProvider(org.certificateservices.messages.MessageSecurityProvider messageSecurityProvider)
+| messageSecurityProvider(se.signatureservice.message.MessageSecurityProvider messageSecurityProvider)
 | Specify a message security provider to use when signing requests and when verifying responses from central system.
 
 | messageSource(org.springframework.context.MessageSource messageSource)
