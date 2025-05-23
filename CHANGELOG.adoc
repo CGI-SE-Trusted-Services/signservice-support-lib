@@ -19,7 +19,9 @@ Changes in preparation for moving to java 21 in Q4 2025
 * Bump se.signatureservice.configuration:signservice-java-configuration to 2505.1.
 * Bump Jackson dependency from 2.18.3 to 2.19.0
 * Bump Jakarta Activation API from 2.0.0 to 2.1.3 to match that in Jakarta XML Binding API.
-* Bump Tomcat dependency used in testing from 10.1.39 to 10.1.40
+* Bump Tomcat dependency used in testing from 10.1.39 to 10.1.41
+* Bump Spock Framework Core Module to 2.4-M6-groovy-3.0
+* Removed unnecessary com.squareup.okhttp3:okhttp and org.json:json dependency.
 * Refactored SignTaskHelper to manage SystemTime via instance state instead of static members/parameters.
 * Fixed vulnerability CVE-2025-27820, derived from dependencies of eu.europa.ec.joinup.sd-dss:dss-service, by upgrading libraries:
 
