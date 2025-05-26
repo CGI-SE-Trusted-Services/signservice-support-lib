@@ -675,7 +675,7 @@ class V2SupportServiceAPISpec extends Specification {
         ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | null
         ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
         ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
-        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"                                                                      | ["Ref:B"]
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"                                                                      | ["Ref:A", "Ref:B"]
     }
 
     @Unroll
