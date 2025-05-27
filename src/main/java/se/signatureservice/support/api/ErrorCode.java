@@ -55,7 +55,8 @@ public enum ErrorCode {
     MESSAGE_PROCESSING_ERROR            ("10022", "error.message.processing", "Message processing error", ServerErrorException.class),
     INVALID_VISIBLE_SIGNATURE_ATTRIBUTE ("10023", "error.invalid.visible.signature.attribute", "Error while generating visible signature", ClientErrorException.class),
     INVALID_AUTH_CONTEXT_CLASS_REF      ("10024", "error.invalid.authcontextclassref", "The provided AuthnContextClassRef is invalid or does not match the allowed list", ClientErrorException.class),
-    INVALID_SIGNATURE_ATTRIBUTE         ("10025", "error.invalid.signature.attribute", "Invalid signature attribute provided", ClientErrorException.class);
+    INVALID_SIGNATURE_ATTRIBUTE         ("10025", "error.invalid.signature.attribute", "Invalid signature attribute provided", ClientErrorException.class),
+    INVALID_PARAMETER_VALUE             ("10026", "error.invalid.parameter.value", "Invalid value for parameter", ClientErrorException.class);
 
     private final String errorCode;
     private final String messageCode;
