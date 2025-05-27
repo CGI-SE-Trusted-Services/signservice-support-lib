@@ -127,6 +127,9 @@ PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature
     user,
     // Entity ID of identity provider to use.
     "https://idp.someorg.com/samlv2/idp/metadata",
+    // Optional parameter to override authnContextClassRefs from profileConfig, obviating the need to
+    // instantiate new profileConfigs just to change authnContextClassRefs setting
+    List.of("http://id.elegnamnden.se/loa/1.0/loa3", "http://id.elegnamnden.se/loa/1.0/loa4"),
     // Consumer URL to receive the sign response.
     "https://app.someorg.com/sign",
     // No attributes.
