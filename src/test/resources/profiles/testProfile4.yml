@@ -1,0 +1,41 @@
+# Multiple SAN in requested attributes.
+
+relatedProfile: "testProfile4"
+xadesSignatureLevel: "XAdES-BASELINE-B"
+xadesSignaturePacking: "ENVELOPED"
+xadesCanonicalizationAlgorithmURI: "http://www.w3.org/2001/10/xml-exc-c14n#"
+xadesXPathLocationString: "node()[not(self::Signature)]"
+padesSignatureLevel: "PAdES-BASELINE-B"
+padesSignaturePacking: "ENVELOPED"
+cadesSignatureLevel: "CAdES-BASELINE-B"
+cadesSignaturePacking: "ENVELOPING"
+signatureAlgorithm: "SHA256withRSA"
+signServiceId: "http://localhost:8080/signservice-frontend/metadata/116cc52a654"
+signServiceRequestURL: "http://localhost:8080/signservice-frontend/request/116cc52a654"
+enableAuthnProfile: true
+authorizedConsumerURLs:
+  - "https://localhost"
+  - "http://localhost"
+requestedCertAttributes:
+  sn:
+    samlAttributeName: "urn:oid:2.5.4.4"
+    certAttributeRef: "2.5.4.4"
+    required: true
+  givenName:
+    samlAttributeName: "urn:oid:2.5.4.42"
+    certAttributeRef: "2.5.4.42"
+    required: true
+  displayName:
+    samlAttributeName: "urn:oid:2.16.840.1.113730.3.1.241"
+    certAttributeRef: "2.16.840.1.113730.3.1.241"
+    required: true
+  serialNumber:
+    samlAttributeName: [ { value: "urn:oid:1.2.752.29.4.13", order: 1 }, # personal identity number
+                         { value: "urn:oid:1.2.752.29.6.2.1", order: 0 } ] # employee Hsa ID
+    certAttributeRef: "2.5.4.5"
+    required: true
+signerAttributes:
+  employeehsaid:
+    samlAttributeName: "urn:oid:1.2.752.29.6.2.1"
+    userAttributeMapping: "employeehsaid"
+    required: true
