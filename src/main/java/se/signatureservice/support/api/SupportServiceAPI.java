@@ -65,6 +65,36 @@ public interface SupportServiceAPI {
      * @param signMessage Signature message to include in the request or null if no signature message should be used.
      * @param user Information about the signatory.
      * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
+     * @param authnContextClassRefs List that will override any profile settings for authnContextClassRefs
+     * @param consumerURL Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes Optional attributes to use when signing documents.
+     * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
+     * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when generating the signature request.
+     */
+    PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            List<String> authnContextClassRefs,
+            String consumerURL,
+            List<Attribute> signatureAttributes
+    ) throws ClientErrorException, ServerErrorException;
+
+    /**
+     * Generate signature request info that contains the signature request
+     * along with the transaction state that needs to be persisted and supplied
+     * to processSignResponse in order to obtain the final signed document(s).
+     *
+     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents Documents to generate sign request for.
+     * @param transactionId Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage Signature message to include in the request or null if no signature message should be used.
+     * @param user Information about the signatory.
+     * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
      * @param consumerURL Return URL that the user should be redirected to in the end of the signature flow.
      * @param signatureAttributes Optional attributes to use when signing documents.
      * @param documentSignatureAttributes Optional attributes to use for individual documents. Mapping key is document
@@ -81,6 +111,40 @@ public interface SupportServiceAPI {
             String signMessage,
             User user,
             String authenticationServiceId,
+            String consumerURL,
+            List<Attribute> signatureAttributes,
+            Map<String, List<Attribute>> documentSignatureAttributes
+    ) throws ClientErrorException, ServerErrorException;
+
+    /**
+     * Generate signature request info that contains the signature request
+     * along with the transaction state that needs to be persisted and supplied
+     * to processSignResponse in order to obtain the final signed document(s).
+     *
+     * @param profileConfig Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents Documents to generate sign request for.
+     * @param transactionId Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage Signature message to include in the request or null if no signature message should be used.
+     * @param user Information about the signatory.
+     * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
+     * @param authnContextClassRefs List that will override any profile settings for authnContextClassRefs
+     * @param consumerURL Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes Optional attributes to use when signing documents.
+     * @param documentSignatureAttributes Optional attributes to use for individual documents. Mapping key is document
+     *                                    referenceId and mapping value is list of signature attributes that will
+     *                                    override signatureAttributes for given document.
+     * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
+     * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when generating the signature request.
+     */
+    PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            List<String> authnContextClassRefs,
             String consumerURL,
             List<Attribute> signatureAttributes,
             Map<String, List<Attribute>> documentSignatureAttributes

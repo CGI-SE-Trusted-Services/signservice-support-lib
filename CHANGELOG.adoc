@@ -29,6 +29,11 @@ Changes in preparation for moving to java 21 in Q4 2025
     org.apache.httpcomponents.core5:httpcore5 to 5.3.4
     org.apache.httpcomponents.core5:httpcore5-h2 to 5.3.4
 
+* Added support for overriding authnContextClassRefs settings in signservice-support-lib SupportServiceAPI.prepareSignature calls
+
+    New method signatures for SupportServiceAPI.prepareSignature which take a 'authnContextClassRefs' parameter. The supplied list of strings
+    will override any profile settings for 'authnContextClassRefs', for that API call. As usual, the values must map to settings in the cental system.
+
 == Version 2503.1
 
 === Upgrade notes
