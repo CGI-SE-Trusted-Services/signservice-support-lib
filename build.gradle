@@ -40,8 +40,8 @@ dependencies {
         api project(":signservice-messages")
         api project(":signservice-java-configuration")
     } else {
-        api("se.signatureservice.messages:signservice.messages:2505.1")
-        api("se.signatureservice.configuration:signservice-java-configuration:2505.1")
+        api("se.signatureservice.messages:signservice-messages:2506.1")
+        api("se.signatureservice.configuration:signservice-java-configuration:2506.1")
     }
     implementation "com.fasterxml.jackson.core:jackson-databind:2.19.1"
 
