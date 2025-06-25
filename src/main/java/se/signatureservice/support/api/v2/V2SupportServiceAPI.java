@@ -206,8 +206,49 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes) throws ClientErrorException, ServerErrorException {
-        return prepareSignature(profileConfig, documents, transactionId, signMessage, user, authenticationServiceId, consumerURL, signatureAttributes, null);
+    public PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            String consumerURL,
+            List<Attribute> signatureAttributes
+    ) throws ClientErrorException, ServerErrorException {
+        return prepareSignature(profileConfig, documents, transactionId, signMessage, user, authenticationServiceId, null, consumerURL, signatureAttributes, null);
+    }
+
+    /**
+     * Generate prepared signature response that contains a signature request
+     * and related information for given set of documents.
+     *
+     * @param profileConfig           Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents               Documents to generate sign request for.
+     * @param transactionId           Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage             Signature message to include in the request or null if no signature message should be used.
+     * @param user                    Information about the signatory.
+     * @param authenticationServiceId Authentication service (identity provider) to use when signing the document.
+     * @param authnContextClassRefs   List that will override any profile settings for authnContextClassRefs
+     * @param consumerURL             Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes     Optional attributes to use when signing documents.
+     * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
+     * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when generating the signature request.
+     */
+    @Override
+    public PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            List<String> authnContextClassRefs,
+            String consumerURL,
+            List<Attribute> signatureAttributes
+    ) throws ClientErrorException, ServerErrorException {
+        return prepareSignature(profileConfig, documents, transactionId, signMessage, user, authenticationServiceId, authnContextClassRefs, consumerURL, signatureAttributes, null);
     }
 
     /**
@@ -231,7 +272,54 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @throws ServerErrorException If an internal error occurred when generating the signature request.
      */
     @Override
-    public PreparedSignatureResponse prepareSignature(SupportAPIProfile profileConfig, DocumentRequests documents, String transactionId, String signMessage, User user, String authenticationServiceId, String consumerURL, List<Attribute> signatureAttributes, Map<String, List<Attribute>> documentSignatureAttributes) throws ClientErrorException, ServerErrorException {
+    public PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            String consumerURL,
+            List<Attribute> signatureAttributes,
+            Map<String, List<Attribute>> documentSignatureAttributes
+    ) throws ClientErrorException, ServerErrorException {
+        return prepareSignature(profileConfig, documents, transactionId, signMessage, user, authenticationServiceId, null, consumerURL, signatureAttributes, documentSignatureAttributes);
+    }
+
+    /**
+     * Generate signature request info that contains the signature request
+     * along with the transaction state that needs to be persisted and supplied
+     * to processSignResponse in order to obtain the final signed document(s).
+     *
+     * @param profileConfig               Profile configuration containing various settings to control how the signature request is generated.
+     * @param documents                   Documents to generate sign request for.
+     * @param transactionId               Transaction ID to use or null to let the library generate one automatically.
+     * @param signMessage                 Signature message to include in the request or null if no signature message should be used.
+     * @param user                        Information about the signatory.
+     * @param authenticationServiceId     Authentication service (identity provider) to use when signing the document.
+     * @param authnContextClassRefs       List that will override any profile settings for authnContextClassRefs
+     * @param consumerURL                 Return URL that the user should be redirected to in the end of the signature flow.
+     * @param signatureAttributes         Optional attributes to use when signing documents.
+     * @param documentSignatureAttributes Optional attributes to use for individual documents. Mapping key is document
+     *                                    referenceId and mapping value is list of signature attributes that will
+     *                                    override signatureAttributes for given document.
+     * @return SignRequestInfo instance that contains the XML signature request along with the transaction state.
+     * @throws ClientErrorException If an error occurred when generating the signature request due to client supplied data.
+     * @throws ServerErrorException If an internal error occurred when generating the signature request.
+     */
+    @Override
+    public PreparedSignatureResponse prepareSignature(
+            SupportAPIProfile profileConfig,
+            DocumentRequests documents,
+            String transactionId,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            List<String> authnContextClassRefs,
+            String consumerURL,
+            List<Attribute> signatureAttributes,
+            Map<String, List<Attribute>> documentSignatureAttributes
+    ) throws ClientErrorException, ServerErrorException {
         long currentTime, operationStart = System.currentTimeMillis();
         int operationTime;
         PreparedSignatureResponse preparedSignature;
@@ -259,7 +347,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             preparedSignature.setProfile(profileConfig.getRelatedProfile());
             preparedSignature.setActionURL(getSignServiceRequestURL(profileConfig, signatureAttributes));
             preparedSignature.setTransactionId(transactionId);
-            preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, consumerURL, profileConfig, signatureAttributes, documentSignatureAttributes));
+            preparedSignature.setSignRequest(generateSignRequest(context, transactionId, documents, signMessage, user, authenticationServiceId, authnContextClassRefs, consumerURL, profileConfig, signatureAttributes, documentSignatureAttributes));
 
             // Fetch transaction state that is created and stored together with to-be-signed data (TBS).
             // If no transaction state can be read it indicates a problem with generating TBS.
@@ -511,19 +599,31 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     /**
      * Generate Base64 encoded SignRequest according to Swedish eID framework.
      *
-     * @param context                 Security provider context
-     * @param transactionId           Transaction ID to use
-     * @param documents               Documents to be signed
-     * @param signMessage             Message to show during signing process or null if no message should be shown
-     * @param user                    User signatory information
-     * @param authenticationServiceId identity provider to use during signature process
-     * @param consumerURL             URL where the user will be sent when signature process is completed
-     * @param config                  Configuration to use when generating request
+     * @param context                           Security provider context
+     * @param transactionId                     Transaction ID to use
+     * @param documents                         Documents to be signed
+     * @param signMessage                       Message to show during signing process or null if no message should be shown
+     * @param user                              User signatory information
+     * @param authenticationServiceId           identity provider to use during signature process
+     * @param overridingAuthnContextClassRefs   List that will override any profile settings for authnContextClassRefs
+     * @param consumerURL                       URL where the user will be sent when signature process is completed
+     * @param config                            Configuration to use when generating request
      * @return Marshalled SignRequest XML-document based on given parameters
      */
-    protected synchronized String generateSignRequest(ContextMessageSecurityProvider.Context context, String transactionId, DocumentRequests documents,
-                                                      String signMessage, User user, String authenticationServiceId, String consumerURL,
-                                                      SupportAPIProfile config, List<Attribute> signatureAttributes, Map<String, List<Attribute>> documentSignatureAttributes) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
+    protected synchronized String generateSignRequest(
+            ContextMessageSecurityProvider.Context context,
+            String transactionId,
+            DocumentRequests documents,
+            String signMessage,
+            User user,
+            String authenticationServiceId,
+            List<String> overridingAuthnContextClassRefs,
+            String consumerURL,
+            SupportAPIProfile config, List<Attribute> signatureAttributes,
+            Map<String, List<Attribute>> documentSignatureAttributes
+    ) throws IOException, MessageContentException, MessageProcessingException, BaseAPIException, InvalidArgumentException, InternalErrorException,
+            ClassNotFoundException, ParserConfigurationException, SAXException, InvalidCanonicalizerException, CanonicalizationException,
+            CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
 
         GregorianCalendar requestTime = new GregorianCalendar();
         requestTime.setTime(new Date());
@@ -538,7 +638,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         signRequestExtensionType.setRequestTime(datatypeFactory.newXMLGregorianCalendar(requestTime));
         signRequestExtensionType.setIdentityProvider(createNameIDType(authenticationServiceId, "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.setSignService(createNameIDType(config.getSignServiceId(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
-        setCertRequestProperties(signRequestExtensionType, authenticationServiceId, config, signatureAttributes);
+        setCertRequestProperties(signRequestExtensionType, authenticationServiceId, config, signatureAttributes, overridingAuthnContextClassRefs);
         signRequestExtensionType.setSignRequester(createNameIDType(config.getSignRequester(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
         signRequestExtensionType.getCertRequestProperties().setCertType(config.getCertificateType());
         signRequestExtensionType.setRequestedSignatureAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getUri());
@@ -1258,12 +1358,18 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param authenticationServiceId  Authentication service to add recipient for.
      * @param config                   Profile configuration.
      * @param signatureAttributes      Related signature attributes.
+     * @param overridingAuthnContextClassRefs   List that will override any profile settings for authnContextClassRefs
      * @throws ClientErrorException If Attribute is in signatureAttributes set but don't exist in AuthnContextClassRefs List.
      */
-    protected void setCertRequestProperties(SignRequestExtensionType signRequestExtensionType, String authenticationServiceId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws BaseAPIException {
+    protected void setCertRequestProperties(
+            SignRequestExtensionType signRequestExtensionType,
+            String authenticationServiceId,
+            SupportAPIProfile config,
+            List<Attribute> signatureAttributes,
+            List<String> overridingAuthnContextClassRefs
+    ) throws BaseAPIException {
         String attributeValue = AvailableSignatureAttributes.getAttributeValue(signatureAttributes, AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF);
-
-        List<String> authnContextClassRefs = getAuthnContextClassRefs(authenticationServiceId, config);
+        List<String> authnContextClassRefs = getAuthnContextClassRefs(authenticationServiceId, config, overridingAuthnContextClassRefs);
 
         if (attributeValue == null) {
             log.debug("No value specified in Signature Request 'signatureAttributes' for attribute: " + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ". Setting certification request properties from list of AuthnContextClassRefs: {}. Given authenticationServiceId: {}", authnContextClassRefs, authenticationServiceId);
@@ -1274,7 +1380,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signRequestExtensionType.setCertRequestProperties(sweEid2ObjectFactory.createCertRequestPropertiesType());
             signRequestExtensionType.getCertRequestProperties().getAuthnContextClassRef().add(attributeValue);
         } else {
-            throw ErrorCode.INVALID_AUTH_CONTEXT_CLASS_REF.toException("Value specified in Signature Request 'signatureAttributes' for attribute '" + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + "' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: " + authnContextClassRefs + " for authenticationServiceId: " + authenticationServiceId);
+            throw ErrorCode.INVALID_AUTH_CONTEXT_CLASS_REF.toException("Value specified in Signature Request 'signatureAttributes' for attribute '" + AvailableSignatureAttributes.ATTRIBUTE_AUTH_CONTEXT_CLASS_REF + ": " + attributeValue + "' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: " + authnContextClassRefs + " for authenticationServiceId: " + authenticationServiceId + ", nor set in AuthnContextClassRefs override " + overridingAuthnContextClassRefs);
         }
     }
 
@@ -1789,11 +1895,19 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     /**
      * Get list of AuthnContextClassRefs to request for a given authentication service.
      *
-     * @param authenticationServiceId Authentication service identifier to get AuthnContextClassRefs for.
-     * @param config                  Support service configuration to use.
+     * @param authenticationServiceId           Authentication service identifier to get AuthnContextClassRefs for.
+     * @param config                            Support service configuration to use.
+     * @param overridingAuthnContextClassRefs   List that will override any profile settings for authnContextClassRefs
      * @return List of AuthnContextClassRefs to request.
      */
-    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportAPIProfile config) {
+    private List<String> getAuthnContextClassRefs(String authenticationServiceId, SupportAPIProfile config, List<String> overridingAuthnContextClassRefs) throws BaseAPIException {
+        if(overridingAuthnContextClassRefs != null) {
+            if (overridingAuthnContextClassRefs.isEmpty()) {
+                throw ErrorCode.INVALID_PARAMETER_VALUE.toException("If a authnContextClassRefs list is supplied to override the profile settings, it must be non-empty");
+            }
+            return overridingAuthnContextClassRefs;
+        }
+
         List<String> accRefs = new ArrayList<>();
 
         if (config.getAuthnContextClassRef() != null) {

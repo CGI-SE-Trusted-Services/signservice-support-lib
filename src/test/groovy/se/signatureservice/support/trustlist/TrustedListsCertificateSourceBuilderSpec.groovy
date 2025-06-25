@@ -338,17 +338,17 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
             response.signatures.signer.get(0).signerId == expectedSignerId
             response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
-            response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+            response.signatures.signer.get(0).signingAlgorithm == expectedSigningAlgorithm
             response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
             response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
             response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
             response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-            testDocument          | documentType | expectedSignatureFormat | expectedSignerId
-            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072"
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"
+            testDocument          | documentType | expectedSignatureFormat | expectedSignerId      | expectedSigningAlgorithm
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072"  | "SHA256withRSAandMGF1"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"        | "SHA256withRSA"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"        | "SHA256withRSA"
     }
 
     @Unroll
@@ -491,18 +491,18 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer != null
             response.signatures.signer.size() == 1
             response.signatures.signer.get(0).issuerId.contains(issuerId)
-            response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+            response.signatures.signer.get(0).signingAlgorithm == expectedSigningAlgorithm
             response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
             response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
             response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
             response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-            testDocument                | expectedSignatureFormat    | issuerId                                 | documentType
-            testSignedXMLDocument       | "XAdES-BASELINE-B"         | "CN=sub Network - Development"           | "XML"
-            testSignedPDFDocument       | "PAdES-BASELINE-B"         | "CN=sub Network - Development"           | "PDF"
-            testSignedCMSDocument       | "CAdES-BASELINE-B"         | "CN=sub Network - Development"           | "CMS"
-            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
+            testDocument                | expectedSignatureFormat    | expectedSigningAlgorithm   | issuerId                                 | documentType
+            testSignedXMLDocument       | "XAdES-BASELINE-B"         | "SHA256withRSAandMGF1"     | "CN=sub Network - Development"           | "XML"
+            testSignedPDFDocument       | "PAdES-BASELINE-B"         | "SHA256withRSA"            | "CN=sub Network - Development"           | "PDF"
+            testSignedCMSDocument       | "CAdES-BASELINE-B"         | "SHA256withRSA"            | "CN=sub Network - Development"           | "CMS"
+            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "SHA256withRSA"            | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
     }
 
     def "Test that getCertificateVerifier returns correct class instance"() {
@@ -550,7 +550,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
             response.signatures.signer.get(0).signerId == expectedSignerId
             response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
-            response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+            response.signatures.signer.get(0).signingAlgorithm == expectedSigningAlgorithm
             response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
             response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
             response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
@@ -560,13 +560,13 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             new File("build/tmp/TrustedListsCertificateSourceBuilderSpec/cacheTest").deleteDir()
 
         where:
-            testDocument          | documentType | expectedSignatureFormat  | useOfflineLoader  | expirationTimeOnlineLoader    | expirationTimeOfflineLoader | expectedSignerId
-            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | false             | -1                            | -1                          | "PNOSE-195207092072"
-            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | true              | 0                             | -1                          | "PNOSE-195207092072"
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | false             | -1                            | -1                          | "195207092072"
-            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | true              | 0                             | -1                          | "195207092072"
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | false             | -1                            | -1                          | "195207092072"
-            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | true              | 0                             | -1                          | "195207092072"
+            testDocument          | documentType | expectedSignatureFormat  | expectedSigningAlgorithm   | useOfflineLoader  | expirationTimeOnlineLoader    | expirationTimeOfflineLoader | expectedSignerId
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | "SHA256withRSAandMGF1"     | false             | -1                            | -1                          | "PNOSE-195207092072"
+            testSignedXMLDocument | "XML"        | "XAdES-BASELINE-B"       | "SHA256withRSAandMGF1"     | true              | 0                             | -1                          | "PNOSE-195207092072"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | "SHA256withRSA"            | false             | -1                            | -1                          | "195207092072"
+            testSignedPDFDocument | "PDF"        | "PAdES-BASELINE-B"       | "SHA256withRSA"            | true              | 0                             | -1                          | "195207092072"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | "SHA256withRSA"            | false             | -1                            | -1                          | "195207092072"
+            testSignedCMSDocument | "CMS"        | "CAdES-BASELINE-B"       | "SHA256withRSA"            | true              | 0                             | -1                          | "195207092072"
     }
 
     @Unroll

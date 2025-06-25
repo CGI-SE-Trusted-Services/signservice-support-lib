@@ -128,6 +128,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile1,
                 null,
@@ -160,7 +161,11 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.OptionalInputs.SignRequestExtension.RequestedSignatureAlgorithm == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties != null
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.@CertType == "QC/SSCD"
-        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef == "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == 1
+        authnContextClassRefs.contains("urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI")
+
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 8
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
@@ -200,6 +205,50 @@ class V2SupportServiceAPISpec extends Specification {
     }
 
     @Unroll
+    void "test generateSignRequest overriding authnContextClassRefs #overrideAuthnContextClassRefs"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+                context,
+                "a864b33d-244a-4072-b540-0b29e2e7f40b",
+                documents,
+                "You want to sign?",
+                user,
+                "https://idp.cgi.com/v2/metadata",
+                overrideAuthnContextClassRefs,
+                "https://localhost:8080/response",
+                testProfile1,
+                null,
+                null
+        )
+
+        then:
+        response != null
+        println new String(Base64.decode(response), "UTF-8")
+
+        def signRequest = new XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        signRequest.@Profile == "http://id.elegnamnden.se/csig/1.1/dss-ext/profile"
+        signRequest.@RequestID == "a864b33d-244a-4072-b540-0b29e2e7f40b"
+        signRequest.OptionalInputs != null
+        signRequest.OptionalInputs.SignRequestExtension != null
+        signRequest.OptionalInputs.SignRequestExtension.RequestTime != null
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == expectedAuthnContextClassRefs.size()
+        expectedAuthnContextClassRefs.every {authnContextClassRefs.contains(it)}
+
+        where:
+        overrideAuthnContextClassRefs          | expectedAuthnContextClassRefs
+        null                                   | ["urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"]
+        ["Ref:A", "Ref:B"]                     | ["Ref:A", "Ref:B"]
+    }
+
+    @Unroll
     void "test generateSignRequest with ECDSA"() {
         setup:
         User user = new User(userId: "190102030010")
@@ -215,6 +264,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile2,
                 null,
@@ -247,7 +297,11 @@ class V2SupportServiceAPISpec extends Specification {
         signRequest.OptionalInputs.SignRequestExtension.RequestedSignatureAlgorithm == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties != null
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.@CertType == "QC/SSCD"
-        signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef == "urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos"
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == 1
+        authnContextClassRefs.contains("urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos")
+
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.children().size() == 8
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.42" && it.@FriendlyName == "givenName" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.42"
         signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.RequestedCertAttributes.RequestedCertAttribute.find{it.@CertAttributeRef == "2.5.4.4" && it.@FriendlyName == "sn" && it.@Required == "true"}.SamlAttributeName == "urn:oid:2.5.4.4"
@@ -303,6 +357,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://m00-mg-local.idpst.funktionstjanster.se/samlv2/idp/metadata/6/7",
+                null,
                 "https://localhost:8080/response",
                 testProfile3,
                 null,
@@ -348,6 +403,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile4,
             null,
@@ -387,6 +443,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile5,
             null,
@@ -413,6 +470,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile6,
             null,
@@ -440,6 +498,7 @@ class V2SupportServiceAPISpec extends Specification {
             "You want to sign?",
             user,
             "https://idp.cgi.com/v2/metadata",
+            null,
             "https://localhost:8080/response",
             testProfile7,
             null,
@@ -557,21 +616,23 @@ class V2SupportServiceAPISpec extends Specification {
 
     def "test getAuthnContextClassRefs"() {
         when:
-        List<String> accRefs = supportServiceAPI.getAuthnContextClassRefs(authServiceId, profile)
+        List<String> accRefs = supportServiceAPI.getAuthnContextClassRefs(authServiceId, profile, overrideAuthnContextClassRefs)
 
         then:
         accRefs == expectedAccRefs
 
         where:
-        profile       | authServiceId      | expectedAccRefs
-        testProfile8  | "https://testidp1" | ["Ref:B"]
-        testProfile8  | "https://testidpX" | ["Ref:A"]
-        testProfile9  | "https://testidp1" | ["Ref:D"]
-        testProfile9  | "https://testidpX" | ["Ref:A", "Ref:B", "Ref:C"]
-        testProfile9  | "https://testidp2" | ["Ref:D", "Ref:G"]
-        testProfile10 | "https://testidp1" | ["Ref:C", "Ref:D"]
-        testProfile10 | "https://testidpX" | ["Ref:A", "Ref:B"]
-        testProfile10 | "https://testidp2" | ["Ref:B"]
+        profile       | authServiceId      | overrideAuthnContextClassRefs           | expectedAccRefs
+        testProfile8  | "https://testidp1" | null                                    | ["Ref:B"]
+        testProfile8  | "https://testidpX" | null                                    | ["Ref:A"]
+        testProfile9  | "https://testidp1" | null                                    | ["Ref:D"]
+        testProfile9  | "https://testidpX" | null                                    | ["Ref:A", "Ref:B", "Ref:C"]
+        testProfile9  | "https://testidp2" | null                                    | ["Ref:D", "Ref:G"]
+        testProfile10 | "https://testidp1" | null                                    | ["Ref:C", "Ref:D"]
+        testProfile10 | "https://testidpX" | null                                    | ["Ref:A", "Ref:B"]
+        testProfile10 | "https://testidp2" | null                                    | ["Ref:B"]
+        testProfile10 | "https://testidpX" | ["Ref:S"]                               | ["Ref:S"]
+        testProfile10 | "https://testidp2" | ["Ref:S", "Ref:T"]                      | ["Ref:S", "Ref:T"]
     }
 
     @Unroll
@@ -594,6 +655,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 authenticationServiceId,
+                overrideAuthnContextClassRefs,
                 "https://localhost:8080/response",
                 testProfile9,
                 signatureAttributes,
@@ -606,13 +668,14 @@ class V2SupportServiceAPISpec extends Specification {
         authnContextClassRefsResult.every { signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef*.text().contains(it) }
 
         where:
-        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId
-        ["Ref:D"]                   | null                    | "https://testidp1"
-        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"
-        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"
-        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"
-        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
-        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId                                                                 | overrideAuthnContextClassRefs
+        ["Ref:D"]                   | null                    | "https://testidp1"                                                                      | null
+        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"                                                                      | null
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"                                                                      | null
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | null
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
+        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"                                                                      | ["Ref:A", "Ref:B"]
     }
 
     @Unroll
@@ -624,19 +687,20 @@ class V2SupportServiceAPISpec extends Specification {
             signatureAttributes = [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: signatureAttributeValue)]
         }
         when:
-        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, authenticationServiceId, testProfile9, signatureAttributes)
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, authenticationServiceId, testProfile9, signatureAttributes, overrideAuthnContextClassRefs)
 
         then:
         signRequestExtensionType.certRequestProperties.authnContextClassRef.containsAll(authnContextClassRefsResult)
 
         where:
-        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId
-        ["Ref:D"]                   | null                    | "https://testidp1"
-        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"
-        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"
-        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"
-        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
-        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    // Receives from profile config defaultAuthnContextClassRef(s)
+        authnContextClassRefsResult | signatureAttributeValue | authenticationServiceId                                                                 | overrideAuthnContextClassRefs
+        ["Ref:D"]                   | null                    | "https://testidp1"                                                                      | null
+        ["Ref:D", "Ref:G"]          | null                    | "https://testidp2"                                                                      | null
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp2"                                                                      | null
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | null
+        ["Ref:B"]                   | "Ref:B"                 | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
+        ["Ref:A", "Ref:B", "Ref:C"] | null                    | "https://testidpX"    /*Receives from profile config defaultAuthnContextClassRef(s)*/   | null
+        ["Ref:D"]                   | "Ref:D"                 | "https://testidp1"                                                                      | ["Ref:D"]
     }
 
     def "test setCertRequestProperties method when exception is thrown"() {
@@ -644,12 +708,33 @@ class V2SupportServiceAPISpec extends Specification {
         def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
 
         when:
-        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10, [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")])
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10, [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")], overrideAuthnContextClassRefs)
 
         then:
         def error = thrown(ClientErrorException)
         error.code == "10024"
-        error.message.contains("Value specified in Signature Request 'signatureAttributes' for attribute 'auth_context_class_ref: Ref:B' is not set under related Profile Configuration for existing request property list AuthnContextClassRefs: [Ref:C, Ref:D] for authenticationServiceId: https://testidp1")
+        error.message.contains("Value specified in Signature Request 'signatureAttributes' for attribute 'auth_context_class_ref: Ref:B' is not set under related Profile Configuration for existing request property list " +
+                "AuthnContextClassRefs: [Ref:C, Ref:D] for authenticationServiceId: https://testidp1, nor set in AuthnContextClassRefs override " + overrideAuthnContextClassRefs)
+
+        where:
+        overrideAuthnContextClassRefs << [
+                null,
+                ["Ref:C", "Ref:D"]
+        ]
+    }
+
+    def "test setCertRequestProperties with empty overrideAuthnContextClassRefs list, exception is thrown"() {
+        setup:
+        def signRequestExtensionType = supportServiceAPI.sweEid2ObjectFactory.createSignRequestExtensionType();
+
+        when:
+        supportServiceAPI.setCertRequestProperties(signRequestExtensionType, "https://testidp1", testProfile10,
+                [new Attribute(key: ATTRIBUTE_AUTH_CONTEXT_CLASS_REF, value: "Ref:B")], [])
+
+        then:
+        def error = thrown(ClientErrorException)
+        error.code == "10026"
+        error.message.contains("If a authnContextClassRefs list is supplied to override the profile settings, it must be non-empty")
     }
 
     def "test setVisibleSignature with all kinds of invalid attributes"(){
@@ -952,6 +1037,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile1,
                 signatureAttributes,
@@ -987,17 +1073,17 @@ class V2SupportServiceAPISpec extends Specification {
         response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
         response.signatures.signer.get(0).signerId == expectedSignerId
         response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
-        response.signatures.signer.get(0).signingAlgorithm == "SHA256withRSA"
+        response.signatures.signer.get(0).signingAlgorithm == expectedSigningAlgorithm
         response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
         response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
         response.signatures.signer.get(0).validFrom == signingCertificate.notBefore
         response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-        testDocument            | documentType | expectedSignatureFormat | expectedSignerId
-        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072"
-        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"
-        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"
+        testDocument            | documentType | expectedSignatureFormat | expectedSignerId     | expectedSigningAlgorithm
+        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072" | "SHA256withRSAandMGF1"
+        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"
+        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"
     }
 
     @Unroll
@@ -1134,6 +1220,7 @@ class V2SupportServiceAPISpec extends Specification {
                 "You want to sign?",
                 user,
                 "https://idp.cgi.com/v2/metadata",
+                null,
                 "https://localhost:8080/response",
                 testProfile11,
                 null,
