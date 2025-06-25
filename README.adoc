@@ -108,7 +108,7 @@ User user = new User.Builder()
     // Build user
     .build();
 
-// Create document requests to include in the transaction.
+// Create document requests to include in the transaction (example using document by value).
 DocumentRequests documentRequests = new DocumentRequests.Builder()
     .addXMLDocument("/path/to/document.xml")
     .build();
@@ -183,6 +183,82 @@ if(verifiedDocument.isVerifies()) {
 ----
 
 The validation report is available within the `verifiedDocument.getReportData()`.
+
+=== Handling Documents
+
+The library supports two ways of providing documents for a signature operation:
+
+1. **By value** (i.e., the full document content is included in the request)
+2. **By reference** (i.e., only a reference ID is provided, and the document is resolved later)
+
+==== Handling Documents by Value (Default)
+This is the standard approach where the complete document content is provided upfront.
+Use a `DocumentSigningRequest` object and populate its `data` field with the document's byte content.
+
+[source, groovy]
+----
+DocumentRequests documentRequests = new DocumentRequests(
+    documents: [new DocumentSigningRequest(
+        name: "document.pdf",
+        data: new File("/path/to/document.pdf").bytes,
+        type: "application/pdf")]
+)
+----
+
+Alternatively, you can use the fluent `DocumentRequests.Builder` class to construct the request more conveniently:
+
+[source, java]
+----
+DocumentRequests documentRequests = new DocumentRequests.Builder()
+        .addXMLDocument("/path/to/document.xml")
+        .build();
+----
+
+This builder automatically:
+
+- Sets the correct MIME type
+- Reads the file content
+- Generates a `referenceId`
+- Wraps each input into a `DocumentSigningRequest`
+
+Supported builder methods include:
+
+[source, java]
+----
+// Add PDF documents
+.addPDFDocument("file.pdf", new FileInputStream(...))
+.addPDFDocument("/path/to/file.pdf")
+
+// Add XML documents
+.addXMLDocument("file.xml", new FileInputStream(...))
+.addXMLDocument("/path/to/file.xml")
+
+// Add CMS (binary) documents
+.addCMSDocument("file.cms", new FileInputStream(...))
+.addCMSDocument("/path/to/file.cms")
+
+// Fully customizable
+.addDocument("filename.ext", "mime/type", InputStream, referenceId)
+----
+
+==== Handling Documents by Reference (Advanced)
+This approach is useful for large documents or integration with an external Document Management System (DMS).
+
+In this case, instead of sending the full document, the client provides a `DocumentRef` object with a `referenceId`. The actual content is retrieved later using a `DocumentResolver` implementation.
+
+[source, groovy]
+----
+String documentReferenceId = "dms-uuid-abcdef123456";
+
+DocumentRequests requestsByRef = new DocumentRequests(
+    documents: [new DocumentRef(referenceId: documentReferenceId)]
+)
+----
+
+**Important:** When using document references, a `DocumentResolver` **must** be configured.
+
+See <<document-resolver-configuration>> for details.
+
 
 === Profile configuration
 When using the API a profile configuration instance (`se.signatureservice.support.system.SupportAPIProfile`) needs to be created and provided. The profile configuration contains
@@ -738,6 +814,9 @@ Supported values: +
   This corresponds to the /DocMDP setting in the PDF specification, which controls what changes are permitted in a signed PDF document.
   If an invalid value is provided, an InternalErrorException will be thrown.
 
+| documentResolver(se.signatureservice.support.api.v2.DocumentResolver resolver)
+| Specify the DocumentResolver to use for handling DocumentRef objects (document by reference).
+
 | build()
 | Build the SupportAPIProfile instance.
 |===
@@ -769,9 +848,32 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
 
 An invalid value (anything not equal to 1, 2, or 3) will result in an `InternalErrorException`.
 
-See also: +
-ISO 32000-1, section 12.8.2.2 (DocMDP) +
-DSS documentation section 5.3.3.1 "Certification signatures"
+====== DocMDP Validation Policy Constraint
+
+The constraints defined within the DSS XML Validation Policy and its associated rules can be customized as needed for specific validation requirements.
+
+_Example of PdfVisualDifference usage (with FAIL validation level):_
+[source,xml]
+----
+<BasicSignatureConstraints>
+    ...
+    <PdfVisualDifference Level="FAIL" />
+    ...
+</BasicSignatureConstraints>
+----
+
+The DocMDP constraint validates a PDF document against the /DocMDP field, if present.
+This check ensures that the document adheres to the modification permissions defined in the /DocMDP field.
+If the PDF violates these constraints, the validation will fail.
+
+* Default Level: WARN
+* Applies to: PAdES only (PDF Advanced Electronic Signatures)
+
+For additional details, refer to:
+
+* Digital Signature Service documentation, section 5.3.3.1 – Certification Signatures
+* Digital Signature Service documentation, section 20.2.2.3.1 – Basic Signature Constraints (see the bullet point titled “DocMDP”) +
+* ISO 32000-1, section 12.8.2.2 – DocMDP +
 
 ===== Configuration value: metadataCustomCertAttribute
 Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.
@@ -867,6 +969,31 @@ requestedCertAttributes {
     }
 }
 ----
+
+===== Configuration value: DocumentResolver Configuration [[document-resolver-configuration]]
+
+To enable handling documents by reference, you must provide a custom implementation of the `se.signatureservice.support.api.v2.DocumentResolver` interface.
+
+This component is responsible for retrieving the actual document from your storage system (e.g., a DMS, a database, or a remote service).
+
+The DocumentResolver must be "injected" into the V2SupportServiceAPI instance using its builder:
+
+[source, groovy]
+----
+// 1. Create your custom DocumentResolver instance
+String storagePath = "/path/to/your/document/storage/";
+DocumentResolver myResolver = new SimpleFileOrMapDocumentResolver(storagePath);
+
+// 2. Build the API instance and inject your resolver
+SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
+                            .documentResolver(myResolver)
+                            .build();
+----
+
+NOTE: If a `DocumentRef` is received but no `DocumentResolver` has been configured, the API will throw an `UnsupportedOperationException`.
+
+A basic implementation, `SimpleFileOrMapDocumentResolver`, is provided and can be used for testing or as a base for your own resolver.
+It supports resolving documents from the local file system or an in-memory map.
 
 == Troubleshooting
 

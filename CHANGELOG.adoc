@@ -45,8 +45,11 @@ Changes in preparation for moving to java 21 in Q4 2025
       .pdfCertificationPermission(1) // No change permitted
       .build();
 
-  Values: 1 = No changes, 2 = Minimal changes, 3 = Changes incl. annotations.
+  Values: 1 = No changes, 2 = Minimal changes, 3 = Changes (incl. annotations).
   See documentation(Configuration value: pdfCertificationPermission for full details and permitted levels (ISO 32000-1 /DocMDP).
+
+* Added support for handling documents by reference via `DocumentRef` and `DocumentResolver`.
+** See the updated documentation under _“Handling Documents by Reference”_ and _“Configuration value: DocumentResolver Configuration”_ for usage examples and integration guidance.
 
 == Version 2503.1
 
