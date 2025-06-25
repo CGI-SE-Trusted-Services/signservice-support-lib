@@ -6,50 +6,62 @@ of the Signature Service Support Library.
 == Version 2506.1
 
 === Upgrade notes
-Changes in preparation for moving to java 21 in Q4 2025
+NOTE: This release includes changes in preparation for migrating to Java 21 in Q4 2025.
 
 === Changes
-* Bump Gradle to 7.6.5.
-* Updated the Gradle Wrapper files(gradlew, gradlew.bat, gradle-wrapper.jar) to align with the configured Gradle version.
-* Replaced old test library org.codehaus.groovy.modules.http-builder:http-builder in favor com.squareup.okhttp3:okhttp
-* Removed not related internal build logic from build.gradle.
-* Removed Joda-Time dependency in favor of standard java.time APIs.
-* Bump Apache XML Security For Java from 2.3.4 to 2.3.5
-* Bump SLF4J from 2.0.16 to 2.0.17
-* Bump Groovy to 3.0.25
-* Bump Apache HttpClient to 5.5
-* Bump se.signatureservice.configuration:signservice-messages to 2506.1.
-* Bump se.signatureservice.configuration:signservice-java-configuration to 2506.1.
-* Bump Jackson dependency from 2.18.3 to 2.19.1
-* Bump Jakarta Activation API from 2.0.0 to 2.1.3 to match that in Jakarta XML Binding API.
-* Bump Tomcat dependency used in testing from 10.1.39 to 10.1.42
-* Bump Spock Framework Core Module to 2.4-M6-groovy-3.0
-* Removed unnecessary org.json:json dependency.
-* Refactored SignTaskHelper to manage SystemTime via instance state instead of static members/parameters.
-* Fixed vulnerability CVE-2025-27820, derived from dependencies of eu.europa.ec.joinup.sd-dss:dss-service, by upgrading libraries:
+- Bumped Gradle to `7.6.5`
+** Updated wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.jar`) to match.
+- Replaced `org.codehaus.groovy.modules.http-builder:http-builder` with `com.squareup.okhttp3:okhttp`.
+- Bumped:
+* `se.signatureservice.configuration:signservice-messages` to `2506.1`
+* `se.signatureservice.configuration:signservice-java-configuration` to `2506.1`
+* Apache XML Security from `2.3.4` to `2.3.5`
+* SLF4J from `2.0.16` to `2.0.17`
+* Groovy to `3.0.25`
+* Apache HttpClient to `5.5`
+* Jackson from `2.18.3` to `2.19.1`
+* Jakarta Activation API from `2.0.0` to `2.1.3`
+* Tomcat (test scope) from `10.1.39` to `10.1.42`
+* Spock Framework (Groovy 3) to `2.4-M6-groovy-3.0`
 
-    org.apache.httpcomponents.client5:httpclient5 to 5.5
-    org.apache.httpcomponents.core5:httpcore5 to 5.3.4
-    org.apache.httpcomponents.core5:httpcore5-h2 to 5.3.4
+=== Removals & Cleanups
+- Removed Joda-Time dependency (replaced with `java.time` API).
+- Removed unused `org.json:json` dependency.
+- Removed unrelated internal build logic from `build.gradle`.
 
-* Added support for overriding authnContextClassRefs settings in signservice-support-lib SupportServiceAPI.prepareSignature calls
+=== Fixes
+- Fixed incorrect dependency declaration for `signservice-messages` in `build.gradle`.
+- Addressed CVE-2025-27820 by upgrading:
+* `org.apache.httpcomponents.client5:httpclient5` to `5.5`
+* `httpcore5` and `httpcore5-h2` to `5.3.4`
 
+
+=== Enhancements
+- `SignTaskHelper`: now uses instance state for `SystemTime` instead of static access.
+- Added support for overriding `authnContextClassRefs` in `SupportServiceAPI.prepareSignature()`:
++
     New method signatures for SupportServiceAPI.prepareSignature which take a 'authnContextClassRefs' parameter. The supplied list of strings
     will override any profile settings for 'authnContextClassRefs', for that API call. As usual, the values must map to settings in the central system.
     There is also a utility class 'AuthnContextClassRefUtils' to help resolve higher levels of assurance, for some loa hierarchies, e.g. \http://id.elegnamnden.se/loa/1.0/loa(1|2|3|4).
++
+A new utility `AuthnContextClassRefUtils` is available to help resolve assurance levels.
 
-* Added support for setting PDF certification permission level via `pdfCertificationPermission(int level)` in `SupportAPIProfile.Builder`.
+- PDF certification level can now be set in `SupportAPIProfile.Builder`:
++
+[source, java]
+----
+SupportAPIProfile profile = new SupportAPIProfile.Builder()
+    .pdfCertificationPermission(1)
+    .build();
+----
++
+Values:
+1 = No changes allowed, 2 = Minimal changes, 3 = Any changes (incl. annotations).
+See: _Configuration value: pdfCertificationPermission_
 
-  Example:
-  SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
-      .pdfCertificationPermission(1) // No change permitted
-      .build();
-
-  Values: 1 = No changes, 2 = Minimal changes, 3 = Changes (incl. annotations).
-  See documentation(Configuration value: pdfCertificationPermission for full details and permitted levels (ISO 32000-1 /DocMDP).
-
-* Added support for handling documents by reference via `DocumentRef` and `DocumentResolver`.
-** See the updated documentation under _“Handling Documents by Reference”_ and _“Configuration value: DocumentResolver Configuration”_ for usage examples and integration guidance.
+- Added support for document references using `DocumentRef` and `DocumentResolver`.
++
+See: _Handling Documents by Reference_ and _DocumentResolver Configuration_ in the documentation.
 
 == Version 2503.1
 
