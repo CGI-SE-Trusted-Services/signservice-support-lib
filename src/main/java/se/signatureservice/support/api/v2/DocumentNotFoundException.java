@@ -10,11 +10,17 @@
  *  See terms of license at gnu.org.                                     *
  *                                                                       *
  *************************************************************************/
-package se.signatureservice.support.common.system;
+package se.signatureservice.support.api.v2;
 
 /**
- * Created by vendilph on 2017-03-18.
+ * Exception thrown when a document cannot be found or resolved via a DocumentResolver.
  */
-public class Configuration {
+public class DocumentNotFoundException extends Exception {
+    public DocumentNotFoundException(String message) {
+        super(message);
+    }
 
+    public DocumentNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
