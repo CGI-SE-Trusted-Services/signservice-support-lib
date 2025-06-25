@@ -38,6 +38,15 @@ Changes in preparation for moving to java 21 in Q4 2025
     will override any profile settings for 'authnContextClassRefs', for that API call. As usual, the values must map to settings in the central system.
     There is also a utility class 'AuthnContextClassRefUtils' to help resolve higher levels of assurance, for some loa hierarchies, e.g. \http://id.elegnamnden.se/loa/1.0/loa(1|2|3|4).
 
+* Added support for setting PDF certification permission level via `pdfCertificationPermission(int level)` in `SupportAPIProfile.Builder`.
+
+  Example:
+  SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+      .pdfCertificationPermission(1) // No change permitted
+      .build();
+
+  Values: 1 = No changes, 2 = Minimal changes, 3 = Changes incl. annotations.
+  See documentation(Configuration value: pdfCertificationPermission for full details and permitted levels (ISO 32000-1 /DocMDP).
 
 == Version 2503.1
 

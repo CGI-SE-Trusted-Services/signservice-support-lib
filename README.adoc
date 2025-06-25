@@ -548,7 +548,7 @@ be used.
 |===
 | Method | Description
 | addAuthorizedCentralServiceEntityId(String authorizedCentralServiceEntityId)
-| Add Meta Data Entity Id of trusted central service that might send signature responses to application using the library.
+| Add Metadata Entity Id of trusted central service that might send signature responses to application using the library.
 
 | addAuthorizedConsumerURL(String authorizedConsumerURL)
 | Add authorized consumer URLs that can be specified when using the profile.
@@ -579,7 +579,7 @@ String userIdAttributeMapping)
 | Add trusted authentication services/identity providers that can be used for the given profile.
 
 | authorizedCentralServiceEntityIds(java.util.List<String> authorizedCentralServiceEntityIds)
-| Specify list of meta Data entity Id of all trusted central services that might send signature responses to the library.
+| Specify list of metaData entity Id of all trusted central services that might send signature responses to the library.
 
 | authorizedConsumerURLs(java.util.List<String> authorizedConsumerURLs)
 | Specify list of authorized consumer URLs that can be specified by the driving application.
@@ -728,9 +728,50 @@ setting is missing or if the specified attribute is missing the userId will be u
 | xadesXPathLocationString(String xadesXPathLocationString)
 | XAdES XPath location string that defines the area where the signature will be added
 
+| pdfCertificationPermission(int level)
+| PDF certification permission level setting.
+Supported values: +
+    1 = NO_CHANGE_PERMITTED +
+    2 = MINIMAL_CHANGES_PERMITTED +
+    3 = CHANGES_PERMITTED
+
+  This corresponds to the /DocMDP setting in the PDF specification, which controls what changes are permitted in a signed PDF document.
+  If an invalid value is provided, an InternalErrorException will be thrown.
+
 | build()
 | Build the SupportAPIProfile instance.
 |===
+
+===== Configuration value: pdfCertificationPermission
+
+Defines the level of modification permissions allowed for certification signatures in PDF documents, using the `/DocMDP` dictionary as specified in the ISO 32000-1 standard ("12.8.2.2 DocMDP").
+Certification signatures protect the integrity of a document by explicitly declaring what kinds of changes are allowed after signing.
+If a validator detects changes that are not permitted by the specified certification level, the certification signature will be considered invalid.
+
+DSS supports the following certification permission levels:
+
+- `1` = `NO_CHANGE_PERMITTED`
+No changes are permitted after signing. Any modification will invalidate the signature.
+
+- `2` = `MINIMAL_CHANGES_PERMITTED`
+Only form filling, instantiating page templates, and signing are allowed. All other modifications invalidate the signature.
+
+- `3` = `CHANGES_PERMITTED`
+In addition to the permissions in level 2, this allows annotation creation, deletion, and modification. Other changes still invalidate the signature.
+
+To apply a certification signature, this value must be supplied via the builder method:
+[source,java]
+----
+SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
+        .pdfCertificationPermission(1) // No change permitted
+        .build(); // Build the profile.
+----
+
+An invalid value (anything not equal to 1, 2, or 3) will result in an `InternalErrorException`.
+
+See also: +
+ISO 32000-1, section 12.8.2.2 (DocMDP) +
+DSS documentation section 5.3.3.1 "Certification signatures"
 
 ===== Configuration value: metadataCustomCertAttribute
 Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.

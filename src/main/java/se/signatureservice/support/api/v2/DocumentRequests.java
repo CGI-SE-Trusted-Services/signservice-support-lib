@@ -12,11 +12,11 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
+import jakarta.xml.bind.annotation.*;
 import org.apache.commons.io.IOUtils;
 import se.signatureservice.support.utils.SerializableUtils;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
-import jakarta.xml.bind.annotation.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
