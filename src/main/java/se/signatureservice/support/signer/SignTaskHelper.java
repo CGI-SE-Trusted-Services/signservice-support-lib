@@ -12,17 +12,25 @@
  *************************************************************************/
 package se.signatureservice.support.signer;
 
+import jakarta.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.c14n.InvalidCanonicalizerException;
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.encoders.Base64;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.messages.MessageProcessingException;
 import se.signatureservice.messages.dss1.core.jaxb.SignResponse;
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.SigType;
@@ -33,15 +41,8 @@ import se.signatureservice.messages.sweeid2.dssextenstions1_1.jaxb.SignTasksType
 import se.signatureservice.messages.utils.CertUtils;
 import se.signatureservice.messages.utils.DefaultSystemTime;
 import se.signatureservice.messages.utils.SystemTime;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import se.signatureservice.configuration.common.InvalidArgumentException;
 import se.signatureservice.support.common.keygen.SignAlgorithm;
 
-import jakarta.xml.bind.DatatypeConverter;
-import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
