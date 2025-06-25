@@ -19,17 +19,21 @@ import eu.europa.esig.dss.model.SignatureValue
 import eu.europa.esig.dss.model.ToBeSigned
 import eu.europa.esig.dss.model.x509.CertificateToken
 import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry
 import eu.europa.esig.dss.token.JKSSignatureToken
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier
-import eu.europa.esig.dss.xades.TrustedListSignatureParametersBuilder
 import eu.europa.esig.dss.xades.XAdESSignatureParameters
 import eu.europa.esig.dss.xades.signature.XAdESService
+import eu.europa.esig.dss.xades.tsl.TrustedListV5SignatureParametersBuilder
 import eu.europa.esig.trustedlist.TrustedListFacade
 import eu.europa.esig.trustedlist.jaxb.tsl.*
 import groovy.xml.XmlSlurper
 import groovy.yaml.YamlSlurper
+import jakarta.servlet.ServletException
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import se.signatureservice.messages.utils.CertUtils
 import se.signatureservice.support.api.v2.Document
@@ -44,10 +48,6 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import jakarta.servlet.ServletException
-import jakarta.servlet.http.HttpServlet
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import javax.xml.datatype.DatatypeFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -142,7 +142,6 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
         /**
          * eu-lotl.xml
          * Tests pruned to fail when not maintained.
-         * TODO <NextUpdate> 2024-05-07T14:10:01Z
          */
         euDSSTestSignedXMLDocument = new Document(referenceId: "133737", type: "text/xml", name: "OJ_C_2017_173_FULL.xml", data: new File("src/test/resources/signed-documents/dss-lib-signed/OJ_C_2017_173_FULL.xml").bytes)
     }
@@ -190,7 +189,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             DSSPrivateKeyEntry privateKeyEntry = token.getKeys().get(0)
             CertificateToken signingCertificate = privateKeyEntry.getCertificate()
 
-            TrustedListSignatureParametersBuilder builder = new TrustedListSignatureParametersBuilder(signingCertificate, unsigned_TL)
+            TrustedListV5SignatureParametersBuilder builder = new TrustedListV5SignatureParametersBuilder(signingCertificate, unsigned_TL)
             XAdESSignatureParameters parameters = builder.build()
 
             XAdESService service = new XAdESService(new CommonCertificateVerifier())
@@ -259,7 +258,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             DSSPrivateKeyEntry privateKeyEntry = token.getKeys().get(0)
             CertificateToken signingCertificate = privateKeyEntry.getCertificate()
 
-            TrustedListSignatureParametersBuilder builder = new TrustedListSignatureParametersBuilder(signingCertificate, unsigned_TL)
+            TrustedListV5SignatureParametersBuilder builder = new TrustedListV5SignatureParametersBuilder(signingCertificate, unsigned_TL)
             XAdESSignatureParameters parameters = builder.build()
 
             XAdESService service = new XAdESService(new CommonCertificateVerifier())

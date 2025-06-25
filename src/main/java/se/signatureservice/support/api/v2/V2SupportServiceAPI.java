@@ -148,6 +148,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private se.signatureservice.messages.saml2.assertion.jaxb.ObjectFactory saml2ObjectFactory;
     private DatatypeFactory datatypeFactory;
     private final TemplateProcessor templateProcessor;
+    private final DocumentResolver documentResolver;
+
+    public static final String SAML_ENTITY_NAMEID_FORMAT = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity";
 
     /**
      * Create an instance of the support service library.
@@ -159,6 +162,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             this.apiConfig = apiConfig;
             this.messageSource = apiConfig.getMessageSource();
             this.cacheProvider = apiConfig.getCacheProvider();
+            this.documentResolver = apiConfig.getDocumentResolver();
 
             try {
                 datatypeFactory = DatatypeFactory.newInstance();
@@ -434,20 +438,62 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             signatureCertificateChain = SignTaskHelper.getSignatureCertificateChain(response).toArray(new X509Certificate[0]);
 
             // Process list of sign tasks and create signed documents.
-            // TODO: Support document handling by reference.
             List<Document> signedDocuments = new ArrayList<>();
             for (SignTaskDataType signTask : signTasks) {
-                DocumentSigningRequest relatedDocument = null;
-                for (Object object : transactionState.getDocuments().getDocuments()) {
-                    if (object instanceof DocumentSigningRequest) {
-                        DocumentSigningRequest document = (DocumentSigningRequest) object;
-                        if (document.referenceId.equals(signTask.getSignTaskId())) {
-                            relatedDocument = document;
+                DocumentSigningRequest documentDataForSigning = null;
+                String signTaskReferenceId = signTask.getSignTaskId();
+
+                Object documentObjectFromState = null;
+                if (transactionState.getDocuments() != null && transactionState.getDocuments().getDocuments() != null) {
+                    for (Object objInState : transactionState.getDocuments().getDocuments()) {
+                        if (objInState instanceof DocumentSigningRequest && ((DocumentSigningRequest) objInState).getReferenceId().equals(signTaskReferenceId)) {
+                            documentObjectFromState = objInState;
+                            break;
+                        } else if (objInState instanceof DocumentRef && ((DocumentRef) objInState).getReferenceId().equals(signTaskReferenceId)) {
+                            documentObjectFromState = objInState;
+                            break;
                         }
                     }
                 }
-                if (relatedDocument != null) {
-                    signedDocuments.add(signDocument(relatedDocument, signTask, signatureCertificateChain, transactionState, profileConfig));
+
+                if (documentObjectFromState instanceof DocumentSigningRequest) {
+                    documentDataForSigning = (DocumentSigningRequest) documentObjectFromState;
+                } else if (documentObjectFromState instanceof DocumentRef) {
+                    if (this.documentResolver == null) {
+                        log.error("DocumentResolver not configured. Cannot resolve DocumentRef for SignTaskID: {}", signTaskReferenceId);
+                        throw ErrorCode.INTERNAL_ERROR.toException("DocumentResolver is required to handle DocumentRef. Set it via V2SupportServiceAPI.Builder().documentResolver(...).");
+                    }
+
+                    DocumentRef docRef = (DocumentRef) documentObjectFromState;
+
+                    log.info("Resolving DocumentRef with referenceId: {} for completing signature", docRef.getReferenceId());
+                    try {
+                        byte[] resolvedData = this.documentResolver.resolveDocumentData(docRef.getReferenceId());
+                        String resolvedMimeType = this.documentResolver.resolveDocumentMimeType(docRef.getReferenceId());
+                        String resolvedName = this.documentResolver.resolveDocumentName(docRef.getReferenceId());
+
+                        if (resolvedData == null || resolvedMimeType == null || resolvedName == null) {
+                            throw new DocumentNotFoundException("Resolved document data, mimeType, or name is null from DocumentResolver for referenceId: " + docRef.getReferenceId());
+                        }
+
+                        documentDataForSigning = new DocumentSigningRequest();
+                        documentDataForSigning.setData(resolvedData);
+                        documentDataForSigning.setType(resolvedMimeType);
+                        documentDataForSigning.setName(resolvedName);
+                        documentDataForSigning.setReferenceId(docRef.getReferenceId());
+                    } catch (DocumentNotFoundException e) {
+                        log.error("Document not found via DocumentResolver for referenceId {} during completion: {}", docRef.getReferenceId(), e.getMessage());
+                        throw ErrorCode.INVALID_DOCUMENT.toException("Document (referenced by " + docRef.getReferenceId() + ") not found for SignTaskID: " + signTaskReferenceId + ". " + e.getMessage());
+                    } catch (IOException e) {
+                        log.error("IOException while resolving DocumentRef {} via DocumentResolver during completion: {}", docRef.getReferenceId(), e.getMessage(), e);
+                        throw ErrorCode.INTERNAL_ERROR.toException("Error resolving document (referenced by " + docRef.getReferenceId() + ") for SignTaskID: " + signTaskReferenceId + ". " + e.getMessage());
+                    }
+                }
+
+                if (documentDataForSigning != null) {
+                    signedDocuments.add(signDocument(documentDataForSigning, signTask, signatureCertificateChain, transactionState, profileConfig));
+                } else {
+                    log.error("No related document (DocumentSigningRequest or resolvable DocumentRef) found in transaction state for SignTaskID: {}. Skipping this task.", signTaskReferenceId);
                 }
             }
 
@@ -636,10 +682,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         signRequestExtensionType.setConditions(generateConditions(requestTime, consumerURL, config));
         signRequestExtensionType.setSigner(generateSigner(user, authenticationServiceId, config));
         signRequestExtensionType.setRequestTime(datatypeFactory.newXMLGregorianCalendar(requestTime));
-        signRequestExtensionType.setIdentityProvider(createNameIDType(authenticationServiceId, "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
-        signRequestExtensionType.setSignService(createNameIDType(config.getSignServiceId(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
+        signRequestExtensionType.setIdentityProvider(createNameIDType(authenticationServiceId, V2SupportServiceAPI.SAML_ENTITY_NAMEID_FORMAT));
+        signRequestExtensionType.setSignService(createNameIDType(config.getSignServiceId(), V2SupportServiceAPI.SAML_ENTITY_NAMEID_FORMAT));
         setCertRequestProperties(signRequestExtensionType, authenticationServiceId, config, signatureAttributes, overridingAuthnContextClassRefs);
-        signRequestExtensionType.setSignRequester(createNameIDType(config.getSignRequester(), "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"));
+        signRequestExtensionType.setSignRequester(createNameIDType(config.getSignRequester(), V2SupportServiceAPI.SAML_ENTITY_NAMEID_FORMAT));
         signRequestExtensionType.getCertRequestProperties().setCertType(config.getCertificateType());
         signRequestExtensionType.setRequestedSignatureAlgorithm(SignatureAlgorithm.forJAVA(config.getSignatureAlgorithm()).getUri());
         signRequestExtensionType.getCertRequestProperties().setRequestedCertAttributes(sweEid2ObjectFactory.createRequestedAttributesType());
@@ -665,20 +711,53 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         JAXBElement<SignRequestExtensionType> signRequestExtension = sweEid2ObjectFactory.createSignRequestExtension(signRequestExtensionType);
         SignTasksType signTasksType = sweEid2ObjectFactory.createSignTasksType();
 
-        for (Object object : documents.documents) {
+        for (Object object : documents.getDocuments()) {
+            DocumentSigningRequest documentToProcess;
+
             if (object instanceof DocumentSigningRequest) {
-                DocumentSigningRequest documentSigningRequest = (DocumentSigningRequest) object;
-                if (documentSigningRequest.referenceId == null) {
-                    documentSigningRequest.referenceId = SupportLibraryUtils.generateReferenceId();
-                }
-                List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(documentSigningRequest).preProcess(documentSignatureAttributes != null ? documentSignatureAttributes.getOrDefault(documentSigningRequest.referenceId, signatureAttributes) : signatureAttributes, documentSigningRequest);
-                signTasksType.getSignTaskData().add(generateSignTask(documentSigningRequest, transactionId, getSigningId(user, config), config, preProcessedSignatureAttributes));
+                documentToProcess = (DocumentSigningRequest) object;
             } else if (object instanceof DocumentRef) {
-                // TODO: Implement support for signing document by reference
-                throw ErrorCode.UNSUPPORTED_OPERATION.toException("Document references not supported");
+                if (this.documentResolver == null) {
+                    log.error("DocumentResolver not configured. Cannot resolve DocumentRef.");
+                    throw ErrorCode.INTERNAL_ERROR.toException("DocumentResolver is required to handle DocumentRef. Set it via V2SupportServiceAPI.Builder().documentResolver(...)");
+                }
+
+                DocumentRef docRef = (DocumentRef) object;
+
+                log.info("Resolving DocumentRef with referenceId: {} during sign request generation", docRef.getReferenceId());
+                try {
+                    byte[] resolvedData = this.documentResolver.resolveDocumentData(docRef.getReferenceId());
+                    String resolvedMimeType = this.documentResolver.resolveDocumentMimeType(docRef.getReferenceId());
+                    String resolvedName = this.documentResolver.resolveDocumentName(docRef.getReferenceId());
+
+                    if (resolvedData == null || resolvedMimeType == null || resolvedName == null) {
+                        throw new DocumentNotFoundException("Resolved document data, mimeType, or name is null for referenceId: " + docRef.getReferenceId());
+                    }
+
+                    documentToProcess = new DocumentSigningRequest();
+                    documentToProcess.setData(resolvedData);
+                    documentToProcess.setType(resolvedMimeType);
+                    documentToProcess.setName(resolvedName);
+                    documentToProcess.setReferenceId(docRef.getReferenceId());
+                } catch (DocumentNotFoundException e) {
+                    log.error("Document not found via DocumentResolver for referenceId {} during sign request generation: {}", docRef.getReferenceId(), e.getMessage());
+                    throw ErrorCode.INVALID_DOCUMENT.toException("Document not found for reference: " + docRef.getReferenceId() + ". " + e.getMessage());
+                } catch (IOException e) {
+                    log.error("IOException while resolving DocumentRef {} via DocumentResolver during sign request generation: {}", docRef.getReferenceId(), e.getMessage(), e);
+                    throw ErrorCode.INTERNAL_ERROR.toException("Error resolving document reference: " + docRef.getReferenceId() + ". " + e.getMessage());
+                }
             } else {
                 throw ErrorCode.UNSUPPORTED_OPERATION.toException("Input document type not supported: " + object.getClass().getName());
             }
+
+            if (documentToProcess.getReferenceId() == null) {
+                documentToProcess.setReferenceId(SupportLibraryUtils.generateReferenceId());
+            }
+            List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(documentToProcess)
+                    .preProcess(documentSignatureAttributes != null ?
+                            documentSignatureAttributes.getOrDefault(documentToProcess.getReferenceId(), signatureAttributes) :
+                            signatureAttributes, documentToProcess);
+            signTasksType.getSignTaskData().add(generateSignTask(documentToProcess, transactionId, getSigningId(user, config), config, preProcessedSignatureAttributes));
         }
 
         JAXBElement<SignTasksType> signTasks = sweEid2ObjectFactory.createSignTasks(signTasksType);
@@ -849,41 +928,37 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @param profile API Profile
      * @return Path to validation policy to use.
      */
-    InputStream getValidationPolicy(SupportAPIProfile profile) throws FileNotFoundException {
-        InputStream policy = null;
-        Path policyPath;
-        String policyBasePath = apiConfig.getValidationPolicyDirectory();
-
-        String profilePolicyPath = profile.getValidationPolicy();
-        if (!profilePolicyPath.endsWith(".xml")) {
-            profilePolicyPath += ".xml";
+    InputStream getValidationPolicy(SupportAPIProfile profile) {
+        String policyFileName = profile.getValidationPolicy();
+        if (!policyFileName.endsWith(".xml")) {
+            policyFileName += ".xml";
         }
 
-        if (policyBasePath != null) {
-            policyPath = Paths.get(policyBasePath, profilePolicyPath);
-        } else {
-            policyPath = Paths.get(profilePolicyPath);
+        Path policyPath = apiConfig.getValidationPolicyDirectory() != null
+                ? Paths.get(apiConfig.getValidationPolicyDirectory(), policyFileName)
+                : Paths.get(policyFileName);
+
+        String resourcePath = policyPath.toString().replace("\\", "/");
+        if (!resourcePath.startsWith("/")) {
+            resourcePath = "/" + resourcePath;
+        }
+
+        InputStream policyStream = this.getClass().getResourceAsStream(resourcePath);
+        if (policyStream != null) {
+            return policyStream;
         }
 
         try {
-            String policyClassPath = policyPath.toString();
-            if (!policyClassPath.startsWith("/")) {
-                policyClassPath = String.format("/%s", policyClassPath);
-            }
-
-            policy = this.getClass().getResourceAsStream(policyClassPath);
-            if (policy == null) {
-                policy = Files.newInputStream(policyPath.toFile().toPath());
-            }
+            policyStream = Files.newInputStream(policyPath);
         } catch (Exception e) {
-            log.error("Error while reading policy file: {}", e.getMessage());
+            log.error("Error reading validation policy from '{}': {}", policyPath, e.getMessage());
         }
 
-        if (policy == null) {
+        if (policyStream == null) {
             log.error("Could not load validation policy from path: {}", policyPath);
         }
 
-        return policy;
+        return policyStream;
     }
 
     /**
@@ -1041,15 +1116,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * @return Signature form of given sign task
      */
     private SignatureForm getSignatureForm(SignTaskDataType signTask) {
-        if (SignTaskHelper.isXadesSignTask(signTask)) {
-            return SignatureForm.XAdES;
-        } else if (SignTaskHelper.isCadesSignTask(signTask)) {
-            return SignatureForm.CAdES;
-        } else if (SignTaskHelper.isPadesSignTask(signTask)) {
-            return SignatureForm.PAdES;
-        } else {
-            return null;
-        }
+        if (SignTaskHelper.isXadesSignTask(signTask)) return SignatureForm.XAdES;
+        if (SignTaskHelper.isCadesSignTask(signTask)) return SignatureForm.CAdES;
+        if (SignTaskHelper.isPadesSignTask(signTask)) return SignatureForm.PAdES;
+        return null;
     }
 
     /**
@@ -1611,6 +1681,9 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 PAdESSignatureParameters pp = new PAdESSignatureParameters();
                 pp.setSignatureLevel(SignatureLevel.valueByName(config.getPadesSignatureLevel()));
                 pp.setSignaturePackaging(SignaturePackaging.valueOf(config.getPadesSignaturePacking()));
+                if (config.getPdfCertificationPermission() != null) {
+                    pp.setPermission(config.getPdfCertificationPermission());
+                }
                 parameters = pp;
                 break;
             default:
@@ -2138,7 +2211,12 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     throw (ClientErrorException) ErrorCode.INVALID_MIMETYPE.toException("Invalid type (" + document.getType() + ") for document name (" + document.getName() + "). " + MimeType.fromFileName(document.getName()).getMimeTypeString() + " was exptected.", messageSource);
                 }
             } else if (object instanceof DocumentRef) {
-                throw (ClientErrorException) ErrorCode.UNSUPPORTED_OPERATION.toException("Document references are not supported", messageSource);
+                DocumentRef docRef = (DocumentRef) object;
+                if (docRef.getReferenceId() == null || docRef.getReferenceId().trim().isEmpty()) {
+                    throw (ClientErrorException) ErrorCode.INVALID_DOCUMENT.toException("DocumentRef is missing a referenceId.", messageSource);
+                }
+            } else {
+                throw (ClientErrorException) ErrorCode.UNSUPPORTED_OPERATION.toException("An unsupported document type was provided in the request: " + object.getClass().getName(), messageSource);
             }
         }
     }
@@ -2216,6 +2294,11 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
          */
         public Builder() {
             config = new SupportAPIConfiguration();
+        }
+
+        public Builder documentResolver(DocumentResolver documentResolver) {
+            config.setDocumentResolver(documentResolver);
+            return this;
         }
 
         /**

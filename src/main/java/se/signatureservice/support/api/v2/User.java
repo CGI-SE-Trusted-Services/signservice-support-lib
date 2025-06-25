@@ -12,17 +12,13 @@
  *************************************************************************/
 package se.signatureservice.support.api.v2;
 
-import se.signatureservice.support.utils.SerializableUtils;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-import java.io.Externalizable;
-import java.io.Serializable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import se.signatureservice.support.utils.SerializableUtils;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

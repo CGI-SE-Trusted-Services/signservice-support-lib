@@ -76,7 +76,7 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
                 .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
                 .addAuthorizedConsumerURL("http://localhost")
                 .signRequester("http://localhost:9090/signservice-support/metadata")
-                .signatureAlgorithm("SHA256withRSA")
+                .signatureAlgorithm("SHA512withRSAandMGF1")
                 .relatedProfile("rsaProfile")
                 .enableAuthnProfile(true)
                 .build()
