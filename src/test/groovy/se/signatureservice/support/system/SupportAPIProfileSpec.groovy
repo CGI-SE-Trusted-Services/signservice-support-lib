@@ -12,6 +12,8 @@
  *************************************************************************/
 package se.signatureservice.support.system
 
+import eu.europa.esig.dss.enumerations.CertificationPermission
+import se.signatureservice.configuration.common.InternalErrorException
 import spock.lang.Specification
 
 class SupportAPIProfileSpec extends Specification {
@@ -256,5 +258,45 @@ class SupportAPIProfileSpec extends Specification {
         profile.signerAttributes["testattribute2"]["samlAttributeName"] == "urn:oid:2.5.4.10"
         profile.signerAttributes["testattribute2"]["userAttributeMapping"] == "userattribute2"
         profile.signerAttributes["testattribute2"]["required"] == "false"
+    }
+
+    def "test pdfCertificationPermission builder method sets correct permission"() {
+        when: "A SupportAPIProfile is built with a specific PDF certification permission level"
+        SupportAPIProfile profile = new SupportAPIProfile.Builder()
+                .pdfCertificationPermission(level)
+                .build()
+
+        then: "The profile should have the correct CertificationPermission enum set"
+        profile.getPdfCertificationPermission() == expectedPermission
+
+        where:
+        level | expectedPermission
+        1     | CertificationPermission.NO_CHANGE_PERMITTED
+        2     | CertificationPermission.MINIMAL_CHANGES_PERMITTED
+        3     | CertificationPermission.CHANGES_PERMITTED
+    }
+
+    def "test pdfCertificationPermission builder method with invalid level throws exception"() {
+        when: "A SupportAPIProfile is built with an invalid PDF certification permission level"
+        new SupportAPIProfile.Builder()
+                .pdfCertificationPermission(invalidLevel)
+                .build()
+
+        then: "An InternalErrorException should be thrown"
+        thrown(InternalErrorException)
+
+        where:
+        invalidLevel | _
+        0            | _
+        4            | _
+        -1           | _
+    }
+
+    def "test pdfCertificationPermission builder method when no permission is set"() {
+        when: "A SupportAPIProfile is built without setting PDF certification permission"
+        SupportAPIProfile profile = new SupportAPIProfile.Builder().build()
+
+        then: "The pdfCertificationPermission should be null by default"
+        profile.getPdfCertificationPermission() == null
     }
 }

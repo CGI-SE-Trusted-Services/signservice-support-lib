@@ -11,15 +11,20 @@
  *                                                                       *
  *************************************************************************/
 package se.signatureservice.support.system;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europa.esig.dss.enumerations.CertificationPermission;
 import se.signatureservice.configuration.common.InternalErrorException;
 import se.signatureservice.configuration.support.system.Constants;
 import se.signatureservice.configuration.support.system.SupportProfile;
 import se.signatureservice.configuration.support.system.TimeStampConfig;
 import se.signatureservice.configuration.support.system.VisibleSignatureConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Support service API profile configuration. Contains all configuration parameters
@@ -382,6 +387,16 @@ public class SupportAPIProfile implements SupportProfile {
      * Timestamp configuration.
      */
     private TimeStampConfig timeStamp = null;
+
+    /**
+     * Optional PDF certification permission to apply during signing.
+     * If null, no certification signature (/DocMDP) will be added to the PDF.
+     * Use values 1, 2, or 3 mapped to CertificationPermission enum:
+     * 1 = NO_CHANGE_PERMITTED
+     * 2 = MINIMAL_CHANGES_PERMITTED
+     * 3 = CHANGES_PERMITTED
+     */
+    private CertificationPermission pdfCertificationPermission = null;
 
     public String getRelatedProfile() {
         return relatedProfile;
@@ -775,6 +790,14 @@ public class SupportAPIProfile implements SupportProfile {
         this.timeStamp = timeStamp;
     }
 
+    public CertificationPermission getPdfCertificationPermission() {
+        return pdfCertificationPermission;
+    }
+
+    public void setPdfCertificationPermission(CertificationPermission pdfCertificationPermission) {
+        this.pdfCertificationPermission = pdfCertificationPermission;
+    }
+
     /**
      * Builder class to help when building a ProfileConfiguration instance.
      */
@@ -782,7 +805,7 @@ public class SupportAPIProfile implements SupportProfile {
         private SupportAPIProfile config;
 
         /**
-         * Create new SupportConfiguration builder
+         * Creates a new SupportConfiguration builder
          */
         public Builder(){
             config = new SupportAPIProfile();
@@ -1105,6 +1128,15 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder timeStamp(TimeStampConfig timeStampConfig){
             config.setTimeStamp(timeStampConfig);
+            return this;
+        }
+
+        public Builder pdfCertificationPermission(int level) throws InternalErrorException {
+            try {
+                config.setPdfCertificationPermission(CertificationPermission.fromCode(level));
+            } catch (IllegalArgumentException e) {
+                throw new InternalErrorException(e.getMessage(), e);
+            }
             return this;
         }
 

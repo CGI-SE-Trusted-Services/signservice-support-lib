@@ -19,7 +19,6 @@ import se.signatureservice.support.utils.SerializableUtils;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Serializable class containing all information needed to describe

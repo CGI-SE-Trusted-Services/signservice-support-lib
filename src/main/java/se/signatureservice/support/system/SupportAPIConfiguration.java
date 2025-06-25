@@ -13,13 +13,14 @@
 package se.signatureservice.support.system;
 
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig;
+import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
-import eu.europa.esig.dss.spi.validation.CertificateVerifier;
-import se.signatureservice.messages.MessageSecurityProvider;
 import org.springframework.context.MessageSource;
 import se.signatureservice.configuration.common.cache.CacheProvider;
 import se.signatureservice.configuration.support.system.Constants;
+import se.signatureservice.messages.MessageSecurityProvider;
+import se.signatureservice.support.api.v2.DocumentResolver;
 
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -118,6 +119,13 @@ public class SupportAPIConfiguration {
      */
     private MessageSource messageSource = null;
 
+    /**
+     * Resolver for fetching document content and metadata when documents are handled by reference.
+     * Implementations define how reference IDs are mapped to actual documents.
+     * Default value: null
+     */
+    private DocumentResolver documentResolver = null;
+
     public MessageSecurityProvider getMessageSecurityProvider() {
         return messageSecurityProvider;
     }
@@ -146,7 +154,7 @@ public class SupportAPIConfiguration {
         return this.certificateVerifier;
     }
 
-    public void setCertificateVerifier(CertificateVerifier certificateVerifier){
+    public void setCertificateVerifier(CertificateVerifier certificateVerifier) {
         this.certificateVerifier = certificateVerifier;
     }
 
@@ -170,15 +178,15 @@ public class SupportAPIConfiguration {
         return ignoreMissingRevocationData;
     }
 
-    public void setIgnoreMissingRevocationData(boolean ignoreMissingRevocationData){
+    public void setIgnoreMissingRevocationData(boolean ignoreMissingRevocationData) {
         this.ignoreMissingRevocationData = ignoreMissingRevocationData;
     }
 
-    public void setValidationPolicyDirectory(String validationPolicyDirectory){
+    public void setValidationPolicyDirectory(String validationPolicyDirectory) {
         this.validationPolicyDirectory = validationPolicyDirectory;
     }
 
-    public String getValidationPolicyDirectory(){
+    public String getValidationPolicyDirectory() {
         return validationPolicyDirectory;
     }
 
@@ -221,4 +229,13 @@ public class SupportAPIConfiguration {
     public void setMessageSource(MessageSource messageSource) {
         this.messageSource = messageSource;
     }
+
+    public DocumentResolver getDocumentResolver() {
+        return documentResolver;
+    }
+
+    public void setDocumentResolver(DocumentResolver documentResolver) {
+        this.documentResolver = documentResolver;
+    }
+
 }
