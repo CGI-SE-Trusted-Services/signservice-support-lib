@@ -2,9 +2,7 @@ package se.signatureservice.support.metadata;
 
 import se.signatureservice.messages.metadata.ReducedMetadata;
 
-public class MetadataSource {
+public interface MetadataSource {
 
-    public ReducedMetadata getMetadata(String entityId) {
-        return null;
-    }
+    ReducedMetadata getMetaData(String entityId);
 }
