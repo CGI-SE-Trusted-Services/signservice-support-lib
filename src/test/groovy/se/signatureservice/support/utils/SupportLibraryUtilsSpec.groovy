@@ -12,7 +12,9 @@
  *************************************************************************/
 package se.signatureservice.support.utils
 
+import se.signatureservice.support.system.SupportAPIProfile
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class SupportLibraryUtilsSpec extends Specification {
     def "test generateTransactionId"(){
@@ -60,5 +62,54 @@ class SupportLibraryUtilsSpec extends Specification {
             assert sri.length() >= 32
             assert strongReferenceIds.findAll { it == sri }.size() == 1
         }
+    }
+
+    @Unroll
+    def "test getUserIdAttributeMappings with userIdAttributeMapping #userIdAttributeMapping and defaultUserIdAttributeMapping #defaultUserIdAttributeMapping"() {
+        given:
+        def supportAPIProfile = Mock(SupportAPIProfile)
+        supportAPIProfile.userIdAttributeMapping >> userIdAttributeMapping
+        supportAPIProfile.defaultUserIdAttributeMapping >> defaultUserIdAttributeMapping
+
+        when:
+        def result = SupportLibraryUtils.getUserIdAttributeMappings(supportAPIProfile)
+
+        then:
+        result == expected
+
+        where:
+        userIdAttributeMapping | defaultUserIdAttributeMapping | expected
+        "userIdMappingValue"   | "defaultMappingValue"         | ["userIdAttributeMapping": "userIdMappingValue", "defaultUserIdAttributeMapping": "defaultMappingValue"]
+        "userIdMappingValue"   | null                          | ["userIdAttributeMapping": "userIdMappingValue"]
+        null                   | "defaultMappingValue"         | ["defaultUserIdAttributeMapping": "defaultMappingValue"]
+        ""                     | " "                           | [:]
+        ""                     | null                          | [:]
+        null                   | " "                           | [:]
+        null                   | null                          | [:]
+    }
+
+    @Unroll
+    def "test findAuthConfUserIdAttributeMappings with authenticationServiceId #authenticationServiceId"() {
+        given:
+        def supportAPIProfile = Mock(SupportAPIProfile)
+        supportAPIProfile.trustedAuthenticationServices >> trustedAuthenticationServices
+
+        when:
+        def result = SupportLibraryUtils.findAuthConfUserIdAttributeMappings(authenticationServiceId, supportAPIProfile)
+
+        then:
+        result == expected
+
+        where:
+        authenticationServiceId | trustedAuthenticationServices                                                                                                   | expected
+        "serviceId1"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: "value"], idp2: [entityId: "serviceId2", userIdAttributeMapping: null]] | [idp1: [entityId: "serviceId1", userIdAttributeMapping: "value"]]
+        "serviceId1"            | [idp1: [userIdAttributeMapping: "value"], idp2: [entityId: "serviceId2", userIdAttributeMapping: null]]                         | [:]
+        "serviceId1"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: "  "]]                                                                  | [:]
+        "serviceId1"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: null]]                                                                  | [:]
+        "serviceId1"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: 1]]                                                                     | [:]
+        "serviceId1"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: ["1", "2"]]]                                                            | [:]
+        "serviceId1"            | [idp1: [entityId: "serviceId1"]]                                                                                                | [:]
+        "serviceId3"            | [idp1: [entityId: "serviceId1", userIdAttributeMapping: "value"]]                                                               | [:]
+        "serviceId1"            | null                                                                                                                            | [:]
     }
 }
