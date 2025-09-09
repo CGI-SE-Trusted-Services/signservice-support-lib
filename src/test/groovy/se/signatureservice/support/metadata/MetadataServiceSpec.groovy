@@ -1,6 +1,8 @@
 package se.signatureservice.support.metadata
 
 import org.slf4j.Logger
+import se.signatureservice.messages.metadata.MetadataConstants
+import se.signatureservice.messages.metadata.ReducedMetadata
 import se.signatureservice.messages.metadata.ReducedMetadataImpl
 import se.signatureservice.support.system.SupportAPIProfile
 import spock.lang.Specification
@@ -10,6 +12,188 @@ class MetadataServiceSpec extends Specification {
 
     MetadataService service = new MetadataService(Mock(org.springframework.context.MessageSource))
 
+    def "Test that defaultDisplayName is fetched from metadata, if missing on trustedAuthenticationServices"() {
+        given:
+        def profile = new SupportAPIProfile.Builder()
+                .addTrustedAuthenticationService("1", "ent1", "disp1")
+                .addTrustedAuthenticationService("2", "ent2", null)
+                .build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "ent2"
+        rmd2.organisation = new ReducedMetadataImpl.Organisation([new ReducedMetadataImpl.DisplayName("org", "en")])
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("", "", "en", profile, metadataSource)
+
+        then:
+        profile.getTrustedAuthenticationServices().get("1").get("defaultDisplayName") == "disp1"
+        profile.getTrustedAuthenticationServices().get("2").get("defaultDisplayName") == "org"
+    }
+
+    def "Test that if trustedAuthenticationServices are missing, the authenticationServiceId param is used and defaultDisplayName fetched from metadata"() {
+        given:
+        def profile = new SupportAPIProfile.Builder().build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "ent2"
+        rmd2.organisation = new ReducedMetadataImpl.Organisation([new ReducedMetadataImpl.DisplayName("org", "en")])
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("ent2", "", "en", profile, metadataSource)
+
+        then:
+        profile.getTrustedAuthenticationServices().get("org").get("defaultDisplayName") == "org"
+    }
+
+    def "Test that supportedAuthnContextClassRefs is fetched from metadata corresponding to the authenticationServiceId param"() {
+        given:
+        def profile = new SupportAPIProfile.Builder()
+                .fetchAuthnContextClassRefFromMetaData(true)
+                .addTrustedAuthenticationService("2", "ent2", null)
+                .build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "ent2"
+        rmd2.entityAttributes = [
+                (MetadataConstants.DEFAULT_ASSURANCE_CERTIFICATION_NAME): ["a", "b"]
+        ]
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("ent2", "", "en", profile, metadataSource)
+
+        then:
+        profile.getTrustedAuthenticationServices().get("2").get("authnContextClassRefs") == ["a", "b"]
+    }
+
+    def "Test that custom attribute gets read from metadata"() {
+        given:
+        def profile = new SupportAPIProfile.Builder()
+                .fetchCertAttributesFromMetaData(true)
+                .metadataCustomCertAttribute(["attrName": ["samlAttributeName":"attrName", "certAttributeRef":"0.9.2342.19200300.100.1.3"]])
+                .addTrustedAuthenticationService("1", "ent1", "disp1")
+                .signServiceId("signsvc")
+                .build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "signsvc"
+        rmd2.attributeConsumingServices = [
+                new ReducedMetadataImpl.AttributeConsumingService(["svcname"], [
+                        new ReducedMetadataImpl.RequestedAttribute("attrName", "friendly", true)
+                ])
+        ]
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("ent2", "svcname", "en", profile, metadataSource)
+
+        then:
+        profile.getRequestedCertAttributes().get("attrName") == [
+                required: true, samlAttributeName: "attrName", certAttributeRef: "0.9.2342.19200300.100.1.3", certNameType: "san"
+        ]
+    }
+
+    def "Test that ordinary attribute gets read from metadata"() {
+        given:
+        def profile = new SupportAPIProfile.Builder()
+                .fetchCertAttributesFromMetaData(true)
+                .addTrustedAuthenticationService("1", "ent1", "disp1")
+                .signServiceId("signsvc")
+                .build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "signsvc"
+        rmd2.attributeConsumingServices = [
+                new ReducedMetadataImpl.AttributeConsumingService(["svcname"], [
+                        new ReducedMetadataImpl.RequestedAttribute("urn:oid:0.9.2342.19200300.100.1.3", "friendly", false)
+                ])
+        ]
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("ent2", "svcname", "en", profile, metadataSource)
+
+        then:
+        profile.getRequestedCertAttributes().get("email") == [
+                required: false, samlAttributeName: "urn:oid:0.9.2342.19200300.100.1.3", certAttributeRef: "0.9.2342.19200300.100.1.3", certNameType: "san"
+        ]
+    }
+
+    def "Test setting DefaultUserIdAttributeMapping from metadata"() {
+
+        given:
+        def profile = new SupportAPIProfile.Builder()
+                .signServiceId("signsvc")
+                .defaultUserIdAttributeMapping(null)
+                .build()
+
+        def rmd1 = new ReducedMetadataImpl()
+        rmd1.entityID = "ent1"
+        def rmd2 = new ReducedMetadataImpl()
+        rmd2.entityID = "signsvc"
+        rmd2.attributeConsumingServices = [
+                new ReducedMetadataImpl.AttributeConsumingService(["svcname"], [
+                        new ReducedMetadataImpl.RequestedAttribute("urn:oid:1.2.752.29.4.13", "friendly", false)
+                ])
+        ]
+
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd1.getEntityID()): rmd1, (rmd2.getEntityID()): rmd2].get(entityId)
+            }
+        }
+
+        when:
+        service.applyMetadataToProfile("ent1", "svcname", "en", profile, metadataSource)
+
+        then:
+        profile.getDefaultUserIdAttributeMapping() == "urn:oid:1.2.752.29.4.13"
+    }
+    
     @Unroll
     def "Test setReqCertAttrFromMetaDataCustomCertAttr method"() {
         when:
