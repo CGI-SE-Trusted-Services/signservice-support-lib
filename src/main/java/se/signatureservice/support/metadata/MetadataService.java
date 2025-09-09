@@ -15,32 +15,36 @@ import se.signatureservice.support.utils.SupportLibraryUtils;
 
 import java.util.*;
 
-public class MetadataSomething {
-    static Logger msgLog;
+/**
+ * Logic to extract information from metadata to maybe modify a SupportAPIProfile.
+ *
+ * @author Fredrik
+ */
+public class MetadataService {
+    static Logger msgLog = LoggerFactory.getLogger(MetadataService.class);
     final static String DEFAULT_LANGUAGE = "en";
 
     MessageSource messageSource;
 
-    public MetadataSomething(MessageSource messageSource, Logger logger) {
-        msgLog = logger;
+    public MetadataService(MessageSource messageSource) {
         this.messageSource = messageSource;
     }
+
     /**
      * Populate Idp displayNames from metadata, and conditionally fetch AuthnContextClassRefs, CertAttributes and UserIdAttributeMapping, from metadata
-     * @param authenticationServiceId identity provider to use during signature process
-     * @param serviceName
-     * @param preferredLang Preferred language of display name to primarily be selected.
-     * @param config
-     * @return SupportAPIProfile
+     * @param authenticationServiceId, The entity whose metadata will be applied
+     * @param serviceName, To match attributeConsumingServices in the metadata
+     * @param preferredLang, For getting displayName
+     * @param supportAPIProfile, The profile to modify
      */
     public void applyMetadataToProfile(
             String authenticationServiceId,
             String serviceName,
             String preferredLang,
             SupportAPIProfile supportAPIProfile,
-            MetadataSource metaDataManager) throws BaseAPIException, InternalErrorException {
+            MetadataSource metadataSource) throws BaseAPIException, InternalErrorException {
         try {
-            setTrustedAuthenticationServices(supportAPIProfile, authenticationServiceId, metaDataManager, preferredLang);
+            setTrustedAuthenticationServices(supportAPIProfile, authenticationServiceId, metadataSource, preferredLang);
             if (ConfigUtils.parseBoolean(
                     supportAPIProfile.isFetchAuthnContextClassRefFromMetaData(),
                     String.format("Invalid 'fetchAuthnContextClassRefFromMetaData' value in '%s' or common under profileConfig. Please specify a valid Boolean value.",
@@ -52,7 +56,7 @@ public class MetadataSomething {
                         supportAPIProfile.getRelatedProfile(), authenticationServiceId
                 ));
 
-                fetchAuthnContextClassRefFromMetaData(authenticationServiceId, supportAPIProfile, metaDataManager);
+                fetchAuthnContextClassRefFromMetaData(authenticationServiceId, supportAPIProfile, metadataSource);
             }
 
             if (ConfigUtils.parseBoolean(
@@ -68,10 +72,10 @@ public class MetadataSomething {
                         serviceName
                 ));
 
-                fetchCertAttributesFromMetaData(serviceName, supportAPIProfile, metaDataManager);
+                fetchCertAttributesFromMetaData(serviceName, supportAPIProfile, metadataSource);
             }
 
-            setDefaultUserIdAttributeMapping(authenticationServiceId, serviceName, supportAPIProfile, metaDataManager);
+            setDefaultUserIdAttributeMapping(authenticationServiceId, serviceName, supportAPIProfile, metadataSource);
         } catch (Exception e) {
             throw e;
         }
@@ -88,7 +92,7 @@ public class MetadataSomething {
     private void setTrustedAuthenticationServices(
             SupportAPIProfile supportAPIProfile,
             String authenticationServiceId,
-            MetadataSource metaDataManager,
+            MetadataSource metadataSource,
             String preferredLanguage)
             throws BaseAPIException {
         String lang = Optional.ofNullable(preferredLanguage).map(s -> s.trim().toLowerCase()).orElse(Locale.getDefault().getLanguage());
@@ -124,7 +128,7 @@ public class MetadataSomething {
                                 entityId, serviceName
                         ));
 
-                        ReducedMetadata metadata = metaDataManager.getMetaData(entityId);
+                        ReducedMetadata metadata = metadataSource.getMetaData(entityId);
                         defaultDisplayName = metadata.getDisplayName(lang, DEFAULT_LANGUAGE);
 
                         if (defaultDisplayName != null && !defaultDisplayName.isEmpty()) {
@@ -170,7 +174,7 @@ public class MetadataSomething {
                             authenticationServiceId
                     ));
 
-                    ReducedMetadata metadata = metaDataManager.getMetaData(authenticationServiceId);
+                    ReducedMetadata metadata = metadataSource.getMetaData(authenticationServiceId);
                     String defaultDisplayName = metadata.getDisplayName(lang, DEFAULT_LANGUAGE);
 
                     if (defaultDisplayName != null && !defaultDisplayName.isBlank()) {
@@ -226,9 +230,9 @@ public class MetadataSomething {
      * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
      */
-    private void fetchAuthnContextClassRefFromMetaData(String authenticationServiceId, SupportAPIProfile supportAPIProfile, MetadataSource metaDataManager) throws BaseAPIException {
+    private void fetchAuthnContextClassRefFromMetaData(String authenticationServiceId, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
-            ReducedMetadata metadata = metaDataManager.getMetaData(authenticationServiceId);
+            ReducedMetadata metadata = metadataSource.getMetaData(authenticationServiceId);
             boolean hasElements = metadata != null && metadata.hasEntityAttributes();
             if (!hasElements) {
                 msgLog.warn(String.format(
@@ -288,12 +292,12 @@ public class MetadataSomething {
      * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
      */
-    private void fetchCertAttributesFromMetaData(String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metaDataManager) throws BaseAPIException {
+    private void fetchCertAttributesFromMetaData(String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         boolean requestedCertAttributesInitialized = false;
 
         try {
-            ReducedMetadata metadata = metaDataManager != null
-                    ? metaDataManager.getMetaData(supportAPIProfile.getSignServiceId())
+            ReducedMetadata metadata = metadataSource != null
+                    ? metadataSource.getMetaData(supportAPIProfile.getSignServiceId())
                     : null;
 
             if (metadata != null) {
@@ -411,7 +415,7 @@ public class MetadataSomething {
      * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
      */
-    void setDefaultUserIdAttributeMapping(String authenticationServiceId, String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metaDataManager) throws BaseAPIException {
+    void setDefaultUserIdAttributeMapping(String authenticationServiceId, String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
             Map<String, String> userIdAttributeMappings = SupportLibraryUtils.getUserIdAttributeMappings(supportAPIProfile);
             Map<String, Map<String, Object>> authConfUserIdAttributeMappings =
@@ -449,9 +453,7 @@ public class MetadataSomething {
                         supportAPIProfile.getSignServiceId()
                 ));
 
-                ReducedMetadata metadata = metaDataManager != null
-                        ? metaDataManager.getMetaData(supportAPIProfile.getSignServiceId())
-                        : null;
+                ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
 
                 if (metadata != null) {
                     List<?> acsList = metadata.getAttributeConsumingServices(serviceName);
@@ -546,12 +548,15 @@ public class MetadataSomething {
                         samlAttributeNames.add(parsed);
                     } else if (samlAttributeNameObj instanceof List<?>) {
                         List<String> rawList = (List<String>) samlAttributeNameObj;
-                        samlAttributeNames.addAll(ConfigUtils.parseListOfString(
+                        List<String> strings = ConfigUtils.parseListOfString(
                                 rawList,
                                 String.format("Invalid or empty value in the list for %s.metadataCustomCertAttribute.%s.samlAttributeName: %s. Please specify valid String value(s).",
                                         supportAPIProfile.getRelatedProfile(), key, rawList),
                                 true
-                        ));
+                        );
+                        if(strings != null) {
+                            samlAttributeNames.addAll(strings);
+                        }
                     } else {
                         throw ErrorCode.INVALID_CONFIGURATION.toException(
                                 String.format("Invalid value for 'samlAttributeName' under %s.metadataCustomCertAttribute.%s. It must be either a single string or a list of strings.",
