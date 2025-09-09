@@ -251,7 +251,7 @@ public class MetadataService {
                 return;
             }
 
-            if (supportAPIProfile != null && supportAPIProfile.getTrustedAuthenticationServices() != null) {
+            if (supportAPIProfile.getTrustedAuthenticationServices() != null) {
                 for (Map.Entry<String, Map<String, Object>> entry : supportAPIProfile.getTrustedAuthenticationServices().entrySet()) {
                     String idp = entry.getKey();
                     Map<String, Object> value = entry.getValue();
@@ -276,7 +276,7 @@ public class MetadataService {
         } catch (Exception e) {
             var v = String.format(
                     "Failed to automatically parse assurance-certification, AuthnContextClassRef, from metadata for profile '%s' using authenticationServiceId '%s'. %s",
-                    supportAPIProfile != null ? supportAPIProfile.getRelatedProfile() : "null",
+                    supportAPIProfile.getRelatedProfile(),
                     authenticationServiceId,
                     e.getMessage()
             );
@@ -296,10 +296,7 @@ public class MetadataService {
         boolean requestedCertAttributesInitialized = false;
 
         try {
-            ReducedMetadata metadata = metadataSource != null
-                    ? metadataSource.getMetaData(supportAPIProfile.getSignServiceId())
-                    : null;
-
+            ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
             if (metadata != null) {
                 List<?> acsList = metadata.getAttributeConsumingServices(serviceName);
 
@@ -421,7 +418,7 @@ public class MetadataService {
             Map<String, Map<String, Object>> authConfUserIdAttributeMappings =
                     SupportLibraryUtils.findAuthConfUserIdAttributeMappings(authenticationServiceId, supportAPIProfile);
 
-            if (userIdAttributeMappings != null && !userIdAttributeMappings.isEmpty()) {
+            if (!userIdAttributeMappings.isEmpty()) {
                 if (userIdAttributeMappings.containsKey("userIdAttributeMapping")) {
                     msgLog.debug(String.format(
                             "userIdAttributeMapping '%s' is set fetched from profile-configuration 'userIdAttributeMapping' setting",
@@ -443,7 +440,7 @@ public class MetadataService {
                 ));
             }
 
-            boolean noMappingsDefined = (userIdAttributeMappings == null || userIdAttributeMappings.isEmpty())
+            boolean noMappingsDefined = (userIdAttributeMappings.isEmpty())
                     && (authConfUserIdAttributeMappings == null || authConfUserIdAttributeMappings.isEmpty());
 
             if (noMappingsDefined) {
@@ -526,7 +523,12 @@ public class MetadataService {
      * @param requestedAttributeMap
      * @param requestedAttribute
      */
-    private void setReqCertAttrFromMetaDataCustomCertAttr(SupportAPIProfile supportAPIProfile, StringBuilder friendlyName, Map<String, Object> requestedAttributeMap, ReducedMetadataImpl.RequestedAttribute requestedAttribute) throws BaseAPIException {
+    private void setReqCertAttrFromMetaDataCustomCertAttr(
+            SupportAPIProfile supportAPIProfile,
+            StringBuilder friendlyName,
+            Map<String, Object> requestedAttributeMap,
+            ReducedMetadataImpl.RequestedAttribute requestedAttribute
+    ) throws BaseAPIException {
         try {
             Map<String, Map<String, Object>> metadataCustomCertAttributeMap = supportAPIProfile.getMetadataCustomCertAttribute();
             if (metadataCustomCertAttributeMap != null) {

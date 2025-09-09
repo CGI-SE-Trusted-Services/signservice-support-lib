@@ -1,0 +1,64 @@
+# Basic test profile using RSA
+
+relatedProfile: "testProfile0"
+xadesSignatureLevel: "XAdES-BASELINE-B"
+xadesSignaturePacking: "ENVELOPED"
+xadesCanonicalizationAlgorithmURI: "http://www.w3.org/2001/10/xml-exc-c14n#"
+xadesXPathLocationString: "node()[not(ancestor-or-self::*[local-name()='Signature' and namespace-uri()='http://www.w3.org/2000/09/xmldsig#'])]"
+padesSignatureLevel: "PAdES-BASELINE-B"
+padesSignaturePacking: "ENVELOPED"
+cadesSignatureLevel: "CAdES-BASELINE-B"
+cadesSignaturePacking: "ENVELOPING"
+signatureAlgorithm: "SHA256withRSA"
+signatureValidityOverlapMinutes: 5
+signatureValidityMinutes: 10
+defaultUserIdAttributeMapping: "urn:oid:1.2.752.29.4.13"
+signServiceId: "https://signservice.thecompany.se/v1/metadata"
+signServiceRequestURL: "https://signservice.thecompany.se/signservice-frontend/request/4321a583928"
+signRequester: "TheCompany"
+defaultAuthnContextClassRef: "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+certificateType: "QC/SSCD"
+fetchAuthnContextClassRefFromMetaData: true
+visibleSignature:
+  enable: true
+requestedCertAttributes:
+  givenName:
+    samlAttributeName: "urn:oid:2.5.4.42"
+    certAttributeRef: "2.5.4.42"
+    required: true
+  sn:
+    samlAttributeName: "urn:oid:2.5.4.4"
+    certAttributeRef: "2.5.4.4"
+    required: true
+  serialNumber:
+    samlAttributeName: "urn:oid:1.2.752.29.4.13"
+    certAttributeRef: "2.5.4.5"
+    required: true
+  commonName:
+    samlAttributeName: "urn:oid:2.16.840.1.113730.3.1.241"
+    certAttributeRef: "2.5.4.3"
+    required: false
+  displayName:
+    samlAttributeName: "urn:oid:2.16.840.1.113730.3.1.241"
+    certAttributeRef: "2.16.840.1.113730.3.1.241"
+    required: false
+  c:
+    samlAttributeName: "urn:oid:2.5.4.6"
+    certAttributeRef: "2.5.4.6"
+    required: false
+  organizationName:
+    samlAttributeName: "urn:oid:2.5.4.10"
+    certAttributeRef: "2.5.4.10"
+    required: false
+  gender:
+    samlAttributeName: "urn:oid:1.3.6.1.5.5.7.9.3"
+    certAttributeRef: "1.3.6.1.5.5.7.9.3"
+    certNameType: "sda"
+    required: false
+authorizedConsumerURLs:
+  - "https://localhost"
+  - "http://localhost"
+trustedAuthenticationServices:
+  testIdp:
+    entityId: "https://idp.cgi.com/v2/metadata"
+    defaultDisplayName: "Test iDP"
