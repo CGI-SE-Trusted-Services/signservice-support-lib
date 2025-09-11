@@ -1,0 +1,191 @@
+/************************************************************************
+ *                                                                       *
+ *  Signature Service - Support Service Library                          *
+ *                                                                       *
+ *  This software is free software; you can redistribute it and/or       *
+ *  modify it under the terms of the GNU Lesser General Public License   *
+ *  License as published by the Free Software Foundation; either         *
+ *  version 3 of the License, or any later version.                      *
+ *                                                                       *
+ *  See terms of license at gnu.org.                                     *
+ *                                                                       *
+ *************************************************************************/
+package se.signatureservice.support.utils;
+
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.catalina.Context;
+import org.apache.catalina.connector.Connector;
+import org.apache.catalina.startup.Tomcat;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Helper class to make is simple to start up a web server in background.
+ * <p>
+ * See test class for example usage.
+ *
+ * @author Philip Vendil, jakobssonan
+ */
+public class TestHTTPServer {
+
+    public int port;
+
+    private Tomcat server;
+    private Connector connector;
+    private Context context;
+
+    private HttpServlet handler;
+    private String handlerPath;
+    private String handlerPattern;
+    private boolean handlerWildcard = false;
+
+    private final Map<String, String> requestBody;
+    private final Map<String, String> responseBody;
+    private final Map<String, String> mockResponseData;
+    private final Map<String, String> mockResponseDataMatchers;
+
+    /**
+     * Constructor for setting up an HTTP Server on a random available port
+     */
+    public TestHTTPServer() {
+        this(getUnusedPort());
+    }
+
+    /**
+     * Constructor for setting up a HTTP Server on a specified port
+     */
+    public TestHTTPServer(int port) {
+        this.port = port;
+        requestBody = new HashMap<>();
+        responseBody = new HashMap<>();
+        mockResponseData = new HashMap<>();
+        mockResponseDataMatchers = new HashMap<>();
+    }
+
+    /**
+     * Method to add a Handler to a specific path on the web server. Should be called before
+     *
+     * @param handler Instantiated servlet to handle http request/response
+     * @param path    Servlet path beginning with slash
+     */
+    public void addHandler(HttpServlet handler, String path) {
+        addHandler(handler, path, path, false);
+    }
+
+    public void addHandler(HttpServlet handler, String path, String pattern, boolean wildcard) {
+        this.handler = handler;
+        this.handlerPath = path;
+        this.handlerPattern = pattern;
+        this.handlerWildcard = wildcard;
+    }
+
+    public void setMockedResponse(String matchId, String matchValue, String mockResponse) {
+        mockResponseData.put(matchId, mockResponse);
+        mockResponseDataMatchers.put(matchId, matchValue);
+    }
+
+    public String getResponseBody(String matchId) {
+        return responseBody.get(matchId);
+    }
+
+    public String getRequestBody(String matchId) {
+        return requestBody.get(matchId);
+    }
+
+    /**
+     * Method to start the web server in background.
+     *
+     * @throws Exception if problems occurred starting the underlying web server.
+     */
+    public void start() throws Exception {
+        server = new Tomcat();
+        server.setBaseDir("./");
+
+        connector = server.getConnector();
+        connector.setPort(port);
+        connector.setScheme("http");
+        connector.setSecure(false);
+
+        context = server.addContext("", new File(".").getAbsolutePath());
+
+        Tomcat.addServlet(context, handlerPath, handler);
+        context.addServletMappingDecoded(handlerPattern, handlerPath, handlerWildcard);
+
+        server.start();
+    }
+
+    /**
+     * Method to stop the web server running in the background.
+     *
+     * @throws Exception if problems occurred stopping the underlying web server.
+     */
+    public void stop() throws Exception {
+        server.stop();
+        server.destroy();
+    }
+
+    /**
+     * @return if the underlying server is running.
+     */
+    public boolean isRunning() {
+        return server.getConnector().getState().isAvailable();
+    }
+
+    public void clearResponseAndRequests() {
+        responseBody.clear();
+        requestBody.clear();
+    }
+
+    public HttpServlet createMockedServlet() {
+        return new HttpServlet() {
+            @Override
+            protected void service(HttpServletRequest baseRequest, HttpServletResponse servletResponse) throws IOException {
+                String request = new String(baseRequest.getInputStream().readAllBytes(), Charset.defaultCharset());
+                System.out.println("INCOMING REQUEST: " + request);
+                String matchId = null;
+
+                for (String id : mockResponseData.keySet()) {
+                    if (request.matches(mockResponseDataMatchers.get(id))) {
+                        matchId = id;
+                        responseBody.put(matchId, mockResponseData.get(matchId));
+                    }
+                }
+                requestBody.put(matchId, request);
+
+                if (matchId == null) {
+                    servletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    requestBody.put(null, "Invalid request");
+                } else {
+                    servletResponse.setStatus(HttpServletResponse.SC_OK);
+                }
+
+                System.out.println("MOCKED RESPONSE: " + getResponseBody(matchId));
+                servletResponse.setContentType("text/xml;charset=utf-8");
+                PrintWriter out = servletResponse.getWriter();
+                out.print(getResponseBody(matchId));
+            }
+        };
+    }
+
+    /**
+     * Method that creates a ServerSocket with an automatically selected free port
+     *
+     * @return port number
+     * @throws RuntimeException if the port could not be found.
+     */
+    public static int getUnusedPort() throws RuntimeException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to find an available port", e);
+        }
+    }
+}
