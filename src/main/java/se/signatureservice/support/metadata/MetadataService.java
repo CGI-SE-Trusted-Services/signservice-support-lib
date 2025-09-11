@@ -33,9 +33,10 @@ public class MetadataService {
     /**
      * Populate Idp displayNames from metadata, and conditionally fetch AuthnContextClassRefs, CertAttributes and UserIdAttributeMapping, from metadata
      * @param authenticationServiceId, The entity whose metadata will be applied
-     * @param serviceName, To match attributeConsumingServices in the metadata
+     * @param serviceName, To match attributeConsumingServices in the metadata, where the metadata is that of the signServiceId in the profile
      * @param preferredLang, For getting displayName
      * @param supportAPIProfile, The profile to modify
+     * @param metadataSource, get metadata per entityId
      */
     public void applyMetadataToProfile(
             String authenticationServiceId,
@@ -86,8 +87,8 @@ public class MetadataService {
      *
      * @param supportAPIProfile Support service API profile configuration
      * @param authenticationServiceId identity provider to use during signature process
-     * @param idpEntities list of Entity Descriptors.
-     * @param lang Preferred language of display name to primarily be selected.
+     * @param metadataSource, get metadata per entityId
+     * @param preferredLanguage Preferred language of display name to primarily be selected.
      */
     private void setTrustedAuthenticationServices(
             SupportAPIProfile supportAPIProfile,
@@ -227,8 +228,8 @@ public class MetadataService {
     /**
      * Fetch and set AuthnContextClassRef from metadata.
      * @param authenticationServiceId identity provider to use during signature process
-     * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
+     * @param metadataSource, get metadata per entityId
      */
     private void fetchAuthnContextClassRefFromMetaData(String authenticationServiceId, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
@@ -291,6 +292,7 @@ public class MetadataService {
      * Fetch and set requestedCertAttributes from metadata.
      * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
+     * @param metadataSource, get metadata per entityId
      */
     private void fetchCertAttributesFromMetaData(String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         boolean requestedCertAttributesInitialized = false;
@@ -341,7 +343,7 @@ public class MetadataService {
                             String friendlyNameStr = friendlyName.toString();
                             if (!friendlyNameStr.isBlank()) {
                                 if (!requestedCertAttributesInitialized) {
-                                    supportAPIProfile.setRequestedCertAttributes(new HashMap<>());
+                                    supportAPIProfile.setRequestedCertAttributes(new LinkedHashMap<>());
                                     requestedCertAttributesInitialized = true;
                                 }
 
@@ -411,6 +413,7 @@ public class MetadataService {
      * @param authenticationServiceId identity provider to use during signature process
      * @param serviceName
      * @param supportAPIProfile Support service API profile configuration
+     * @param metadataSource, get metadata per entityId
      */
     void setDefaultUserIdAttributeMapping(String authenticationServiceId, String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
