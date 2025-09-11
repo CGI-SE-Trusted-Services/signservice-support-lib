@@ -21,6 +21,9 @@ import okhttp3.RequestBody
 import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.support.api.SupportServiceAPI
 import se.signatureservice.support.common.cache.SimpleCacheProvider
+import se.signatureservice.support.metadata.MetadataService
+import se.signatureservice.support.metadata.MetadataSource
+import se.signatureservice.support.metadata.MetadataSourceImpl
 import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.utils.SupportLibraryUtils
 import spock.lang.Ignore
@@ -67,19 +70,32 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
                 .signServiceId("http://localhost:8080/signservice-frontend/metadata/1834c194136")
                 .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/1834c194136")
                 .addTrustedAuthenticationService("Dummy idP", "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "Signature Service Dummy iDP")
-                .addRequestedCertAttribute("givenName",  "urn:oid:2.5.4.42", "2.5.4.42", true)
+
+                // Required attributes fetched from metadata instead
+                /*.addRequestedCertAttribute("givenName",  "urn:oid:2.5.4.42", "2.5.4.42", true)
                 .addRequestedCertAttribute("sn", "urn:oid:2.5.4.4", "2.5.4.4", true)
                 .addRequestedCertAttribute("serialNumber", "urn:oid:1.2.752.29.4.13", "2.5.4.5", true)
                 .addRequestedCertAttribute("commonName", "urn:oid:2.16.840.1.113730.3.1.241", "2.5.4.3", false)
                 .addRequestedCertAttribute("displayName", "urn:oid:2.16.840.1.113730.3.1.241", "2.16.840.1.113730.3.1.241", false)
                 .addRequestedCertAttribute("c", "urn:oid:2.5.4.6", "2.5.4.6", false)
-                .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)
+                .addRequestedCertAttribute("gender", "urn:oid:1.3.6.1.5.5.7.9.3", "1.3.6.1.5.5.7.9.3", "sda", false)*/
                 .addAuthorizedConsumerURL("http://localhost")
                 .signRequester("http://localhost:9090/signservice-support/metadata")
                 .signatureAlgorithm("SHA512withRSAandMGF1")
                 .relatedProfile("rsaProfile")
                 .enableAuthnProfile(true)
+                .fetchCertAttributesFromMetaData(true)  // This allows requested attributes found in metadata, to overwrite those already in the profile
+                .fetchAuthnContextClassRefFromMetaData(true) // This allows authNContextClassRefs found in the metadata to overwrite those already in the profileConfig
                 .build()
+
+        // Create a source for metadata, and load saml metadata files. Supply a messageSecurityProvider, which will be used if we choose to verify metadata xml signatures.
+        MetadataSource metadataSource = new MetadataSourceImpl(messageSecurityProvider)
+        metadataSource.loadMetadata(new File("src/test/resources/metadata/idp-sign-service-dev-metadata.xml"), false)
+        metadataSource.loadMetadata(new File("src/test/resources/metadata/frontend_testcustomer.xml"), false)
+
+        // MetadataService provides the logic for applying metadata to modify SupportAPIProfiles. Optionally provide a MessageSource
+        MetadataService metadataService = new MetadataService(null)
+        metadataService.applyMetadataToProfile("http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "My service name", "en", profileConfig, metadataSource)
     }
 
     def cleanupSpec(){
