@@ -1,19 +1,23 @@
 package se.signatureservice.support.metadata;
 
+import se.signatureservice.messages.ContextMessageSecurityProvider;
 import se.signatureservice.messages.MessageContentException;
 import se.signatureservice.messages.MessageProcessingException;
+import se.signatureservice.messages.MessageSecurityProvider;
+import se.signatureservice.messages.metadata.MetadataConstants;
 import se.signatureservice.messages.metadata.ReducedMetadata;
-import se.signatureservice.messages.metadata.ReducedMetadataIO;
+import se.signatureservice.messages.metadata.ReducedMetadataImpl;
+import se.signatureservice.messages.saml2.metadata.SAMLMetaDataMessageParser;
+import se.signatureservice.messages.saml2.metadata.jaxb.EntitiesDescriptorType;
+import se.signatureservice.messages.saml2.metadata.jaxb.EntityDescriptorType;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * For loading metadata from disk, and cache the results
@@ -22,6 +26,12 @@ import java.util.stream.Stream;
  */
 public class MetadataSourceImpl implements MetadataSource {
     private final Map<String, ReducedMetadata> metadata = new ConcurrentHashMap<>();
+    private final SAMLMetaDataMessageParser messageParser;
+
+    public MetadataSourceImpl(MessageSecurityProvider messageSecurityProvider) throws MessageProcessingException {
+        this.messageParser = new SAMLMetaDataMessageParser();
+        messageParser.init(messageSecurityProvider, null);
+    }
 
     @Override
     public ReducedMetadata getMetaData(String entityId) {
@@ -32,20 +42,48 @@ public class MetadataSourceImpl implements MetadataSource {
         return metadata;
     }
 
-    public void loadMetadata(File file) throws MessageContentException, IOException, MessageProcessingException {
-        List<ReducedMetadata> reducedMetadata = ReducedMetadataIO.fromFile(file, false);
+    /**
+     * Read saml entityDescriptors, convert to ReducedMetadata and store by entityID
+     * @param file, the file to read
+     * @param verifySignature, verify signature in saml xml
+     */
+    public void loadMetadata(File file, boolean verifySignature) throws MessageContentException, IOException, MessageProcessingException {
+        loadMetadata(Files.readAllBytes(file.toPath()), verifySignature);
+    }
+
+    /**
+     * Read saml entityDescriptors, convert to ReducedMetadata and store by entityID
+     * @param bytes, the bytes to read
+     * @param verifySignature, verify signature in saml xml
+     */
+    public void loadMetadata(byte[] bytes, boolean verifySignature) throws MessageContentException, MessageProcessingException {
+        List<ReducedMetadata> reducedMetadata = fromBytes(bytes, verifySignature);
         reducedMetadata.forEach(md -> metadata.put(md.getEntityID(), md));
     }
 
-    public void loadMetadata(byte[] bytes) throws MessageContentException, MessageProcessingException {
-        List<ReducedMetadata> reducedMetadata = ReducedMetadataIO.fromBytes(bytes, false);
-        reducedMetadata.forEach(md -> metadata.put(md.getEntityID(), md));
+    /**
+     * Synchronized since the message parser is not necessarily thread safe
+     * @param bytes, the bytes to read
+     * @param verifySignature, verify signature in saml xml
+     */
+    private synchronized List<ReducedMetadata> fromBytes(byte[] bytes, boolean verifySignature) throws MessageProcessingException, MessageContentException {
+        Object o = messageParser.parseMessage(
+                new ContextMessageSecurityProvider.Context(MetadataConstants.CONTEXT_USAGE_METADATA_SIGN),
+                bytes, verifySignature
+        );
+        var list = new LinkedList<ReducedMetadata>();
+        collectMetadata(o, list);
+        return list;
     }
 
-    public void loadMetadataInDirectory(File directory) throws MessageContentException, MessageProcessingException, IOException {
-        try(Stream<Path> list = Files.find(directory.toPath(), 1, (p, attr) -> { return p.toString().endsWith(".xml");})) {
-            for (Path path : list.collect(Collectors.toList())) {
-                loadMetadata(path.toFile());
+    private static void collectMetadata(Object metaData, List<ReducedMetadata> list) {
+        if (metaData instanceof EntityDescriptorType) {
+            list.add(new ReducedMetadataImpl(((EntityDescriptorType) metaData)));
+        } else {
+            if (metaData instanceof EntitiesDescriptorType) {
+                for (Object edt : ((EntitiesDescriptorType) metaData).getEntityDescriptorOrEntitiesDescriptor()) {
+                    collectMetadata(edt, list);
+                }
             }
         }
     }
