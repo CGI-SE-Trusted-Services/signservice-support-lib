@@ -3,6 +3,13 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2509.1
+
+=== Enhancements
+
+- Support-lib now provides functionality for using Saml metadata to potentially simplify the configuration of
+SupportApiProfile instances.
+
 == Version 2506.1
 
 === Upgrade notes

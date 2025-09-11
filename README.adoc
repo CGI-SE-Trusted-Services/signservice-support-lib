@@ -298,11 +298,43 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
     // Enable Authn profile. This must match how the signature service is configured.
     .enableAuthnProfile(true)
 
+    // This allows requested attributes found in metadata, to overwrite those already in the profile.
+    .fetchCertAttributesFromMetaData(true)
+
+    // This allows authNContextClassRefs found in the metadata to overwrite those already in the profileConfig.
+    .fetchAuthnContextClassRefFromMetaData(true)
+
     // Finally build the profile.
     .build();
 ----
 NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
 within this document.
+
+=== Using metadata to modify profiles
+It is possible to modify profile configuration instances, using entity metadata for Idp:s and SP:s.
+Create a MetadataSource, and load the saml metadata xml files.
+[source]
+----
+MetadataSource metadataSource = new MetadataSourceImpl(messageSecurityProvider)
+metadataSource.loadMetadata(new File("some-idp.xml"), false)
+metadataSource.loadMetadata(new File("some-idp2.xml"), false)
+metadataSource.loadMetadata(new File("my-sp.xml"), false)
+metadataSource.loadMetadata(new File("my-sp2.xml"), false)
+----
+And create a MetadataService instance. Calling metadataService.applyMetadataToProfile(...) modifies profile configuration instances in place.
+[source]
+----
+MetadataService metadataService = new MetadataService(messageSource)
+metadataService.applyMetadataToProfile(
+    // the idp we intend to use in the prepareSignature api call
+    "the-idp",
+    // an attribute consuming service in the metadata of profile.signServiceId
+    "some-attr-consuming-service-name",
+    "en",
+    profileConfig,
+    metadataSource
+)
+----
 
 === Time stamp configuration (-T, -LT and -LTA level)
 When using a profile that has been configured with a -T, -LT or -LTA signature level, a time stamp will be requested
