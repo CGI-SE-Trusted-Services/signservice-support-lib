@@ -37,10 +37,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utility methods that can be used when working with the
@@ -263,5 +261,59 @@ public class SupportLibraryUtils {
 		sb.append("</body>\n");
 		sb.append("</html>\n");
         return sb.toString();
+    }
+
+    /**
+     * Retrieves a map of User ID Attribute Mappings from the provided SupportAPIProfile.
+     * Includes 'userIdAttributeMapping' and 'defaultUserIdAttributeMapping' if they are set.
+     *
+     * @param supportAPIProfile The SupportAPIProfile to extract the mappings from.
+     * @return A map containing the User ID Attribute Mappings, if present.
+     */
+    public static Map<String, String> getUserIdAttributeMappings(SupportAPIProfile supportAPIProfile) {
+        Map<String, String> userIdAttributeMappingMap = new HashMap<>();
+        if(supportAPIProfile != null){
+            if(supportAPIProfile.getUserIdAttributeMapping() != null && !supportAPIProfile.getUserIdAttributeMapping().isBlank()) {
+                userIdAttributeMappingMap.put("userIdAttributeMapping", supportAPIProfile.getUserIdAttributeMapping());
+            }
+            if(supportAPIProfile.getDefaultUserIdAttributeMapping() != null && !supportAPIProfile.getDefaultUserIdAttributeMapping().isBlank()) {
+                userIdAttributeMappingMap.put("defaultUserIdAttributeMapping", supportAPIProfile.getDefaultUserIdAttributeMapping());
+            }
+        }
+
+        return userIdAttributeMappingMap;
+    }
+
+    /**
+     * Searches for authentication services within a given Support API Profile that match the specified authentication
+     * service ID and have a non-null and non-blank User ID Attribute Mapping.
+     *
+     * @param authenticationServiceId Identifier for the authentication service to match.
+     * @param supportAPIProfile The profile containing authentication services.
+     * @return A list of matching authentication service configurations, or an empty map if no matches are found.
+     */
+    public static Map<String, Map<String, Object>> findAuthConfUserIdAttributeMappings(String authenticationServiceId, SupportAPIProfile supportAPIProfile){
+        if(supportAPIProfile == null || supportAPIProfile.getTrustedAuthenticationServices() == null){
+            return Collections.emptyMap();
+        }
+
+        return supportAPIProfile.getTrustedAuthenticationServices().entrySet().stream().filter(
+                idp -> {
+                    if(idp == null || idp.getValue() == null){
+                        return false;
+                    }
+                    var v = idp.getValue().get("userIdAttributeMapping");
+                    if(!(v instanceof String)){
+                        return false;
+                    }
+                    if (((String) v).isBlank()) {
+                        return false;
+                    }
+                    return idp.getValue().get("entityId") == authenticationServiceId;
+                }
+        ).collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue
+        ));
     }
 }

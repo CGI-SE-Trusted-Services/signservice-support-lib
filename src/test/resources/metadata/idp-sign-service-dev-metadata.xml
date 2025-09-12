@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" ID="_07c08b13f419f875a02222b404d9ca7dc1" entityID="http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata">
+    <md:Extensions>
+        <mdattr:EntityAttributes
+                xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
+            <saml:Attribute xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                            Name="urn:oasis:names:tc:SAML:attribute:assurance-certification"
+                            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa2
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa2-sigmessage
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa3
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa3-sigmessage
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa4
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                     xsi:type="xs:string">
+                    http://id.elegnamnden.se/loa/1.0/loa4-sigmessage
+                </saml:AttributeValue>
+            </saml:Attribute>
+        </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:Extensions>
+            <psc:RequestedPrincipalSelection
+                    xmlns:psc="http://id.swedenconnect.se/authn/1.0/principal-selection/ns">
+                <psc:MatchValue Name="urn:oid:1.2.752.29.4.13" />
+                <psc:MatchValue Name="urn:oid:1.2.752.29.4.14" />
+            </psc:RequestedPrincipalSelection>
+        </md:Extensions>
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIDvjCCAqagAwIBAgIIfRVty1AiD9MwDQYJKoZIhvcNAQELBQAwPzEYMBYGA1UE
+                        AwwPTW9jayBJc3N1aW5nIENBMRYwFAYDVQQKDA1Nb2NrYXNpbmVyIEFCMQswCQYD
+                        VQQGEwJTRTAeFw0yMDEwMjcxMDMxMjhaFw0zNTEwMjgwMTQyNThaMEkxIjAgBgNV
+                        BAMMGVNpZ25hdHVyZSBJZFAgU2VydmljZSBEZXYxFjAUBgNVBAoMDU1vY2thc2lu
+                        ZXIgQUIxCzAJBgNVBAYTAlNFMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+                        AQEAtOBDnUOZi6sn32agebE1Us4ZR9cjneuWQgbYLitbbbODNVI9f9lnEGeK9/mD
+                        KY1EwH/nHSg5iOTJmR2ajwwQQBin/DaM7C2vFSs376Hd0+ASErWYHS+p6QyaXjyS
+                        Hn6Ymi3/Gd6P2jfDElrd2RiVRXzGNOi+pTuyD4t6RXUQa11MsWtyDrpckXI9E1tp
+                        Lj2SX8WpzAmWtFSo7oqdtwBy3+WMjM34sbjaIoI9X/QxzjlENzuyjAM0Ourh+DmP
+                        cw1Nw0MC6FRUeYeQ1YLvN45LG5lwxiKyRITfcQwtOOEZzC1sYODs9xdYsaw9ClSH
+                        +41+XZy7EX2fHQ4scSGTOoKHxwIDAQABo4GzMIGwMAwGA1UdEwEB/wQCMAAwOwYD
+                        VR0fBDQwMjAwoC6gLIYqaHR0cDovL2NybC5tb2NrYXNpbmVyLnNlL21vY2tpc3N1
+                        aW5nY2EuY3JsMB0GA1UdDgQWBBT8VCLTntzbiiGx3ay5EBarXk1nhzAfBgNVHSME
+                        GDAWgBTnj4cWYHkjUdpCeANCdvSkiFv3qjAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0l
+                        BAwwCgYIKwYBBQUHAwEwDQYJKoZIhvcNAQELBQADggEBADOs6k03Q+zOVt6o7sLV
+                        J4OQp1uIQSepZWDRXWVAAUuEm7guHh8GRSr/2sMnvXuGFcHGvPxqraJmboUjXdMU
+                        Lt833t9sd4tPkGl+25QjomA37lmadk+8mb9/pztx3mvPdoqVRH9FZauS5/AwRafD
+                        1vG5psMJPzcKrhGAFLXSsyZEpirWmpJ43bzcoUG7ynVhb/WBh8ulHTOSUIAdghcw
+                        6oze8fB/VF6ilsu7mi7nAwIntsiNriTSSZ4PvPczHkTCCKrDW28CZs35FMJoWKmE
+                        EXxfuy1Z46GoeEvSHhpVY/NlnOcdg7irwP+85OQn+VgazqpWmoCGaRGjjwp3lNIw
+                        x3g=</ds:X509Certificate>
+                </ds:X509Data>
+                <ds:KeyName>idp-signservice-dev</ds:KeyName>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:6060/eid2-dummy-idp/samlv2/idp/req"/>
+        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="http://localhost:6060/eid2-dummy-idp/samlv2/idp/req"/>
+        <md:NameIDFormat>
+            urn:oasis:names:tc:SAML:2.0:nameid-format:transient
+        </md:NameIDFormat>
+        <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="http://localhost:6060/eid2-dummy-idp/samlv2/idp/req"/>
+        <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="http://localhost:6060/eid2-dummy-idp/samlv2/idp/req"/>
+    </md:IDPSSODescriptor>
+</md:EntityDescriptor>
