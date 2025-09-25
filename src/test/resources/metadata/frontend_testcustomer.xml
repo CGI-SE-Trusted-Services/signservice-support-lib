@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<md:EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                     xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+                     xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
+                     xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                     ID="_12312399" entityID="http://localhost:8080/signservice-frontend/metadata/1834c194136">
+    <md:Extensions>
+        <mdattr:EntityAttributes xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
+            <saml:Attribute Name="http://macedir.org/entity-category"
+                            NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">
+                    http://id.elegnamnden.se/st/1.0/sigservice
+                </saml:AttributeValue>
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">
+                    http://id.elegnamnden.se/ec/1.0/loa3-pnr
+                </saml:AttributeValue>
+            </saml:Attribute>
+        </mdattr:EntityAttributes>
+    </md:Extensions>
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true"
+                        protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:Extensions>
+            <mdui:UIInfo xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui">
+                <mdui:DisplayName xml:lang="sv">CGI Secure Signature Creation Device (Instance 2)</mdui:DisplayName>
+                <mdui:DisplayName xml:lang="en">CGI Secure Signature Creation Device (Instance 2)</mdui:DisplayName>
+                <mdui:Description xml:lang="sv">Detta Ã¤r en tjÃ¤nst fÃ¶r elektroniska underskrifter.</mdui:Description>
+                <mdui:Description xml:lang="en">This is a service for electronic signatures.</mdui:Description>
+                <mdui:Logo width="102" height="70">https://esign.signatureservice.se/images/cgi.png</mdui:Logo>
+            </mdui:UIInfo>
+        </md:Extensions>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                     Location="https://esign.signatureservice.se/mission/acs/d5be57d3c93344c0"
+                                     index="0"/>
+        <md:AttributeConsumingService index="0" isDefault="true" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+            <md:ServiceName xml:lang="sv" xmlns:xml="http://www.w3.org/XML/1998/namespace">My service name</md:ServiceName>
+            <md:ServiceName xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">My service name</md:ServiceName>
+            <md:RequestedAttribute Name="urn:oid:1.2.752.29.4.13" isRequired="false"/>
+            <md:RequestedAttribute Name="urn:oid:1.2.752.201.3.7" isRequired="false"/>
+            <md:RequestedAttribute Name="urn:oid:2.16.840.1.113730.3.1.241" isRequired="false"/>
+            <md:RequestedAttribute Name="urn:oid:2.5.4.42" isRequired="true"/>
+            <md:RequestedAttribute Name="urn:oid:2.5.4.4" isRequired="true"/>
+        </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+    <md:Organization>
+        <md:OrganizationName xml:lang="sv">CGI Sverige AB</md:OrganizationName>
+        <md:OrganizationName xml:lang="en">CGI Sverige AB</md:OrganizationName>
+        <md:OrganizationDisplayName xml:lang="sv">CGI Sverige</md:OrganizationDisplayName>
+        <md:OrganizationDisplayName xml:lang="en">CGI Sverige</md:OrganizationDisplayName>
+        <md:OrganizationURL xml:lang="sv">https://www.cgi.com/</md:OrganizationURL>
+        <md:OrganizationURL xml:lang="en">https://www.cgi.com/</md:OrganizationURL>
+    </md:Organization>
+    <md:ContactPerson contactType="support">
+        <md:Company>CGI Sverige AB</md:Company>
+        <md:EmailAddress>support@cgi.com</md:EmailAddress>
+    </md:ContactPerson>
+    <md:ContactPerson contactType="technical">
+        <md:Company>CGI Sverige AB</md:Company>
+        <md:EmailAddress>info@cgi.com</md:EmailAddress>
+        <md:TelephoneNumber>+4686710371</md:TelephoneNumber>
+    </md:ContactPerson>
+    <md:ContactPerson contactType="billing">
+        <md:Company>CGI Sverige AB</md:Company>
+        <md:EmailAddress>support@cgi.com</md:EmailAddress>
+    </md:ContactPerson>
+    <md:ContactPerson contactType="administrative">
+        <md:Company>CGI Sverige AB</md:Company>
+        <md:EmailAddress>support@cgi.com</md:EmailAddress>
+    </md:ContactPerson>
+</md:EntityDescriptor>
