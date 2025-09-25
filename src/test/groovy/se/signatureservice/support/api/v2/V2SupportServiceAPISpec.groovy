@@ -30,10 +30,15 @@ import se.signatureservice.messages.ContextMessageSecurityProvider
 import se.signatureservice.messages.MessageSecurityProvider
 import se.signatureservice.messages.dss1.core.jaxb.Result
 import se.signatureservice.messages.dss1.core.jaxb.SignResponse
+import se.signatureservice.messages.metadata.MetadataConstants
+import se.signatureservice.messages.metadata.ReducedMetadata
+import se.signatureservice.messages.metadata.ReducedMetadataImpl
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.SigType
 import se.signatureservice.messages.sweeid2.dssextenstions1_1.SweEID2DSSExtensionsMessageParser
 import se.signatureservice.messages.utils.CertUtils
 import se.signatureservice.support.common.cache.SimpleCacheProvider
+import se.signatureservice.support.metadata.MetadataService
+import se.signatureservice.support.metadata.MetadataSource
 import se.signatureservice.support.signer.SignatureAttributePreProcessor
 import se.signatureservice.support.system.SupportAPIProfile
 import se.signatureservice.support.system.TransactionState
@@ -60,6 +65,7 @@ class V2SupportServiceAPISpec extends Specification {
     static List<Object> testDocuments = []
     static YamlSlurper yamlSlurper = new YamlSlurper()
 
+    static SupportAPIProfile testProfile0 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile0.yml")) as Map)
     static SupportAPIProfile testProfile1 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
     static SupportAPIProfile testProfile2 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile2.yml")) as Map)
     static SupportAPIProfile testProfile3 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile3.yml")) as Map)
@@ -202,6 +208,57 @@ class V2SupportServiceAPISpec extends Specification {
         signedInfo.Reference[1].Transforms.Transform[0].@Algorithm == "http://www.w3.org/2001/10/xml-exc-c14n#"
         signedInfo.Reference[1].DigestMethod.@Algorithm == "http://www.w3.org/2001/04/xmlenc#sha256"
         signedInfo.Reference[1].DigestValue != null
+    }
+
+    @Unroll
+    void "test generateSignRequest with RSA, and read authnContextClassRefs from metadata"() {
+        setup:
+        User user = new User(userId: "190102030010")
+        ContextMessageSecurityProvider.Context context = null
+        DocumentRequests documents = new DocumentRequests()
+        documents.documents = testDocuments
+
+        def rmd = new ReducedMetadataImpl()
+        rmd.entityID = "https://idp.cgi.com/v2/metadata"
+        rmd.entityAttributes = [(MetadataConstants.DEFAULT_ASSURANCE_CERTIFICATION_NAME): ["a", "b"]]
+        MetadataSource metadataSource = new MetadataSource() {
+            @Override
+            ReducedMetadata getMetaData(String entityId) {
+                return [(rmd.getEntityID()): rmd].get(entityId)
+            }
+        }
+
+        def svc = new MetadataService(supportServiceAPI.getMessageSource())
+        svc.applyMetadataToProfile(
+                "https://idp.cgi.com/v2/metadata",
+                "", "en", testProfile0, metadataSource)
+
+        when:
+        byte[] response = supportServiceAPI.generateSignRequest(
+                context,
+                "a864b33d-244a-4072-b540-0b29e2e7f40b",
+                documents,
+                "You want to sign?",
+                user,
+                "https://idp.cgi.com/v2/metadata",
+                null,
+                "https://localhost:8080/response",
+                testProfile0,
+                null,
+                null
+        )
+
+        then:
+        response != null
+        println new String(Base64.decode(response), "UTF-8")
+
+        def signRequest = new XmlSlurper().parse(new ByteArrayInputStream(Base64.decode(response)))
+        signRequest.@Profile == "http://id.elegnamnden.se/csig/1.1/dss-ext/profile"
+        signRequest.@RequestID == "a864b33d-244a-4072-b540-0b29e2e7f40b"
+
+        def authnContextClassRefs = signRequest.OptionalInputs.SignRequestExtension.CertRequestProperties.AuthnContextClassRef.iterator().collect { it.text() }
+        authnContextClassRefs.size() == 2
+        authnContextClassRefs.containsAll(["a", "b"])
     }
 
     @Unroll

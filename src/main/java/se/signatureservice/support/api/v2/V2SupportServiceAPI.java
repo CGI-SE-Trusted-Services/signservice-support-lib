@@ -2283,6 +2283,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
         }
     }
 
+    public MessageSource getMessageSource() {
+        return messageSource;
+    }
+
     /**
      * Builder class to use when building a SupportServiceAPI instance.
      */
