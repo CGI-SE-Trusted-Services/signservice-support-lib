@@ -28,7 +28,7 @@ public class DefaultUserIdAttributeMappingValues {
             "http://sambi.se/attributes/1/employeeHsaId",
             "http://sambi.se/attributes/1/organizationIdentifier",
             "urn:orgAffiliation"
-            );
+    );
 
     /**
      * Finds matches in CONSTANTS and, optionally, profileConstants.
@@ -43,7 +43,7 @@ public class DefaultUserIdAttributeMappingValues {
     /**
      * Finds matches in CONSTANTS and, optionally, profileConstants.
      *
-     * @param values List of strings to check for matches.
+     * @param values           List of strings to check for matches.
      * @param profileConstants Optional set of constants to check for matches.
      * @return List of matching strings.
      */
