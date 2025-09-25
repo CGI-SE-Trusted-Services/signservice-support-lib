@@ -682,7 +682,7 @@ public class MetadataService {
 
                             if (requestedAttribute.isRequired() != null) {
                                 requestedAttributeMap.put("required", requestedAttribute.isRequired());
-                                msgLog.debug("required set to: {}", requestedAttributeMap.get("required"));
+                                msgLog.debug(String.format("required set to: %s", requestedAttributeMap.get("required")));
                             }
 
                             requestedAttributeMap.put("samlAttributeName", matchedSamlAttribute);
