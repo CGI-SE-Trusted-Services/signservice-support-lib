@@ -7,8 +7,18 @@ of the Signature Service Support Library.
 
 === Enhancements
 
-- Support-lib now provides functionality for using Saml metadata to potentially simplify the configuration of
-SupportApiProfile instances.
+* Provides functionality for using SAML metadata to simplify the configuration of `SupportAPIProfile` instances.
+More information, detailed explanations, and examples can be found in the README under:
+- Configuration value: trustedAuthenticationServices
+- Configuration value: requestedCertAttributes
+- Configuration value: defaultAuthnContextClassRefs
+- Configuration value: DefaultUserIdAttributeMapping
+* Upgraded Gradle to `7.6.6`
+* Dependency upgrades:
+** `se.signatureservice.configuration:signservice-messages` to `2509.1`
+** `se.signatureservice.configuration:signservice-java-configuration` to `2509.1`
+* Vulnerability CVE-2025-48924 fixed via:
+** commons-lang3: upgraded to 3.18.0
 
 == Version 2506.1
 

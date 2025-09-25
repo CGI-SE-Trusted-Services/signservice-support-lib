@@ -20,8 +20,8 @@ import se.signatureservice.configuration.common.fields.Fields;
 import se.signatureservice.configuration.common.utils.ConfigUtils;
 import se.signatureservice.messages.metadata.ReducedMetadata;
 import se.signatureservice.messages.metadata.ReducedMetadataImpl;
-import se.signatureservice.support.api.v2.BaseAPIException;
 import se.signatureservice.support.api.ErrorCode;
+import se.signatureservice.support.api.v2.BaseAPIException;
 import se.signatureservice.support.system.SupportAPIProfile;
 import se.signatureservice.support.utils.SupportLibraryUtils;
 
@@ -43,12 +43,23 @@ public class MetadataService {
     }
 
     /**
-     * Populate Idp displayNames from metadata, and conditionally fetch AuthnContextClassRefs, CertAttributes and UserIdAttributeMapping, from metadata
-     * @param authenticationServiceId, The entity whose metadata will be applied
-     * @param serviceName, To match attributeConsumingServices in the metadata, where the metadata is that of the signServiceId in the profile
-     * @param preferredLang, For getting displayName
-     * @param supportAPIProfile, The profile to modify
-     * @param metadataSource, get metadata per entityId
+     * Applies metadata from the given {@link MetadataSource} to a {@link SupportAPIProfile}.
+     * <p>
+     * This method may update the profile with:
+     * <ul>
+     *   <li>Trusted authentication services (including default display names from metadata).</li>
+     *   <li>AuthnContextClassRefs, if enabled via {@code fetchAuthnContextClassRefFromMetaData}.</li>
+     *   <li>Requested certificate attributes, if enabled via {@code fetchCertAttributesFromMetaData}.</li>
+     *   <li>UserId attribute mappings, if no explicit mappings exist in the profile or IDP configuration.</li>
+     * </ul>
+     *
+     * @param authenticationServiceId the entityId of the IdP whose metadata is applied
+     * @param serviceName             the AttributeConsumingService name (for parsing requested attributes)
+     * @param preferredLang           preferred display language for IdP display names (fallback: "en")
+     * @param supportAPIProfile       the profile being modified
+     * @param metadataSource          source of metadata, keyed by entityId
+     * @throws BaseAPIException       if metadata parsing fails or configuration is invalid
+     * @throws InternalErrorException on internal configuration/metadata errors
      */
     public void applyMetadataToProfile(
             String authenticationServiceId,
@@ -57,14 +68,28 @@ public class MetadataService {
             SupportAPIProfile supportAPIProfile,
             MetadataSource metadataSource) throws BaseAPIException, InternalErrorException {
         try {
+            Objects.requireNonNull(supportAPIProfile, "supportAPIProfile must not be null");
+            Objects.requireNonNull(metadataSource, "metadataSource must not be null");
+
             setTrustedAuthenticationServices(supportAPIProfile, authenticationServiceId, metadataSource, preferredLang);
             if (ConfigUtils.parseBoolean(
                     supportAPIProfile.isFetchAuthnContextClassRefFromMetaData(),
                     String.format("Invalid 'fetchAuthnContextClassRefFromMetaData' value in '%s' or common under profileConfig. Please specify a valid Boolean value.",
                             supportAPIProfile.getRelatedProfile()),
-                    false, false)) {
+                    false,
+                    false)
+            ) {
+                ConfigUtils.parseString(
+                        authenticationServiceId,
+                        String.format(
+                                "Input parameter 'authenticationServiceId' must be provided for profile '%s'. " +
+                                        "This parameter is required to locate assurance-certification, AuthnContextClassRef, from metadata when " +
+                                        "'fetchAuthnContextClassRefFromMetaData=true'.",
+                                supportAPIProfile.getRelatedProfile()),
+                        true,
+                        null);
 
-                msgLog.info(String.format(
+                msgLog.debug(String.format(
                         "Trying to automatically parse assurance-certification, AuthnContextClassRef, from metadata for profile '%s' using authenticationServiceId '%s'",
                         supportAPIProfile.getRelatedProfile(), authenticationServiceId
                 ));
@@ -74,11 +99,20 @@ public class MetadataService {
 
             if (ConfigUtils.parseBoolean(
                     supportAPIProfile.isFetchCertAttributesFromMetaData(),
-                    String.format("Invalid 'fetchCertAttributesFromMetaData' value in %s or common under profileConfig. Please specify a valid Boolean value.",
-                            supportAPIProfile.getRelatedProfile()),
-                    false, false)) {
+                    String.format("Invalid 'fetchCertAttributesFromMetaData' value in %s or common under profileConfig. Please specify a valid Boolean value.", supportAPIProfile.getRelatedProfile()),
+                    false,
+                    false)
+            ) {
+                ConfigUtils.parseString(
+                        serviceName,
+                        String.format("Input parameter 'serviceName' must be provided for profile '%s'. " +
+                                        "This parameter is required to locate requestedCertAttributes from metadata when " +
+                                        "'fetchCertAttributesFromMetaData=true'.",
+                                supportAPIProfile.getRelatedProfile()),
+                        true,
+                        null);
 
-                msgLog.info(String.format(
+                msgLog.debug(String.format(
                         "Trying to automatically parse requestedCertAttributes from metadata for profile '%s' using signServiceId '%s' and serviceName '%s'",
                         supportAPIProfile.getRelatedProfile(),
                         supportAPIProfile.getSignServiceId(),
@@ -95,12 +129,17 @@ public class MetadataService {
     }
 
     /**
-     * Set Authentication Services to given list for given Entity Descriptors.
+     * Initializes or updates trusted authentication services in the given profile.
+     * <p>
+     * If trusted services are already configured, this method tries to fill in missing
+     * {@code defaultDisplayName} values from metadata. If no trusted services are defined,
+     * it will attempt to initialize them from the given {@code authenticationServiceId}.
      *
-     * @param supportAPIProfile Support service API profile configuration
-     * @param authenticationServiceId identity provider to use during signature process
-     * @param metadataSource, get metadata per entityId
-     * @param preferredLanguage Preferred language of display name to primarily be selected.
+     * @param supportAPIProfile       the profile to modify
+     * @param authenticationServiceId entityId of the IdP to resolve metadata for
+     * @param metadataSource          source of metadata
+     * @param preferredLanguage       preferred language for the display name (fallback to "en")
+     * @throws BaseAPIException if metadata is invalid or unavailable
      */
     private void setTrustedAuthenticationServices(
             SupportAPIProfile supportAPIProfile,
@@ -117,13 +156,13 @@ public class MetadataService {
         }
 
         try {
-            if(supportAPIProfile.getTrustedAuthenticationServices() != null) {
+            if (supportAPIProfile.getTrustedAuthenticationServices() != null) {
                 for (var entry : supportAPIProfile.getTrustedAuthenticationServices().entrySet()) {
                     var serviceName = entry.getKey();
                     var serviceParameters = entry.getValue();
                     String defaultDisplayName;
                     Object defaultDisplayNameObj = serviceParameters.getOrDefault("defaultDisplayName", null);
-                    if(defaultDisplayNameObj instanceof String) {
+                    if (defaultDisplayNameObj instanceof String) {
                         defaultDisplayName = (String) defaultDisplayNameObj;
                         if (!defaultDisplayName.isEmpty()) {
                             var message = String.format("defaultDisplayName '%s' already set for idp '%s' with entityId '%s' in trustedAuthenticationServices configuration",
@@ -149,7 +188,7 @@ public class MetadataService {
                                     serviceName, defaultDisplayName
                             );
                             if (added) {
-                                msgLog.info(String.format(
+                                msgLog.debug(String.format(
                                         "Successfully set defaultDisplayName '%s' to idp '%s' with entityId '%s' in trustedAuthenticationServices configuration from metadata",
                                         defaultDisplayName, serviceName, entityId
                                 ));
@@ -178,14 +217,21 @@ public class MetadataService {
                         );
                     }
                 }
-            }
-
-            if (supportAPIProfile.getTrustedAuthenticationServices() == null || supportAPIProfile.getTrustedAuthenticationServices().isEmpty()) {
+            } else if (supportAPIProfile.getTrustedAuthenticationServices() == null || supportAPIProfile.getTrustedAuthenticationServices().isEmpty()) {
                 try {
                     msgLog.debug(String.format(
                             "No trustedAuthenticationServices configuration set. Trying to initialize it from metadata with entityId '%s'",
                             authenticationServiceId
                     ));
+
+                    ConfigUtils.parseString(
+                            authenticationServiceId,
+                            String.format("Input parameter 'authenticationServiceId' must be provided for profile '%s'. " +
+                                            "This parameter is required to locate the authentication service in metadata.",
+                                    supportAPIProfile.getRelatedProfile()),
+                            true,
+                            null
+                    );
 
                     ReducedMetadata metadata = metadataSource.getMetaData(authenticationServiceId);
                     String defaultDisplayName = metadata.getDisplayName(lang, DEFAULT_LANGUAGE);
@@ -200,13 +246,11 @@ public class MetadataService {
 
                         trustedAuthenticationServicesMap.put(key, innerMap);
 
-                        if (supportAPIProfile != null) {
-                            supportAPIProfile.setTrustedAuthenticationServices(trustedAuthenticationServicesMap);
-                        }
+                        supportAPIProfile.setTrustedAuthenticationServices(trustedAuthenticationServicesMap);
 
                         msgLog.info(String.format(
                                 "Successfully set trustedAuthenticationServices configuration for profile '%s': %s",
-                                supportAPIProfile != null ? supportAPIProfile.getRelatedProfile() : "null",
+                                supportAPIProfile.getRelatedProfile(),
                                 trustedAuthenticationServicesMap
                         ));
                     } else {
@@ -238,16 +282,20 @@ public class MetadataService {
     }
 
     /**
-     * Fetch and set AuthnContextClassRef from metadata.
-     * @param authenticationServiceId identity provider to use during signature process
-     * @param supportAPIProfile Support service API profile configuration
-     * @param metadataSource, get metadata per entityId
+     * Fetches and adds supported AuthnContextClassRefs from metadata for a given IdP.
+     * <p>
+     * Updates the corresponding trusted authentication service entry in the profile
+     * with the list of supported AuthnContextClassRefs.
+     *
+     * @param authenticationServiceId IdP entityId to fetch metadata for
+     * @param supportAPIProfile       the profile to update
+     * @param metadataSource          source of metadata
+     * @throws BaseAPIException if metadata retrieval or parsing fails
      */
     private void fetchAuthnContextClassRefFromMetaData(String authenticationServiceId, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
             ReducedMetadata metadata = metadataSource.getMetaData(authenticationServiceId);
-            boolean hasElements = metadata != null && metadata.hasEntityAttributes();
-            if (!hasElements) {
+            if (!(metadata != null && metadata.hasEntityAttributes())) {
                 msgLog.warn(String.format(
                         "No matching JAXBElement found from metadata with entityId '%s'",
                         authenticationServiceId
@@ -294,17 +342,24 @@ public class MetadataService {
                     e.getMessage()
             );
             msgLog.error(v);
-            throw ErrorCode.INTERNAL_ERROR.toException(
-                    v, messageSource
-            );
+            throw ErrorCode.INTERNAL_ERROR.toException(v, messageSource);
         }
     }
 
     /**
-     * Fetch and set requestedCertAttributes from metadata.
-     * @param serviceName
-     * @param supportAPIProfile Support service API profile configuration
-     * @param metadataSource, get metadata per entityId
+     * Parses and applies requested certificate attributes from SignService metadata.
+     * <p>
+     * This method looks up {@code AttributeConsumingServices} by {@code serviceName} and
+     * populates {@code requestedCertAttributes} in the profile. Attributes can be mapped:
+     * <ul>
+     *   <li>Explicitly via {@code metadataCustomCertAttribute} configuration, or</li>
+     *   <li>Implicitly via default SAML → cert attribute mappings in {@link Fields}.</li>
+     * </ul>
+     *
+     * @param serviceName       the AttributeConsumingService name
+     * @param supportAPIProfile the profile being updated
+     * @param metadataSource    source of metadata
+     * @throws BaseAPIException if attributes cannot be resolved or mapping conflicts occur
      */
     private void fetchCertAttributesFromMetaData(String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         boolean requestedCertAttributesInitialized = false;
@@ -392,21 +447,18 @@ public class MetadataService {
                             }
                         }
                     }
-
                     break; // exit after the first matching attributeConsumingService
                 }
             }
-
         } catch (Exception e) {
             var v = String.format(
                     "Failed to automatically parse requestedCertAttributes from metadata for profile '%s' with signServiceId '%s' and serviceName '%s'. %s",
-                    supportAPIProfile != null ? supportAPIProfile.getRelatedProfile() : "null",
-                    supportAPIProfile != null ? supportAPIProfile.getSignServiceId() : "null",
+                    supportAPIProfile.getRelatedProfile(),
+                    supportAPIProfile.getSignServiceId(),
                     serviceName,
                     e.getMessage()
             );
             msgLog.error(v);
-
             throw ErrorCode.INTERNAL_ERROR.toException(v, messageSource);
         }
 
@@ -421,11 +473,17 @@ public class MetadataService {
     }
 
     /**
-     * Set DefaultUserIdAttributeMapping from metadata.
-     * @param authenticationServiceId identity provider to use during signature process
-     * @param serviceName
-     * @param supportAPIProfile Support service API profile configuration
-     * @param metadataSource, get metadata per entityId
+     * Ensures that the profile has a default UserIdAttributeMapping.
+     * <p>
+     * If not already configured in the profile or IdP-specific configuration,
+     * this method attempts to derive a default mapping from metadata by
+     * matching requested attributes against {@code defaultUserIdAttributeMappingValues}.
+     *
+     * @param authenticationServiceId the IdP entityId
+     * @param serviceName             the AttributeConsumingService name
+     * @param supportAPIProfile       the profile to update
+     * @param metadataSource          source of metadata
+     * @throws BaseAPIException if no valid mapping can be determined or multiple matches are found
      */
     void setDefaultUserIdAttributeMapping(String authenticationServiceId, String serviceName, SupportAPIProfile supportAPIProfile, MetadataSource metadataSource) throws BaseAPIException {
         try {
@@ -468,6 +526,14 @@ public class MetadataService {
                 ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
 
                 if (metadata != null) {
+                    ConfigUtils.parseString(
+                            serviceName,
+                            String.format("Input parameter 'serviceName' must be provided for profile '%s'. " +
+                                            "This parameter is required to locate UserIdAttributeMapping from metadata.",
+                                    supportAPIProfile.getRelatedProfile()),
+                            true,
+                            null);
+
                     List<?> acsList = metadata.getAttributeConsumingServices(serviceName);
 
                     for (Object acsObj : acsList) {
@@ -497,7 +563,6 @@ public class MetadataService {
                                     serviceName
                             ));
                             supportAPIProfile.setDefaultUserIdAttributeMapping(matchesFound.get(0));
-
                         } else if (matchesFound.size() > 1) {
                             var v = String.format(
                                     "Multiple DefaultUserIdAttributeMapping matches found in metadata: '%s', but no default DefaultUserIdAttributeMapping is set in profile configuration",
@@ -505,7 +570,6 @@ public class MetadataService {
                             );
                             msgLog.error(v);
                             throw ErrorCode.INTERNAL_ERROR.toException(v, messageSource);
-
                         } else {
                             msgLog.error("No DefaultUserIdAttributeMapping matches found in metadata nor in default DefaultUserIdAttributeMapping profile configuration");
                             throw ErrorCode.INTERNAL_ERROR.toException(
@@ -516,7 +580,6 @@ public class MetadataService {
                     }
                 }
             }
-
         } catch (Exception e) {
             var v = String.format(
                     "Failed to automatically parse DefaultUserIdAttributeMapping from metadata for profile '%s' with authenticationServiceId '%s', ServiceId '%s' and serviceName '%s'. %s",
@@ -532,11 +595,20 @@ public class MetadataService {
     }
 
     /**
-     * Set requestedCertAttributes from set metadataCustomCertAttribute.
-     * @param supportAPIProfile Support service API profile configuration
-     * @param friendlyName
-     * @param requestedAttributeMap
-     * @param requestedAttribute
+     * Maps a RequestedAttribute from metadata using the profile’s
+     * {@code metadataCustomCertAttribute} configuration.
+     * <p>
+     * Matches are based on {@code samlAttributeName}. On a match, this method
+     * populates {@code requestedAttributeMap} with:
+     * <ul>
+     *   <li>{@code samlAttributeName}</li>
+     *   <li>{@code certAttributeRef}</li>
+     *   <li>{@code certNameType} (if defined or inferred)</li>
+     *   <li>{@code required}</li>
+     * </ul>
+     * and sets the {@code friendlyName}.
+     *
+     * @throws BaseAPIException if configuration is invalid or no friendlyName can be determined
      */
     private void setReqCertAttrFromMetaDataCustomCertAttr(
             SupportAPIProfile supportAPIProfile,
@@ -571,7 +643,7 @@ public class MetadataService {
                                         supportAPIProfile.getRelatedProfile(), key, rawList),
                                 true
                         );
-                        if(strings != null) {
+                        if (strings != null) {
                             samlAttributeNames.addAll(strings);
                         }
                     } else {
@@ -584,8 +656,6 @@ public class MetadataService {
 
                     for (String matchedSamlAttribute : samlAttributeNames) {
                         if (requestedAttribute != null && matchedSamlAttribute.equals(requestedAttribute.getName())) {
-
-
                             String certAttributeRef = ConfigUtils.parseString(
                                     value.get("certAttributeRef"),
                                     String.format("Invalid or missing 'certAttributeRef' value in: %s.metadataCustomCertAttribute.%s. Please specify a valid String value.",
@@ -696,17 +766,21 @@ public class MetadataService {
                     e.getMessage()
             );
             msgLog.error(v);
-            throw ErrorCode.INTERNAL_ERROR.toException(
-                    v, messageSource
-            );
+            throw ErrorCode.INTERNAL_ERROR.toException(v, messageSource);
         }
     }
 
     /**
-     * Parse requestedCertAttributes from MetaData.
-     * @param friendlyName
-     * @param requestedAttributeMap
-     * @param requestedAttribute
+     * Maps a RequestedAttribute from metadata using built-in defaults
+     * (without {@code metadataCustomCertAttribute} overrides).
+     * <p>
+     * Friendly name, SAML attribute name, certificate attribute reference,
+     * and certificate name type are derived from {@link Fields}.
+     *
+     * @param friendlyName          StringBuilder that will be updated with the resolved friendly name
+     * @param requestedAttributeMap map to populate with attribute metadata
+     * @param requestedAttribute    the attribute parsed from metadata
+     * @throws BaseAPIException if attribute parsing fails
      */
     private void setReqCertAttrFromMetaData(StringBuilder friendlyName, Map<String, Object> requestedAttributeMap, ReducedMetadataImpl.RequestedAttribute requestedAttribute) throws BaseAPIException {
         try {
@@ -762,19 +836,24 @@ public class MetadataService {
     }
 
     /**
-     * Get the fieldName/friendlyName from either requestedAttributeType.friendlyName or requestedAttributeType.name
-     * looked up via default values.
-     * @param requestedAttributeType
-     * @return friendlyName
+     * Determines a friendlyName for a requested attribute.
+     * <p>
+     * The logic:
+     * <ul>
+     *   <li>Use the provided {@code requestedAttribute.friendlyName} if valid.</li>
+     *   <li>Otherwise, attempt to map {@code requestedAttribute.name} via default SAML-to-token mappings in {@link Fields}.</li>
+     * </ul>
+     * Returns {@code null} if no friendly name can be determined.
+     *
+     * @param requestedAttributeType the attribute from metadata
+     * @return the resolved friendlyName, or null if none found
      */
     static String determineFriendlyName(ReducedMetadataImpl.RequestedAttribute requestedAttributeType) {
         String friendlyName = requestedAttributeType != null && requestedAttributeType.getFriendlyName() != null
                 ? requestedAttributeType.getFriendlyName().trim()
                 : null;
 
-        if (friendlyName != null && !friendlyName.isBlank() &&
-                Fields.fieldNameToAttrRef.containsKey(friendlyName.toLowerCase())) {
-
+        if (friendlyName != null && !friendlyName.isBlank() && Fields.fieldNameToAttrRef.containsKey(friendlyName.toLowerCase())) {
             msgLog.debug(String.format("FriendlyName set from requestedAttributeType.friendlyName to: '%s'", friendlyName.trim()));
             return friendlyName;
         }
