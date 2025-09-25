@@ -1,6 +1,7 @@
 = Signature Support Service Library
 
 == Introduction
+
 The purpose of the signature support API is to help with creating signature requests, and processing
 signature responses, according to the technical framework specified by Sweden Connect
 (https://docs.swedenconnect.se/technical-framework/).
@@ -18,21 +19,25 @@ The library can be used within a maven project by adding the following dependenc
 <dependency>
     <groupId>se.signatureservice.support</groupId>
     <artifactId>signservice-support-lib</artifactId>
-    <version>2506.1</version>
+    <version>2509.1</version>
 </dependency>
 ----
+
 === Gradle Dependency
+
 The library can be used within a Gradle project by adding the following dependency:
 
 [source]
 ----
 implementation 'se.signatureservice.support:signservice-support-lib:2503.1'
 ----
+
 == Usage Guide
 
 === Initializing the Library
-The library is configured and initialized using builder pattern. The following gives a basic example of how to build
-an instance of the API:
+
+The library is configured and initialized using builder pattern.
+The following gives a basic example of how to build an instance of the API:
 
 [source]
 ----
@@ -42,15 +47,17 @@ SupportServiceAPI supportServiceAPI = new V2SupportServiceAPI.Builder()
     .trustStore(trustedCertificateSource)
     .build();
 ----
+
 NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
 within this document.
 
 ==== Message Security Provider
-When creating an instance of the support service API a message security provider must be provided. The
-message security provider is used when signing signature requests and when verifying signature responses.
+
+When creating an instance of the support service API a message security provider must be provided.
+The message security provider is used when signing signature requests and when verifying signature responses.
 A custom message security provider can be created by implementing `se.signatureservice.messages.MessageSecurityProvider`.
-It is also possible to use a build-in simple message security provider. The following gives an example of how to
-create a simple message security provider:
+It is also possible to use a build-in simple message security provider.
+The following gives an example of how to create a simple message security provider:
 
 [source]
 ----
@@ -66,7 +73,9 @@ MessageSecurityProvider messageSecurityProvider = SupportLibraryUtils.createSimp
     "truststore_password"
 );
 ----
+
 ==== Cache Provider
+
 The API also requires a cache provider that will be used when storing transaction state information that needs
 to be kept after creating a signature request and until processing the signature response. A custom cache provider
 can be created by implementing `se.signatureservice.support.common.cache.CacheProvider` . It is also possible to use
@@ -77,7 +86,9 @@ a simple cache provider:
 ----
     CacheProvider cacheProvider = new SimpleCacheProvider();
 ----
+
 ==== Trusted Certificate Source
+
 The API needs a source of trusted certificates that will be used when validating signed documents. A custom implementation
 of a trusted certificate source can be created by implementing `eu.europa.esig.dss.spi.x509.CertificateSource`. It is also
 possible to use the existing KeyStoreCertificateSource that loads trusted certificates from a keystore file (JKS or PKCS#12):
@@ -90,14 +101,16 @@ possible to use the existing KeyStoreCertificateSource that loads trusted certif
         "somepassword"
     )
 ----
+
 === Using the library
+
 The API will be used to create signature requests that then needs to be sent to the central signature service
 through an `HTTP POST` through the user browser. The central signature service will the re-direct the user to the
 identity provider, and after successful authentication the user will be re-directed to a pre-determined consumer URL
 through an `HTTP POST` with the signature request as parameter. The following gives an overview how the API is used
 during these steps:
 
-[source]
+[source,java]
 ----
 // Create user that is going to sign the document(s)
 User user = new User.Builder()
@@ -136,6 +149,7 @@ PreparedSignatureResponse preparedSignature = supportServiceAPI.prepareSignature
     null
 );
 ----
+
 The `PreparedSignatureResponse` received from a successful call to prepareSignature contains the following information:
 
 * `signRequest` - Base64 encoded signature request data.
@@ -143,15 +157,15 @@ The `PreparedSignatureResponse` received from a successful call to prepareSignat
 * `transactionId` - Transaction ID related to the signature request.
 * `profile` - Name of related profile that was used.
 
-An auto-submit form can be used in order to re-direct the user browser with the signature request. This form can
-be generated using a helper:
+An auto-submit form can be used in order to re-direct the user browser with the signature request.
+This form can be generated using a helper:
 
     String formContent = SupportLibraryUtils.generateRedirectHtml(preparedSignature);
 
-After a successful signature flow the signature response will be sent to the consumer URL. The library can then
-be used to create the complete signed document(s), shown through the following example:
+After a successful signature flow the signature response will be sent to the consumer URL.
+The library can then be used to create the complete signed document(s), shown through the following example:
 
-[source]
+[source,java]
 ----
 // Process the sign response using the support service API.
 CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignature(
@@ -164,11 +178,13 @@ CompleteSignatureResponse completeSignature = supportServiceAPI.completeSignatur
 Document signedDocument = (Document)completeSignature
     .getDocuments().getDocuments().get(0);
 ----
-==== Verifying a document
-The API can be used in order to verify a signed document and to assure that the document has not been altered. The
-following example shows how to verify a signed document using the API:
 
-[source]
+==== Verifying a document
+
+The API can be used in order to verify a signed document and to assure that the document has not been altered.
+The following example shows how to verify a signed document using the API:
+
+[source,java]
 ----
 VerifyDocumentResponse verifiedDocument = supportServiceAPI.verifyDocument(
     profileConfig,
@@ -192,10 +208,11 @@ The library supports two ways of providing documents for a signature operation:
 2. **By reference** (i.e., only a reference ID is provided, and the document is resolved later)
 
 ==== Handling Documents by Value (Default)
+
 This is the standard approach where the complete document content is provided upfront.
 Use a `DocumentSigningRequest` object and populate its `data` field with the document's byte content.
 
-[source, groovy]
+[source,groovy]
 ----
 DocumentRequests documentRequests = new DocumentRequests(
     documents: [new DocumentSigningRequest(
@@ -207,7 +224,7 @@ DocumentRequests documentRequests = new DocumentRequests(
 
 Alternatively, you can use the fluent `DocumentRequests.Builder` class to construct the request more conveniently:
 
-[source, java]
+[source,java]
 ----
 DocumentRequests documentRequests = new DocumentRequests.Builder()
         .addXMLDocument("/path/to/document.xml")
@@ -223,7 +240,7 @@ This builder automatically:
 
 Supported builder methods include:
 
-[source, java]
+[source,groovy]
 ----
 // Add PDF documents
 .addPDFDocument("file.pdf", new FileInputStream(...))
@@ -242,13 +259,15 @@ Supported builder methods include:
 ----
 
 ==== Handling Documents by Reference (Advanced)
+
 This approach is useful for large documents or integration with an external Document Management System (DMS).
 
-In this case, instead of sending the full document, the client provides a `DocumentRef` object with a `referenceId`. The actual content is retrieved later using a `DocumentResolver` implementation.
+In this case, instead of sending the full document, the client provides a `DocumentRef` object with a `referenceId`.
+The actual content is retrieved later using a `DocumentResolver` implementation.
 
-[source, groovy]
+[source,groovy]
 ----
-String documentReferenceId = "dms-uuid-abcdef123456";
+String documentReferenceId = "dms-uuid-abcdef123456"
 
 DocumentRequests requestsByRef = new DocumentRequests(
     documents: [new DocumentRef(referenceId: documentReferenceId)]
@@ -259,13 +278,14 @@ DocumentRequests requestsByRef = new DocumentRequests(
 
 See <<document-resolver-configuration>> for details.
 
-
 === Profile configuration
-When using the API a profile configuration instance (`se.signatureservice.support.system.SupportAPIProfile`) needs to be created and provided. The profile configuration contains
-a lot of settings to control how the request is created and how the signature is performed. Profile configuration is
-created using builder pattern. The following gives a basic example of how to create a profile configuration:
 
-[source]
+When using the API a profile configuration instance (`se.signatureservice.support.system.SupportAPIProfile`) needs to be created and provided.
+The profile configuration contains a lot of settings to control how the request is created and how the signature is performed.
+Profile configuration is created using builder pattern.
+The following gives a basic example of how to create a profile configuration:
+
+[source,java]
 ----
 SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
     // Entity ID of central signature service to use.
@@ -307,38 +327,81 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
     // Finally build the profile.
     .build();
 ----
+
 NOTE: Complete description of all available configuration methods for the builder is available in the _API Reference_
 within this document.
 
 === Using metadata to modify profiles
+
+Profiles can be automatically enriched with information extracted from SAML metadata.
+This is useful when working with IdPs (Identity Providers) and SPs (Service Providers),
+since entity descriptors often include display names, authentication context references, certificate attributes, and user ID mappings.
+
 It is possible to modify profile configuration instances, using entity metadata for Idp:s and SP:s.
-Create a MetadataSource, and load the saml metadata xml files.
-[source]
+
+==== 1. Create and load a MetadataSource
+
+The `MetadataSource` is responsible for reading and storing metadata from SAML XML files (or raw XML bytes).
+
+[source,java]
 ----
-MetadataSource metadataSource = new MetadataSourceImpl(messageSecurityProvider)
-metadataSource.loadMetadata(new File("some-idp.xml"), false)
-metadataSource.loadMetadata(new File("some-idp2.xml"), false)
-metadataSource.loadMetadata(new File("my-sp.xml"), false)
-metadataSource.loadMetadata(new File("my-sp2.xml"), false)
+MetadataSource metadataSource = new MetadataSourceImpl(messageSecurityProvider);
+
+// Load metadata from files (no signature verification by default)
+metadataSource.loadMetadata(new File("some-idp.xml"));
+metadataSource.loadMetadata(new File("my-sp.xml"));
 ----
-And create a MetadataService instance. Calling metadataService.applyMetadataToProfile(...) modifies profile configuration instances in place.
-[source]
+
+NOTE: Signature verification is disabled by default.
+If you want to verify SAML XML signatures, use one of the overloads with the `verifySignature` parameter:
+
+[source,java]
+----
+// From File
+metadataSource.loadMetadata(new File("some-idp.xml"), true);
+
+// From raw bytes
+byte[] xmlBytes = Files.readAllBytes(Path.of("some-idp.xml"));
+metadataSource.loadMetadata(xmlBytes, true);
+----
+
+Available overloads:
+
+* `loadMetadata(File file)`
+* `loadMetadata(File file, boolean verifySignature)`
+* `loadMetadata(byte[] bytes)`
+* `loadMetadata(byte[] bytes, boolean verifySignature)`
+
+==== 2. Apply metadata to a profile
+
+Once a `MetadataSource` has been populated, you can use `MetadataService` to modify profile configuration instances in place.
+
+[source,groovy]
 ----
 MetadataService metadataService = new MetadataService(messageSource)
+
 metadataService.applyMetadataToProfile(
-    // the idp we intend to use in the prepareSignature api call
+    // The IdP to be used in the prepareSignature API call
     "the-idp",
-    // an attribute consuming service in the metadata of profile.signServiceId
+
+    // An attribute consuming service name from the metadata of profile.signServiceId
     "some-attr-consuming-service-name",
+
+    // Preferred display language
     "en",
+
+    // The profile configuration instance that will be modified
     profileConfig,
+
+    // Metadata source containing IdP/SP metadata
     metadataSource
 )
 ----
 
 === Time stamp configuration (-T, -LT and -LTA level)
-When using a profile that has been configured with a -T, -LT or -LTA signature level, a time stamp will be requested
-from a time stamp server. This applies for the following signature levels:
+
+When using a profile that has been configured with a -T, -LT or -LTA signature level, a time stamp will be requested from a time stamp server.
+This applies for the following signature levels:
 
 * CAdES-BASELINE-T
 * CAdES-BASELINE-LT
@@ -350,8 +413,7 @@ from a time stamp server. This applies for the following signature levels:
 * XAdES-BASELINE-LT
 * XAdES-BASELINE-LTA
 
-Time stamp configuration is performed by specifying `timeStamp` when building a profile _(Only relevant parts are
-included in the example)_:
+Time stamp configuration is performed by specifying `timeStamp` when building a profile _(Only relevant parts are included in the example)_:
 
 [source]
 ----
@@ -366,8 +428,10 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
         // Build the profile.
         .build();
 ----
-The following table shows available settings that can be used. Each field
-within the table is specified using its setter.
+
+The following table shows available settings that can be used.
+Each field within the table is specified using its setter.
+
 |===
 | Field | Default value | Description
 
@@ -437,14 +501,14 @@ within the table is specified using its setter.
 |===
 
 === Visible PDF Signatures
-Visible signatures is a feature that can be enabled when signing PDF documents. It consists of
-an image and text element that is embedded into the document after it has been signed. The purpose
-is to give a visual indication that the document is digitally signed, and some information about
-the signature such as the name of the person that signed the document, the signature time.
 
-IMPORTANT: A visible signature does not replace the actual cryptographic signature within
-a digitally signed document. It should not be used as a way of verifying that a document has
-been signed, as it is easy to forge.
+Visible signatures is a feature that can be enabled when signing PDF documents.
+It consists of an image and text element that is embedded into the document after it has been signed.
+The purpose is to give a visual indication that the document is digitally signed,
+and some information about the signature such as the name of the person that signed the document, the signature time.
+
+IMPORTANT: A visible signature does not replace the actual cryptographic signature within a digitally signed document.
+It should not be used as a way of verifying that a document has been signed, as it is easy to forge.
 
 Visible signatures are enabled by specifying a `VisibleSignatureConfig` when building a profile _(Only relevant parts are included in the example)_:
 
@@ -461,8 +525,9 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
         // Build the profile.
         .build();
 ----
-The following table shows available settings that can be used. Each field
-within the table is specified using its setter.
+
+The following table shows available settings that can be used.
+Each field within the table is specified using its setter.
 
 |===
 | Field | Default value | Description
@@ -525,15 +590,17 @@ within the table is specified using its setter.
 |===
 
 ==== Signature Text Template
+
 The signature text template is a string that can contain replacement variables and new-lines that
 will be used in order to create the text element rendered within a visible signature.Variables
-within the template must be specified using curly-bracket syntax, ex. `+{signerName}+`, and is case
-sensitive.The following gives an example of a signature text template.
+within the template must be specified using curly-bracket syntax, ex. `+{signerName}+`, and is
+case-sensitive.The following gives an example of a signature text template.
 
 [source]
 ----
 "Document signed by: {signerName}\nTime: {timestamp}"
 ----
+
 The following table shows supported template variables that can be used.
 
 |===
@@ -553,9 +620,10 @@ The following table shows supported template variables that can be used.
 |===
 
 ==== Visible Signature Attributes
-There are a number of signature parameters that can be used in order to control visible signatures. These attributes are specified
-in the initial call to `prepareSignature(...)` and can be specified either for all documents or for individual documents. The
-following table shows available signature attributes related to visible signatures.
+
+There are a number of signature parameters that can be used in order to control visible signatures.
+These attributes are specified in the initial call to `prepareSignature(...)` and can be specified either for all documents or for individual documents.
+The following table shows available signature attributes related to visible signatures.
 
 |===
 | Attribute key | Default value | Description
@@ -586,14 +654,15 @@ following table shows available signature attributes related to visible signatur
 |===
 
 == API Reference
-This section gives detailed information about important classes and methods that are used within the library
-when creating and validating signatures.
+
+This section gives detailed information about important classes and methods that are used within the library when creating and validating signatures.
 
 === Builders
-The library is using builder pattern in order to perform configuration of the library API and profiles that can
-be used.
+
+The library is using builder pattern in order to perform configuration of the library API and profiles that can be used.
 
 ==== V2SupportServiceAPI.Builder
+
 |===
 | Method | Description
 | addAuthContextMapping(String name, String context, String loa)
@@ -839,9 +908,9 @@ setting is missing or if the specified attribute is missing the userId will be u
 | pdfCertificationPermission(int level)
 | PDF certification permission level setting.
 Supported values: +
-    1 = NO_CHANGE_PERMITTED +
-    2 = MINIMAL_CHANGES_PERMITTED +
-    3 = CHANGES_PERMITTED
+1 = NO_CHANGE_PERMITTED +
+2 = MINIMAL_CHANGES_PERMITTED +
+3 = CHANGES_PERMITTED
 
   This corresponds to the /DocMDP setting in the PDF specification, which controls what changes are permitted in a signed PDF document.
   If an invalid value is provided, an InternalErrorException will be thrown.
@@ -862,15 +931,19 @@ If a validator detects changes that are not permitted by the specified certifica
 DSS supports the following certification permission levels:
 
 - `1` = `NO_CHANGE_PERMITTED`
-No changes are permitted after signing. Any modification will invalidate the signature.
+No changes are permitted after signing.
+Any modification will invalidate the signature.
 
 - `2` = `MINIMAL_CHANGES_PERMITTED`
-Only form filling, instantiating page templates, and signing are allowed. All other modifications invalidate the signature.
+Only form filling, instantiating page templates, and signing are allowed.
+All other modifications invalidate the signature.
 
 - `3` = `CHANGES_PERMITTED`
-In addition to the permissions in level 2, this allows annotation creation, deletion, and modification. Other changes still invalidate the signature.
+In addition to the permissions in level 2, this allows annotation creation, deletion, and modification.
+Other changes still invalidate the signature.
 
 To apply a certification signature, this value must be supplied via the builder method:
+
 [source,java]
 ----
 SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
@@ -885,6 +958,7 @@ An invalid value (anything not equal to 1, 2, or 3) will result in an `InternalE
 The constraints defined within the DSS XML Validation Policy and its associated rules can be customized as needed for specific validation requirements.
 
 _Example of PdfVisualDifference usage (with FAIL validation level):_
+
 [source,xml]
 ----
 <BasicSignatureConstraints>
@@ -907,43 +981,10 @@ For additional details, refer to:
 * Digital Signature Service documentation, section 20.2.2.3.1 – Basic Signature Constraints (see the bullet point titled “DocMDP”) +
 * ISO 32000-1, section 12.8.2.2 – DocMDP +
 
-===== Configuration value: metadataCustomCertAttribute
-Map containing custom attributes to be mapped to it's corresponding metadata for requestedCertAttributes.
-Used in special cases when the Name in RequestedAttribute metadata don't apply.
-
-For each entry the following configuration keys are used:
-
-* **samlAttributeName** - The SAML attribute name to be matched against the Name for a RequestedAttribute in the metadata.
-* **certAttributeRef** - To which the samlAttributeName will be mapped to.
-
-*Example configuration 1:*
-
-[source]
-----
- metadataCustomCertAttribute:
-   givenName:
-     samlAttributeName: "http://sambi.se/attributes/1/givenName"
-     certAttributeRef: "2.5.4.42"
-----
-
-*Example configuration 2:*
-
-[source]
-----
-metadataCustomCertAttribute:
-  surName:
-   samlAttributeName:
-      -"http://sambi.se/attributes/1/surname"
-      -"urn:surname"
-    certAttributeRef: "2.5.4.4"
-    certNameType: "sda"
-    required: true
-----
-
 ===== Configuration value: signerAttributes
+
 Map containing attributes to be included in the signer element within the sign request,
-in addition to the mandatory userId attribute (see defaultUserIdAttributeMapping) that
-is always included as a signer attribute.
+in addition to the mandatory userId attribute (see defaultUserIdAttributeMapping) that is always included as a signer attribute.
 
 For each entry the following configuration keys are used:
 
@@ -966,40 +1007,478 @@ signerAttributes {
 ----
 
 ===== Configuration value: trustedAuthenticationServices
-Map containing trusted authentication services/identity providers that  can be used for the given profile.
-Corresponding metadata for each trusted service must also be available in the metadata directory.
+
+The configuration entry `trustedAuthenticationServices`, when specified, contains all the authentication services
+that are trusted by the support service, and also the explicit configuration to be used for each individual
+service which will override any default configuration shared between all authentication services.
+Otherwise, when configuration entry `trustedAuthenticationServices` is not specified, all metadata parsed via
+`MetadataSource` are trusted.
 
 NOTE: defaultDisplayName will be used if display name is not available in metadata.
 
-Example configuration:
+Example of profile trustedAuthenticationServices configuration:
+[source,groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+        .trustedAuthenticationServices([
+            iDPTest: [
+                entityId: "https://idptest.service.se/samlv2/idp/metadata",
+                defaultDisplayName: "Test iDP ST",
+                authnContextClassRefs: [
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:Password",
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+                ],
+                userIdAttributeMapping: "urn:oid:1.2.752.29.4.13"
+            ]
+        ])
+        .build()
+----
 
-[source]
-----
-trustedAuthenticationServices {
-    iDPTest {
-        entityId = "https://idptest.someservice.se/samlv2/idp/metadata"
-        defaultDisplayName = "Test iDP ST"
-        authnContextClassRef = "urn:oasis:names:tc:SAML:2.0:ac:classes:Password"
-        userIdAttributeMapping = "urn:oid:1.2.752.29.4.13"
-    }
-}
-----
+When `trustedAuthenticationServices` is not specified the _entityId_ and _defaultDisplayName_ is automatically parsed from
+each EntityDescriptor element which contains IDPSSODescriptors, of provided metadata (loaded via MetadataSource).
+
+* _entityId_:
+Extracted from the _entityID_ attribute value of the EntityDescriptor element.
+
+* _defaultDisplayName_ (extracted in order of priority (highest first), based on availability):
+1. Extracted from _DisplayName_ of the metadata extension namespace in IDPSSODescriptor.
+2. Extracted from _OrganizationDisplayName_ in _Organization_ of the EntityDescriptor element.
+3. Extracted from the Common-Name(CN) of the X509 Certificate in _KeyDescriptor_, with attribute "signing", of the IDPSSODescriptor element.
+
+A Preferred language code, _preferredLang_ variable, is used when extracting _defaultDisplayName_ XML element data, as above in point 1 and 2.
+Here the attribute is used to indicate the language of the text content within an element.
+If the variable is NOT set, it received from the language code of the system's default locale.
+
+Order of which content to extract based set _Preferred language_ and matched with the language attribute value of the specific XML element:
+
+1. The set Preferred language
+2. "en"
+3. The first one of the XML elements
 
 ===== Configuration value: requestedCertAttributes
-Map containing Requests for subject attributes in a signer certificate that is associated with the signer of the
-generated signature as a result of the sign request.
 
-Example configuration:
+*Manual Configuration:*
 
-[source]
+The `requestedCertAttributes` configuration within a profile defines which subject attributes should be included in the signer’s certificate,
+and thereby associated with the signer of the generated signature as a result of the sign request.
+
+Commonly used attributes include:
+
+- `givenName`
+- `sn`
+- `commonName`
+- `displayName`
+- `organizationName`
+- `gender`
+- `serialNumber`
+
+For the `serialNumber` attribute, the `samlAttributeName` can be configured either as a single string or as a list of maps.
+By default, the order is set to 0; attributes with order value 1 can be filtered out in the sign response.
+
+Example profile configuration:
+[source, groovy]
 ----
-requestedCertAttributes {
-    givenName {
-        samlAttributeName = "urn:oid:2.5.4.42"
-        certAttributeRef = "2.5.4.42"
-        required = true
-    }
-}
+def profile = new SupportAPIProfile.Builder()
+        .requestedCertAttributes([
+            givenName: [
+                samlAttributeName: "urn:oid:2.5.4.42",
+                certAttributeRef  : "2.5.4.42",
+                required          : true
+            ]
+        ])
+        .build()
+----
+
+*Automatic Population from Metadata:*
+
+To automatically populate the `requestedCertAttributes` section of a profile from SAML metadata (loaded via `MetadataSource`),
+enable the fetchCertAttributesFromMetaData option in the profile.
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .fetchCertAttributesFromMetaData(true)
+----
+
+Once this flag is set to true, all RequestedAttribute elements within each AttributeConsumingService that matches the configured serviceName parameter will be parsed.
+This parsing is performed for each EntityDescriptor element that contains SPSSODescriptors.
+
+If any requestedCertAttributes were successfully parsed from the provided metadata, the attributes specified in the profile configuration will be overridden.
+However, if no attributes could be automatically parsed, the system will fall back to the requestedCertAttributes values provided in the configuration, if set.
+
+NOTE: Again, this parsing is only performed for each AttributeConsumingService that matched the configured serviceName parameter.
+
+Below follows an example of when 2 RequestedAttribute are parsed from given metadata:
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .fetchCertAttributesFromMetaData(true)
+
+new MetadataService(messageSource).applyMetadataToProfile(null, "test_service_name", "en", profile, metadataSource)
+----
+
+*Input* XML Metadata containing AttributeConsumingService elements:
+[source,xml]
+----
+<md:AttributeConsumingService index="0" isDefault="true">
+    <md:ServiceName xml:lang="sv">test_service_name</md:ServiceName>
+    <md:RequestedAttribute Name="urn:oid:1.2.752.29.4.13" FriendlyName="serialNumber"/>
+    <md:RequestedAttribute Name="urn:oid:2.5.4.42" isRequired="true"/>
+</md:AttributeConsumingService>
+----
+
+*Output* requestedCertAttributes as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+requestedCertAttributes:
+  serialNumber:
+    samlAttributeName: "urn:oid:1.2.752.29.4.13"
+    certAttributeRef: "2.5.4.5"
+  givenname:
+    samlAttributeName: "urn:oid:2.5.4.42"
+    certAttributeRef: "2.5.4.42"
+    required: true
+----
+
+====== Custom Attribute Mapping: metadataCustomCertAttribute
+
+In cases where the `Name` in a `RequestedAttribute` from the metadata does **not** conform to the standard mapping table,
+a **custom attribute mapping** can be provided via `metadataCustomCertAttribute`, identical to how `requestedCertAttributes` is configured.
+This mapping defines how each SAML attribute from metadata should be converted into `requestedCertAttributes`.
+
+Configuration Keys:
+
+- _samlAttributeName_: The SAML attribute `Name` to match in metadata. Can be a single string or a list of strings.
+- _certAttributeRef_: The certificate attribute reference to map the `samlAttributeName` to.
+- _certNameType_ (optional): The certificate name type for this attribute.
+- _required_ (optional): Overrides the `isRequired` value from the metadata. If not provided, the system uses `isRequired` from metadata, if available.
+
+Rules for `FriendlyName`:
+
+- If a `RequestedAttribute` has a `FriendlyName`, it is used as the key in the resulting `requestedCertAttributes`.
+- If no `FriendlyName` is provided, the system attempts to derive a key from the standard mapping table.
+
+_Example with one samlAttributeName configured:_
+
+*Input* configuration as stored in SupportAPIProfile:
+[source,groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+        .fetchCertAttributesFromMetaData(true)
+        .metadataCustomCertAttribute(["givenName": ["samlAttributeName":"http://sambi.se/attributes/1/givenName[attrName]", "certAttributeRef":"2.5.4.42"]])
+
+new MetadataService(messageSource).applyMetadataToProfile(null, "test_service_name", "en", profile, metadataSource)
+----
+
+*Input* XML Metadata
+[source,xml]
+----
+<md:AttributeConsumingService index="0" isDefault="true">
+    <md:ServiceName xml:lang="sv">test_service_name</md:ServiceName>
+    <md:RequestedAttribute Name="http://sambi.se/attributes/1/givenName" FriendlyName="serialNumber"/>
+    <md:RequestedAttribute Name="urn:oid:2.5.4.4" isRequired="true"/>
+</md:AttributeConsumingService>
+----
+
+*Output* requestedCertAttributes as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+requestedCertAttributes:
+  givenName:
+    samlAttributeName: "http://sambi.se/attributes/1/givenName"
+    certAttributeRef: "2.5.4.42"
+  surname:
+    samlAttributeName: "urn:oid:2.5.4.4"
+    certAttributeRef: "2.5.4.4"
+    required: true
+----
+
+_Example with multiple samlAttributeName configured:_
+
+*Input* configuration as stored in SupportAPIProfile:
+[source,groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+        .fetchCertAttributesFromMetaData(true)
+        .metadataCustomCertAttribute(["surName": ["samlAttributeName":["http://sambi.se/attributes/1/givenName[attrName]", "urn:surname"], "certAttributeRef":"2.5.4.4", "certNameType": "sda"]])
+
+new MetadataService(messageSource).applyMetadataToProfile(null, "test_service_name", "en", profile, metadataSource)
+----
+
+*Input* XML Metadata
+[source,xml]
+----
+<md:AttributeConsumingService index="0" isDefault="true">
+    <md:ServiceName xml:lang="sv">test_service_name</md:ServiceName>
+    <md:RequestedAttribute Name="urn:surname"/>
+    <md:RequestedAttribute Name="urn:oid:2.5.4.42" isRequired="true"/>
+</md:AttributeConsumingService>
+----
+
+*Output* requestedCertAttributes as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+requestedCertAttributes:
+  surName:
+    samlAttributeName: "urn:surname"
+    certAttributeRef: "2.5.4.4"
+    certNameType: "sda"
+  givenname:
+    samlAttributeName: "urn:oid:2.5.4.42"
+    certAttributeRef: "2.5.4.42"
+    required: true
+----
+
+===== Configuration value: defaultAuthnContextClassRefs
+
+There are two main ways to decide which authnContextClassRefs will be set for a sign request
+
+. Via the selected profileConfig, and in this case, optionally, authnContextClassRefs can be read from metadata too. See section <<refs-from-profiles>>
+. In each call to SignSupportV2Endpoint.PrepareSignature. This will override any profile- or metadata settings. See section <<refs-in-api-call>>
+
+[[refs-from-profiles]]
+====== defaultAuthnContextClassRefs from profiles or metadata
+
+*Manual Configuration:*
+
+The most straightforward method is to define `defaultAuthnContextClassRefs` directly in the profile.
+These values will be used in generated AuthnRequests sent to IDPs during a SignRequest, without requiring a SignMessage.
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .defaultAuthnContextClassRefs([
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:Password",
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+        ])
+----
+
+These defaults can be overridden per trusted authentication service using the `authnContextClassRefs` setting.
+
+[source,groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+        .trustedAuthenticationServices([
+            iDPTest: [
+                entityId: "https://idptest.service.se/samlv2/idp/metadata",
+                defaultDisplayName: "Test iDP ST",
+                authnContextClassRefs: [
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:Password",
+                    "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
+                ]
+            ]
+        ])
+----
+
+*Automatic Population from Metadata:*
+
+To minimize manual configuration, you can automatically populate the `defaultAuthnContextClassRefs` section from SAML metadata.
+This requires enabling the `fetchAuthnContextClassRefFromMetaData` option in the profile.
+When enabled, values extracted from metadata take precedence over any profile-specific defaults.
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .fetchAuthnContextClassRefFromMetaData(true)
+
+new MetadataService(messageSource).applyMetadataToProfile("authenticationServiceId", null, "en", profile, metadataSource)
+----
+
+With `fetchAuthnContextClassRefFromMetaData` enabled, `AttributeValue` elements in `Extensions` and `EntityAttributes`
+that belong to the `Attribute` named _'urn:oasis:names:tc:SAML:attribute:assurance-certification'_ are automatically parsed.
+These values are then applied to the `authnContextClassRefs` for trusted authentication services whose `entityId` matches the parsed metadata.
+
+You can also explicitly specify an `AuthnContextClassRef` in a SOAP signature request using the `signatureAttributes` parameter.
+The key `auth_context_class_ref` allows setting a specific Authentication Context Class Reference.
+
+- If the reference is **set**, it is validated against the allowed `authnContextClassRefs` for the given authentication service.
+- If the reference is **not found**, an error is thrown indicating an invalid authentication context class reference.
+- If the reference is **not set**, all available `authnContextClassRefs` for the authentication service are used by default.
+
+NOTE: Assigning new `authnContextClassRefs` will **overwrite** any existing values for the corresponding trusted authentication service's IDP.
+
+Example: If two `authnContextClassRefs` are parsed from metadata, they will be applied to the matched `entityId` as shown below.
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .fetchAuthnContextClassRefFromMetaData(true)
+
+def authenticationServiceId = "https://idp.cgi.com/v2/metadata"
+
+new MetadataService(messageSource).applyMetadataToProfile(authenticationServiceId, null, null, profile, metadataSource)
+----
+
+*Input* XML Metadata
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://idp.cgi.com/v2/metadata" ID="_07c71e61c3100416e3eff9e8c69c3d49e7">
+  <md:Extensions>
+    <mdattr:EntityAttributes xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
+      <saml:Attribute xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" Name="urn:oasis:names:tc:SAML:attribute:assurance-certification">
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">
+          Ref:A
+        </saml:AttributeValue>
+        <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">
+          Ref:B
+        </saml:AttributeValue>
+      </saml:Attribute>
+    </mdattr:EntityAttributes>
+  </md:Extensions>
+</md:EntityDescriptor>
+----
+
+*Output* authnContextClassRefs as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+trustedAuthenticationServices:
+  idpTest1:
+    entityId: "https://idp.cgi.com/v2/metadata"
+    authnContextClassRefs: ["Ref:A", "Ref:B"]
+----
+
+[[refs-in-api-call]]
+====== Overriding AuthnContextClassRefs in SignSupportV2Endpoint.PrepareSignature calls
+
+The `SignSupportV2Endpoint.prepareSignature` method includes an **optional** `authnContextClassRefs` parameter:
+
+[source,java]
+----
+public PreparedSignatureResponse prepareSignature(
+        SupportAPIProfile profileConfig,
+        DocumentRequests documents,
+        String transactionId,
+        String signMessage,
+        User user,
+        String authenticationServiceId,
+        List<String> authnContextClassRefs,
+        String consumerURL,
+        List<Attribute> signatureAttributes,
+        Map<String, List<Attribute>> documentSignatureAttributes
+);
+----
+
+If provided, the `authnContextClassRefs` list **overrides any profile- or metadata-defined settings** for that API call.
+This enables fully dynamic use of `authnContextClassRefs` alongside static configuration.
+
+NOTE: Any `signatureAttributes` (described above) are still applied as usual, but they are now validated against the API-supplied parameters instead of the profile configuration.
+In this context, the use-case for `signatureAttributes` is reduced, since the API parameters provide more flexibility and control.
+
+===== Configuration value: DefaultUserIdAttributeMapping
+
+This section explains how to automatically parse the `DefaultUserIdAttributeMapping` from the metadata.
+This eliminates the need for manual specification of the SAML Attribute name for user ID mapping.
+
+*Manual Specification of SAML Attribute:* +
+If automatic parsing is not used, the SAML Attribute name must be specified manually. This can be done through: +
+- Profile-specific setting `DefaultUserIdAttributeMapping` or `defaultUserIdAttributeMappingValues` +
+- Authentication service configuration `userIdAttributeMapping` +
+
+*Via the profile-specific setting:*
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .DefaultUserIdAttributeMapping("urn:oid:1.2.752.29.4.13")
+----
+
+or
+
+[source, groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+                .defaultUserIdAttributeMappingValues(["urn:oid:1.2.752.201.3.4","urn:oid:1.2.752.29.4.13"])
+----
+
+*Via the profile-specific authentication service configuration:*
+
+[source,groovy]
+----
+def profile = new SupportAPIProfile.Builder()
+        .trustedAuthenticationServices([
+            testIdpST: [
+                entityId: "https://idptest.service.se/samlv2/idp/metadata",
+                defaultDisplayName: "Test iDP ST",
+                userIdAttributeMapping: "urn:oid:1.2.752.29.4.13"
+            ]
+        ])
+----
+
+*Enabling Automatic Parsing:* +
+
+To enable automatic parsing, ensure that the profile-specific `defaultUserIdAttributeMapping` / `userIdAttributeMapping`*(deprecated)* and
+authentication service configuration `userIdAttributeMapping` settings are not set.
+
+How It Works: +
+1. The process first looks for a `ServiceName` attribute in each `AttributeConsumingService` that matches the required set parameter `ServiceName`. +
+2. It then checks each `RequestedAttribute` in the `AttributeConsumingService` for a match in `Name` with the values in the default UserId Attribute Mapping List. +
+3. When a matching value for `Name` is found it sets this value for the `DefaultUserIdAttributeMapping`.
+
+NOTE: If multiple or no matches are found an error thrown.
+
+Default UserId Attribute Mapping List: +
+[source,text]
+----
+- "urn:oid:1.2.752.29.4.13"
+- "urn:oid:1.2.752.201.3.4"
+- "http://sambi.se/attributes/1/personalIdentityNumber"
+- "http://sambi.se/attributes/1/employeeHsaId"
+- "http://sambi.se/attributes/1/organizationIdentifier"
+- "urn:orgAffiliation"
+----
+
+These default UserId Attribute Mapping values can be overridden via the profile-specific configuration
+`DefaultUserIdAttributeMapping` (String) or `defaultUserIdAttributeMappingValues` (List of Strings).
+
+Example of the output configuration when using the _defaultUserIdAttributeMappingValues_ setting: +
+
+*Input* configuration as stored in SupportAPIProfile:
+[source, groovy]
+----
+def profileConfig = new SupportAPIProfile.Builder()
+                .defaultUserIdAttributeMappingValues(["urn:name", "http://sambi.se/attributes/1/id"])
+
+new MetadataService(messageSource).applyMetadataToProfile(null, "service1", "en", profileConfig, metadataSource)
+----
+
+*Input* XML Metadata
+[source,xml]
+----
+    <md:AttributeConsumingService index="0">
+      <md:ServiceName xml:lang="sv">service1</md:ServiceName>
+      <md:RequestedAttribute Name="urn:givenName"/>
+      <md:RequestedAttribute Name="http://sambi.se/attributes/1/id"/>
+    </md:AttributeConsumingService>
+----
+
+*Output* DefaultUserIdAttributeMapping as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+    DefaultUserIdAttributeMapping: "http://sambi.se/attributes/1/id"
+----
+
+Example of the output configuration when parsing via the default UserId Attribute Mapping List: +
+
+*Input*:
+[source, groovy]
+----
+new MetadataService(messageSource).applyMetadataToProfile(null, "service1", "en", SupportAPIProfile, metadataSource)
+----
+
+*Input* XML Metadata:
+[source,xml]
+----
+    <md:AttributeConsumingService index="0">
+      <md:ServiceName xml:lang="sv">service1</md:ServiceName>
+      <md:RequestedAttribute Name="urn:givenName"/>
+      <md:RequestedAttribute Name="urn:oid:1.2.752.29.4.13"/>
+    </md:AttributeConsumingService>
+----
+
+*Output* DefaultUserIdAttributeMapping as stored in SupportAPIProfile after parsing metadata:
+[source,yaml]
+----
+    DefaultUserIdAttributeMapping: "urn:oid:1.2.752.29.4.13"
 ----
 
 ===== Configuration value: DocumentResolver Configuration [[document-resolver-configuration]]
@@ -1010,7 +1489,7 @@ This component is responsible for retrieving the actual document from your stora
 
 The DocumentResolver must be "injected" into the V2SupportServiceAPI instance using its builder:
 
-[source, groovy]
+[source,java]
 ----
 // 1. Create your custom DocumentResolver instance
 String storagePath = "/path/to/your/document/storage/";
@@ -1029,7 +1508,7 @@ It supports resolving documents from the local file system or an in-memory map.
 
 == Troubleshooting
 
-=== Error While Signing Document: Unable to Save Document
+=== Error w Signing Document: Unable to Save Document
 
 When attempting to sign a document, most likely LTA, you might encounter the following error:
 
@@ -1057,7 +1536,8 @@ To resolve this issue, set the profile-specific option `padesContentSize` to inc
 - In your profile configuration, set the `padesContentSize` option to the desired value.
 
 For example:
-[source, yaml]
+
+[source,yaml]
 ----
    padesContentSize: 30000
 ----
