@@ -89,11 +89,10 @@ public class MetadataService {
                         true,
                         null);
 
-                msgLog.debug(
-                        "Trying to automatically parse assurance-certification, AuthnContextClassRef, from metadata for profile '{}' using authenticationServiceId '{}'",
-                        supportAPIProfile.getRelatedProfile(),
-                        authenticationServiceId
-                );
+                msgLog.debug(String.format(
+                        "Trying to automatically parse assurance-certification, AuthnContextClassRef, from metadata for profile '%s' using authenticationServiceId '%s'",
+                        supportAPIProfile.getRelatedProfile(), authenticationServiceId
+                ));
 
                 fetchAuthnContextClassRefFromMetaData(authenticationServiceId, supportAPIProfile, metadataSource);
             }
@@ -113,12 +112,12 @@ public class MetadataService {
                         true,
                         null);
 
-                msgLog.debug(
-                        "Trying to automatically parse requestedCertAttributes from metadata for profile '{}' using signServiceId '{}' and serviceName '{}'",
+                msgLog.debug(String.format(
+                        "Trying to automatically parse requestedCertAttributes from metadata for profile '%s' using signServiceId '%s' and serviceName '%s'",
                         supportAPIProfile.getRelatedProfile(),
                         supportAPIProfile.getSignServiceId(),
                         serviceName
-                );
+                ));
 
                 fetchCertAttributesFromMetaData(serviceName, supportAPIProfile, metadataSource);
             }
@@ -176,7 +175,10 @@ public class MetadataService {
                     try {
                         String entityId = (String) serviceParameters.get("entityId");
 
-                        msgLog.debug("TrustedAuthenticationServices configuration already set. Trying to, if set, set defaultDisplayName from metadata with entityId '{}' to idp '{}'", entityId, serviceName);
+                        msgLog.debug(String.format(
+                                "TrustedAuthenticationServices configuration already set. Trying to, if set, set defaultDisplayName from metadata with entityId '%s' to idp '%s'",
+                                entityId, serviceName
+                        ));
 
                         ReducedMetadata metadata = metadataSource.getMetaData(entityId);
                         defaultDisplayName = metadata.getDisplayName(lang, DEFAULT_LANGUAGE);
@@ -186,17 +188,29 @@ public class MetadataService {
                                     serviceName, defaultDisplayName
                             );
                             if (added) {
-                                msgLog.debug("Successfully set defaultDisplayName '{}' to idp '{}' with entityId '{}' in trustedAuthenticationServices configuration from metadata", defaultDisplayName, serviceName, entityId);
+                                msgLog.debug(String.format(
+                                        "Successfully set defaultDisplayName '%s' to idp '%s' with entityId '%s' in trustedAuthenticationServices configuration from metadata",
+                                        defaultDisplayName, serviceName, entityId
+                                ));
                             } else {
-                                msgLog.warn("Unable to set defaultDisplayName '{}' to idp '{}' with entityId '{}' in trustedAuthenticationServices configuration from metadata", defaultDisplayName, serviceName, entityId);
+                                msgLog.warn(String.format(
+                                        "Unable to set defaultDisplayName '%s' to idp '%s' with entityId '%s' in trustedAuthenticationServices configuration from metadata",
+                                        defaultDisplayName, serviceName, entityId
+                                ));
                             }
                         } else {
-                            msgLog.warn("No defaultDisplayName, using language settings: {}, found for idp '{}' with entityId '{}' in trustedAuthenticationServices configuration from metadata", lang, serviceName, entityId);
+                            msgLog.warn(String.format(
+                                    "No defaultDisplayName, using language settings: %s, found for idp '%s' with entityId '%s' in trustedAuthenticationServices configuration from metadata",
+                                    lang, serviceName, entityId
+                            ));
                         }
 
                     } catch (Exception e) {
                         String entityId = (String) serviceParameters.get("entityId");
-                        msgLog.error("Metadata could not be found or loaded for given entityId '{}'. Check that it is available and contains valid metadata", entityId);
+                        msgLog.error(String.format(
+                                "Metadata could not be found or loaded for given entityId '%s'. Check that it is available and contains valid metadata",
+                                entityId
+                        ));
                         throw ErrorCode.INTERNAL_ERROR.toException(
                                 String.format("Metadata could not be found or loaded for given entityId '%s'. Check that it is available and contains valid metadata. %s", entityId, e.getMessage()),
                                 messageSource
@@ -205,7 +219,10 @@ public class MetadataService {
                 }
             } else if (supportAPIProfile.getTrustedAuthenticationServices() == null || supportAPIProfile.getTrustedAuthenticationServices().isEmpty()) {
                 try {
-                    msgLog.debug("No trustedAuthenticationServices configuration set. Trying to initialize it from metadata with entityId '{}'", authenticationServiceId);
+                    msgLog.debug(String.format(
+                            "No trustedAuthenticationServices configuration set. Trying to initialize it from metadata with entityId '%s'",
+                            authenticationServiceId
+                    ));
 
                     ConfigUtils.parseString(
                             authenticationServiceId,
@@ -231,20 +248,23 @@ public class MetadataService {
 
                         supportAPIProfile.setTrustedAuthenticationServices(trustedAuthenticationServicesMap);
 
-                        msgLog.debug("Successfully set trustedAuthenticationServices configuration for profile '{}': {}",
+                        msgLog.info(String.format(
+                                "Successfully set trustedAuthenticationServices configuration for profile '%s': %s",
                                 supportAPIProfile.getRelatedProfile(),
                                 trustedAuthenticationServicesMap
-                        );
+                        ));
                     } else {
-                        msgLog.warn("Failed to set trustedAuthenticationServices configuration from metadata with entityId '{}' since no defaultDisplayName was able to be parsed from it",
+                        msgLog.warn(String.format(
+                                "Failed to set trustedAuthenticationServices configuration from metadata with entityId '%s' since no defaultDisplayName was able to be parsed from it",
                                 authenticationServiceId
-                        );
+                        ));
                     }
 
                 } catch (Exception e) {
-                    msgLog.error("Metadata could not be found or loaded. Check that it is available, contains valid metadata and authenticationServiceId '{}'",
+                    msgLog.error(String.format(
+                            "Metadata could not be found or loaded. Check that it is available, contains valid metadata and authenticationServiceId '%s'",
                             authenticationServiceId
-                    );
+                    ));
                     throw ErrorCode.INTERNAL_ERROR.toException(
                             String.format(
                                     "Metadata could not be found or loaded. Check that it is available, contains valid metadata and authenticationServiceId '%s'. %s",
@@ -276,13 +296,19 @@ public class MetadataService {
         try {
             ReducedMetadata metadata = metadataSource.getMetaData(authenticationServiceId);
             if (!(metadata != null && metadata.hasEntityAttributes())) {
-                msgLog.warn("No matching JAXBElement found from metadata with entityId '{}'", authenticationServiceId);
+                msgLog.warn(String.format(
+                        "No matching JAXBElement found from metadata with entityId '%s'",
+                        authenticationServiceId
+                ));
                 return;
             }
 
             List<String> supportedAuthnContextClassRefs = metadata.getAuthnContextClassRefs();
             if (supportedAuthnContextClassRefs == null || supportedAuthnContextClassRefs.isEmpty()) {
-                msgLog.warn("No supported AuthnContextClassRefs found from metadata with entityId '{}'", authenticationServiceId);
+                msgLog.warn(String.format(
+                        "No supported AuthnContextClassRefs found from metadata with entityId '%s'",
+                        authenticationServiceId
+                ));
                 return;
             }
 
@@ -295,9 +321,15 @@ public class MetadataService {
                         boolean added = supportAPIProfile.addTrustedAuthenticationServiceAuthnContextClassRef(idp, supportedAuthnContextClassRefs);
 
                         if (added) {
-                            msgLog.debug("Successfully added authnContextClassRef(s) '{}' to idp '{}'", supportedAuthnContextClassRefs, idp);
+                            msgLog.info(String.format(
+                                    "Successfully added authnContextClassRef(s) '%s' to idp '%s'",
+                                    supportedAuthnContextClassRefs, idp
+                            ));
                         } else {
-                            msgLog.debug("Unable to add authnContextClassRef(s) '{}' to idp '{}'", supportedAuthnContextClassRefs, idp);
+                            msgLog.debug(String.format(
+                                    "Unable to add authnContextClassRef(s) '%s' to idp '%s'",
+                                    supportedAuthnContextClassRefs, idp
+                            ));
                         }
                     }
                 }
@@ -388,11 +420,11 @@ public class MetadataService {
                                         .anyMatch(key -> key.equalsIgnoreCase(friendlyNameStr));
 
                                 if (alreadyMapped) {
-                                    msgLog.error(
-                                            "Unable to parse requestedCertAttribute with friendlyName '{}' and samlAttributeName '{}' because it's already mapped.",
+                                    msgLog.error(String.format(
+                                            "Unable to parse requestedCertAttribute with friendlyName '%s' and samlAttributeName '%s' because it's already mapped.",
                                             friendlyNameStr,
                                             requestedAttributeMap.get("samlAttributeName")
-                                    );
+                                    ));
                                     throw ErrorCode.INVALID_PROFILE.toException(String.format(
                                             "Unable to parse requestedCertAttribute with friendlyName '%s' and samlAttributeName '%s' because it's already mapped.",
                                             friendlyNameStr,
@@ -402,13 +434,13 @@ public class MetadataService {
 
                                 supportAPIProfile.addRequestedCertAttribute(friendlyNameStr, requestedAttributeMap);
 
-                                msgLog.debug(
-                                        "RequestedCertAttribute with friendlyName '{}' successfully parsed from metadata using ServiceId '{}' and serviceName '{}'. Resulting attribute map: {}",
+                                msgLog.info(String.format(
+                                        "RequestedCertAttribute with friendlyName '%s' successfully parsed from metadata using ServiceId '%s' and serviceName '%s'. Resulting attribute map: %s",
                                         friendlyNameStr,
                                         supportAPIProfile.getSignServiceId(),
                                         serviceName,
                                         requestedAttributeMap
-                                );
+                                ));
                             } else {
                                 msgLog.error("Unexpected Error, No 'friendlyName' could be parsed.");
                                 throw ErrorCode.INTERNAL_ERROR.toException("Unexpected Error, No 'friendlyName' could be parsed.");
@@ -431,12 +463,12 @@ public class MetadataService {
         }
 
         if (!requestedCertAttributesInitialized) {
-            msgLog.warn(
-                    "No RequestedAttribute was found in metadata for profile '{}' with signServiceId '{}' and serviceName '{}'. Consequently, 'requestedCertAttributes' will remain unchanged as, if, configured.",
+            msgLog.warn(String.format(
+                    "No RequestedAttribute was found in metadata for profile '%s' with signServiceId '%s' and serviceName '%s'. Consequently, 'requestedCertAttributes' will remain unchanged as, if, configured.",
                     supportAPIProfile.getRelatedProfile(),
                     supportAPIProfile.getSignServiceId(),
                     serviceName
-            );
+            ));
         }
     }
 
@@ -461,35 +493,35 @@ public class MetadataService {
 
             if (!userIdAttributeMappings.isEmpty()) {
                 if (userIdAttributeMappings.containsKey("userIdAttributeMapping")) {
-                    msgLog.debug(
-                            "userIdAttributeMapping '{}' is set fetched from profile-configuration 'userIdAttributeMapping' setting",
+                    msgLog.debug(String.format(
+                            "userIdAttributeMapping '%s' is set fetched from profile-configuration 'userIdAttributeMapping' setting",
                             userIdAttributeMappings.get("userIdAttributeMapping")
-                    );
+                    ));
                 }
                 if (userIdAttributeMappings.containsKey("defaultUserIdAttributeMapping")) {
-                    msgLog.debug(
-                            "defaultUserIdAttributeMapping '{}' is set fetched from profile-configuration 'defaultUserIdAttributeMapping' setting",
+                    msgLog.debug(String.format(
+                            "defaultUserIdAttributeMapping '%s' is set fetched from profile-configuration 'defaultUserIdAttributeMapping' setting",
                             userIdAttributeMappings.get("defaultUserIdAttributeMapping")
-                    );
+                    ));
                 }
             }
 
             if (authConfUserIdAttributeMappings != null && !authConfUserIdAttributeMappings.isEmpty()) {
-                msgLog.debug(
-                        "userIdAttributeMapping is set fetched from authentication service configuration in idp(s): {}.",
+                msgLog.debug(String.format(
+                        "userIdAttributeMapping is set fetched from authentication service configuration in idp(s): %s.",
                         authConfUserIdAttributeMappings.keySet()
-                );
+                ));
             }
 
             boolean noMappingsDefined = (userIdAttributeMappings.isEmpty())
                     && (authConfUserIdAttributeMappings == null || authConfUserIdAttributeMappings.isEmpty());
 
             if (noMappingsDefined) {
-                msgLog.debug(
-                        "No userIdAttributeMapping or defaultUserIdAttributeMapping could be found in profile '{}' or IDP authentication service configuration. Attempting to fetch from Metadata using signServiceId '{}'",
+                msgLog.debug(String.format(
+                        "No userIdAttributeMapping or defaultUserIdAttributeMapping could be found in profile '%s' or IDP authentication service configuration. Attempting to fetch from Metadata using signServiceId '%s'",
                         supportAPIProfile.getRelatedProfile(),
                         supportAPIProfile.getSignServiceId()
-                );
+                ));
 
                 ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
 
@@ -523,13 +555,13 @@ public class MetadataService {
                         );
 
                         if (matchesFound.size() == 1) {
-                            msgLog.debug(
-                                    "Single DefaultUserIdAttributeMapping match found in metadata: '{}' for authenticationServiceId '{}', ServiceId '{}' and serviceName '{}'",
+                            msgLog.info(String.format(
+                                    "Single DefaultUserIdAttributeMapping match found in metadata: '%s' for authenticationServiceId '%s', ServiceId '%s' and serviceName '%s'",
                                     matchesFound.get(0),
-                                    authenticationServiceId != null ? authenticationServiceId : "<not provided>",
+                                    authenticationServiceId,
                                     supportAPIProfile.getSignServiceId(),
                                     serviceName
-                            );
+                            ));
                             supportAPIProfile.setDefaultUserIdAttributeMapping(matchesFound.get(0));
                         } else if (matchesFound.size() > 1) {
                             var v = String.format(
@@ -655,8 +687,10 @@ public class MetadataService {
 
                             requestedAttributeMap.put("samlAttributeName", matchedSamlAttribute);
                             requestedAttributeMap.put("certAttributeRef", certAttributeRef);
-                            msgLog.debug("RequestedAttribute added with samlAttributeName '{}' and certAttributeRef '{}' for metadataCustomCertAttribute with friendlyName '{}' under profile '{}'",
-                                    matchedSamlAttribute, certAttributeRef, key, supportAPIProfile.getRelatedProfile());
+                            msgLog.debug(String.format(
+                                    "RequestedAttribute added with samlAttributeName '%s' and certAttributeRef '%s' for metadataCustomCertAttribute with friendlyName '%s' under profile '%s'",
+                                    matchedSamlAttribute, certAttributeRef, key, supportAPIProfile.getRelatedProfile()
+                            ));
 
                             if (certNameType != null && !certNameType.isBlank()) {
                                 requestedAttributeMap.put("certNameType", certNameType);
@@ -781,18 +815,19 @@ public class MetadataService {
 
                 if (requestedAttribute != null && requestedAttribute.isRequired() != null) {
                     requestedAttributeMap.put("required", requestedAttribute.isRequired());
-                    msgLog.debug("required set to: {}", requestedAttributeMap.get("required"));
+                    msgLog.debug(String.format("required set to: %s", requestedAttributeMap.get("required")));
                 }
 
-                msgLog.debug("RequestedAttribute added with samlAttributeName '{}', certAttributeRef '{}' and certNameType '{}' for friendlyName '{}'",
+                msgLog.debug(String.format(
+                        "RequestedAttribute added with samlAttributeName '%s', certAttributeRef '%s' and certNameType '%s' for friendlyName '%s'",
                         samlAttributeName,
                         certAttributeRef,
                         certNameType,
-                        friendlyName
-                );
+                        friendlyName.toString()
+                ));
             }
         } catch (Exception e) {
-            msgLog.error("Failed to automatically parse requestedCertAttributes from Metadata. {}", e.getMessage());
+            msgLog.error(String.format("Failed to automatically parse requestedCertAttributes from Metadata. %s", e.getMessage()));
             throw ErrorCode.INTERNAL_ERROR.toException(
                     String.format("Failed to automatically parse requestedCertAttributes from Metadata. %s", e.getMessage()),
                     messageSource
@@ -819,7 +854,7 @@ public class MetadataService {
                 : null;
 
         if (friendlyName != null && !friendlyName.isBlank() && Fields.fieldNameToAttrRef.containsKey(friendlyName.toLowerCase())) {
-            msgLog.debug("FriendlyName set from requestedAttributeType.friendlyName to: '{}'", friendlyName.trim());
+            msgLog.debug(String.format("FriendlyName set from requestedAttributeType.friendlyName to: '%s'", friendlyName.trim()));
             return friendlyName;
         }
 
@@ -834,12 +869,14 @@ public class MetadataService {
         }
 
         if (tokenFriendlyName != null) {
-            msgLog.debug("FriendlyName set from requestedAttributeType.name to '{}'", tokenFriendlyName);
+            msgLog.debug(String.format("FriendlyName set from requestedAttributeType.name to '%s'", tokenFriendlyName));
             return tokenFriendlyName;
         }
 
-        msgLog.debug("Unable to set any friendlyName from metadata for requestedAttribute with name '{}'",
-                requestedAttributeType != null ? requestedAttributeType.getName() : null);
+        msgLog.debug(String.format(
+                "Unable to set any friendlyName from metadata for requestedAttribute with name '%s'",
+                requestedAttributeType != null ? requestedAttributeType.getName() : null
+        ));
         return null;
     }
 }
