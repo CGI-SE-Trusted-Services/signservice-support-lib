@@ -48,7 +48,7 @@ dependencies {
     api "org.apache.santuario:xmlsec:2.3.5"
     api "org.slf4j:slf4j-api:2.0.17"
     api "org.slf4j:slf4j-simple:2.0.17"
-    api("org.springframework:spring-context:5.3.39") {
+    api("org.springframework:spring-context:${springVersion}") {
         exclude module: "spring-beans"
     }
     if (project.rootProject.name == "signservice") {
@@ -63,14 +63,22 @@ dependencies {
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.4'
     implementation 'jakarta.activation:jakarta.activation-api:2.1.4'
 
+    // To fix vulnerability CVE-2025-27820 derived from eu.europa.ec.joinup.sd-dss:dss-service
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.5'
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.3.4'
+
+    // To fix vulnerability CVE-2025-48924
+    implementation 'org.apache.commons:commons-lang3:3.19.0'
+
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.50"
     testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
-    testImplementation "org.codehaus.groovy:groovy-xml:3.0.25"
-    testImplementation "org.codehaus.groovy:groovy-yaml:3.0.25"
+    testImplementation "org.apache.groovy:groovy-xml:$groovyVersion"
+    testImplementation "org.apache.groovy:groovy-yaml:$groovyVersion"
 
-    testImplementation platform("org.spockframework:spock-bom:2.4-groovy-3.0")
+    testImplementation platform("org.spockframework:spock-bom:$spokVersion")
     testImplementation "org.spockframework:spock-core"
 }
 
