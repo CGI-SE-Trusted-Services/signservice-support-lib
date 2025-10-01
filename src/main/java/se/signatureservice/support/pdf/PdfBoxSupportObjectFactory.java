@@ -19,7 +19,7 @@ import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import eu.europa.esig.dss.pdf.modifications.PdfDifferencesFinder;
 import eu.europa.esig.dss.pdf.modifications.PdfObjectModificationsFinder;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDefaultObjectFactory;
-import eu.europa.esig.dss.signature.resources.DSSResourcesHandlerBuilder;
+import eu.europa.esig.dss.spi.signature.resources.DSSResourcesHandlerBuilder;
 
 /**
  * Custom object factory to control configuration of PDF signature service.
