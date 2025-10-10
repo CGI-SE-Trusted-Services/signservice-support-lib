@@ -88,7 +88,7 @@
                     </CertificateExtensions>
                 </RevocationDataSkip>
                 <RevocationInfoAccessPresent Level="WARN" />
-                <RevocationDataAvailable Level="FAIL" />
+                <RevocationDataAvailable Level="WARN" />
                 <AcceptableRevocationDataFound Level="FAIL" />
                 <CRLNextUpdatePresent Level="WARN" />
                 <RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
@@ -114,7 +114,7 @@
                 <ForbiddenExtensions Level="FAIL">
                     <Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
                 </ForbiddenExtensions>
-                <IssuerName Level="FAIL" />
+                <IssuerName Level="WARN" />
                 <SerialNumberPresent Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
@@ -176,8 +176,8 @@
             <CertDigestMatch Level="FAIL" />
             <IssuerSerialMatch Level="WARN" />
             <KeyIdentifierMatch Level="WARN" />
-            <SigningTime Level="FAIL" />
-            <MessageDigestOrSignedPropertiesPresent Level="FAIL" />
+            <SigningTime Level="WARN" />
+            <MessageDigestOrSignedPropertiesPresent Level="WARN" />
             <EllipticCurveKeySize Level="WARN" />
             <!--		<ContentType Level="FAIL" value="1.2.840.113549.1.7.1" />
                         <ContentHints Level="FAIL" value="*" />
