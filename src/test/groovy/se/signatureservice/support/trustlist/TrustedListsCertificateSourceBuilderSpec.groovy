@@ -90,6 +90,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
     static YamlSlurper yamlSlurper = new YamlSlurper()
 
     static SupportAPIProfile testProfile1 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
+    static SupportAPIProfile testProfile1_for_test = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1-for-test.yml")) as Map)
 
     static String tempFolder = "build/tmp/TrustedListsCertificateSourceBuilderSpec"
 
@@ -319,7 +320,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
     @Unroll
     def "Test LOTL verifyDocument on #documentType document"() {
         when:
-            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testDocument)
+            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1_for_test, testDocument)
             println new String(response.reportData)
             def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
@@ -403,7 +404,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
     def "Test LOTL verifyDocument signed with XML DSig"() {
         when:
-            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testSignedXMLNonETSIDocument)
+            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1_for_test, testSignedXMLNonETSIDocument)
             println new String(response.reportData)
             def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
@@ -431,7 +432,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
         when:
             testSignedXMLDocument.data = new String(originalData, "UTF-8").replaceAll("Heisenberg", "Heisenburg").getBytes("UTF-8")
-            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testSignedXMLDocument)
+            VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1_for_test, testSignedXMLDocument)
             def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
             println new String(response.reportData)
 
@@ -439,8 +440,8 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             !response.verifies
             xmlReport.Signature[0].@SignatureFormat == "XAdES-BASELINE-B"
             xmlReport.Signature[0].Indication == "TOTAL_FAILED"
-            xmlReport.Signature[0].SubIndication == "SIG_CRYPTO_FAILURE"
-            xmlReport.Signature[0].AdESValidationDetails.Error == "The signature is not intact!"
+            xmlReport.Signature[0].SubIndication == "HASH_FAILURE"
+            xmlReport.Signature[0].AdESValidationDetails.Error == "The reference data object is not intact!"
 
         cleanup:
             testSignedXMLDocument.data = originalData
@@ -531,7 +532,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
                     .build() as V2SupportServiceAPI
 
         when:
-            VerifyDocumentResponse response = supportServiceAPI1.verifyDocument(testProfile1, testDocument)
+            VerifyDocumentResponse response = supportServiceAPI1.verifyDocument(testProfile1_for_test, testDocument)
             println new String(response.reportData)
             def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
             X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)

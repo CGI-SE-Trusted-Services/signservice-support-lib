@@ -1,6 +1,6 @@
-# Basic test profile using ECDSA and encrypted sign message.
+# Basic test profile using RSA
 
-relatedProfile: "testProfile3"
+relatedProfile: "testProfile1"
 xadesSignatureLevel: "XAdES-BASELINE-B"
 xadesSignaturePacking: "ENVELOPED"
 xadesCanonicalizationAlgorithmURI: "http://www.w3.org/2001/10/xml-exc-c14n#"
@@ -9,17 +9,14 @@ padesSignatureLevel: "PAdES-BASELINE-B"
 padesSignaturePacking: "ENVELOPED"
 cadesSignatureLevel: "CAdES-BASELINE-B"
 cadesSignaturePacking: "ENVELOPING"
-signatureAlgorithm: "SHA256withECDSA"
+signatureAlgorithm: "SHA256withRSA"
 signatureValidityOverlapMinutes: 5
 signatureValidityMinutes: 10
-useEncryptedSignMessage: true
-signMessageMimeType: "HTML"
-signMessageMustShow: true
 defaultUserIdAttributeMapping: "urn:oid:1.2.752.29.4.13"
 signServiceId: "https://signservice.thecompany.se/v1/metadata"
 signServiceRequestURL: "https://signservice.thecompany.se/signservice-frontend/request/4321a583928"
 signRequester: "TheCompany"
-defaultAuthnContextClassRef: "urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos"
+defaultAuthnContextClassRef: "urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"
 certificateType: "QC/SSCD"
 visibleSignature:
   enable: true
@@ -64,3 +61,4 @@ trustedAuthenticationServices:
   testIdp:
     entityId: "https://idp.cgi.com/v2/metadata"
     defaultDisplayName: "Test iDP"
+validationPolicy: policy/basicpolicy-for-test
