@@ -114,7 +114,7 @@
                 <ForbiddenExtensions Level="FAIL">
                     <Id>1.3.6.1.5.5.7.48.1.5</Id> <!-- ocsp_noCheck -->
                 </ForbiddenExtensions>
-                <IssuerName Level="WARN" />
+                <IssuerName Level="FAIL" />
                 <SerialNumberPresent Level="WARN" />
                 <NotRevoked Level="FAIL" />
                 <NotOnHold Level="FAIL" />
@@ -132,13 +132,13 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <SunsetDate Level="FAIL" />
-                <RevocationDataAvailable Level="WARN" />
+                <RevocationDataAvailable Level="FAIL" />
                 <AcceptableRevocationDataFound Level="FAIL" />
                 <CRLNextUpdatePresent Level="WARN" />
                 <RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
                 <CA Level="FAIL" />
                 <MaxPathLength Level="FAIL" />
-                <KeyUsage Level="WARN">
+                <KeyUsage Level="FAIL">
                     <Id>keyCertSign</Id>
                 </KeyUsage>
                 <PolicyTree Level="WARN" />
