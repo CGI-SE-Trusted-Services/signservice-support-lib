@@ -16,80 +16,90 @@ import se.signatureservice.messages.MessageProcessingException;
 import se.signatureservice.configuration.common.InvalidArgumentException;
 
 /**
- * Class listing all available sign algorithms and based on the
- * reference code provided by elegitimationsnamnden.
+ * Enum listing supported signature algorithms.
+ * Each entry holds its digest algorithm, signature URI, digest name, and OIDs.
+ *
+ * Based on reference code from E-legitimationsnämnden.
  *
  * @author Philip Vendil
- *
  */
 public enum SignAlgorithm {
-    RSA_SHA1,
     RSA_SHA256,
+    RSA_SHA384,
     RSA_SHA512,
     RSA_SSA_PSS_SHA512_MGF1,
-    ECDSA_SHA256;
+    ECDSA_SHA256,
+    ECDSA_SHA384,
+    ECDSA_SHA512;
 
+    // --- Signature Algorithm URIs ---
     public static final String ALG_URI_RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+    public static final String ALG_URI_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384";
     public static final String ALG_URI_RSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512";
     public static final String ALG_URI_RSA_SSA_PSS_SHA512_MGF1 = "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1";
     public static final String ALG_URI_ECDSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256";
-    public static final String ALG_URI_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+    public static final String ALG_URI_ECDSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384";
+    public static final String ALG_URI_ECDSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512";
 
+    // --- Java Security Names ---
     public static final String ALG_JAVA_RSA_SHA256 = "SHA256withRSA";
+    public static final String ALG_JAVA_RSA_SHA384 = "SHA384withRSA";
     public static final String ALG_JAVA_RSA_SHA512 = "SHA512withRSA";
     public static final String ALG_JAVA_RSA_SSA_PSS_SHA512_MGF1 = "SHA512withRSAandMGF1";
     public static final String ALG_JAVA_ECDSA_SHA256 = "SHA256withECDSA";
-    public static final String ALG_JAVA_RSA_SHA1 = "SHA1withRSA";
+    public static final String ALG_JAVA_ECDSA_SHA384 = "SHA384withECDSA";
+    public static final String ALG_JAVA_ECDSA_SHA512 = "SHA512withECDSA";
 
-    public static final String HASH_ALG_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1";
+    // --- Digest Algorithm URIs ---
     public static final String HASH_ALG_SHA256 = "http://www.w3.org/2001/04/xmlenc#sha256";
+    public static final String HASH_ALG_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#sha384";
     public static final String HASH_ALG_SHA512 = "http://www.w3.org/2001/04/xmlenc#sha512";
 
-    static {
-        RSA_SHA1.digestAlgoUri = HASH_ALG_SHA1;
-        RSA_SHA1.sigAlgoUri = ALG_URI_RSA_SHA1;
-        RSA_SHA1.messageDigestName = "SHA-1";
-        RSA_SHA1.digestAlgOid = "1.3.14.3.2.26";
-        RSA_SHA1.signAlgOid = "1.2.840.113549.1.1.5";
-
-        RSA_SHA256.digestAlgoUri = HASH_ALG_SHA256;
-        RSA_SHA256.sigAlgoUri = ALG_URI_RSA_SHA256;
-        RSA_SHA256.messageDigestName = "SHA-256";
-        RSA_SHA256.digestAlgOid = "2.16.840.1.101.3.4.2.1";
-        RSA_SHA256.signAlgOid = "1.2.840.113549.1.1.11";
-
-        RSA_SHA512.digestAlgoUri = HASH_ALG_SHA512;
-        RSA_SHA512.sigAlgoUri = ALG_URI_RSA_SHA512;
-        RSA_SHA512.messageDigestName = "SHA-512";
-        RSA_SHA512.digestAlgOid = "2.16.840.1.101.3.4.2.3";
-        RSA_SHA512.signAlgOid = "1.2.840.113549.1.1.13";
-
-        RSA_SSA_PSS_SHA512_MGF1.digestAlgoUri = HASH_ALG_SHA512;
-        RSA_SSA_PSS_SHA512_MGF1.sigAlgoUri = ALG_URI_RSA_SSA_PSS_SHA512_MGF1;
-        RSA_SSA_PSS_SHA512_MGF1.messageDigestName = "SHA-512";
-        RSA_SSA_PSS_SHA512_MGF1.digestAlgOid = "2.16.840.1.101.3.4.2.3";
-        RSA_SSA_PSS_SHA512_MGF1.signAlgOid = "1.2.840.113549.1.1.10";
-
-        ECDSA_SHA256.digestAlgoUri = HASH_ALG_SHA256;
-        ECDSA_SHA256.sigAlgoUri = ALG_URI_ECDSA_SHA256;
-        ECDSA_SHA256.messageDigestName = "SHA-256";
-        ECDSA_SHA256.digestAlgOid = "2.16.840.1.101.3.4.2.1";
-        ECDSA_SHA256.signAlgOid = "1.2.840.10045.4.3.2";
-
-    }
-
-    private static int[] sha256Prefix = new int[]{0x30, 0x31, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
     private String digestAlgoUri;
     private String sigAlgoUri;
     private String messageDigestName;
     private String digestAlgOid;
     private String signAlgOid;
 
+    static {
+        // --- RSA ---
+        RSA_SHA256.init(HASH_ALG_SHA256, ALG_URI_RSA_SHA256, "SHA-256",
+                "2.16.840.1.101.3.4.2.1", "1.2.840.113549.1.1.11");
+
+        RSA_SHA384.init(HASH_ALG_SHA384, ALG_URI_RSA_SHA384, "SHA-384",
+                "2.16.840.1.101.3.4.2.2", "1.2.840.113549.1.1.12");
+
+        RSA_SHA512.init(HASH_ALG_SHA512, ALG_URI_RSA_SHA512, "SHA-512",
+                "2.16.840.1.101.3.4.2.3", "1.2.840.113549.1.1.13");
+
+        RSA_SSA_PSS_SHA512_MGF1.init(HASH_ALG_SHA512, ALG_URI_RSA_SSA_PSS_SHA512_MGF1, "SHA-512",
+                "2.16.840.1.101.3.4.2.3", "1.2.840.113549.1.1.10");
+
+        // --- ECDSA ---
+        ECDSA_SHA256.init(HASH_ALG_SHA256, ALG_URI_ECDSA_SHA256, "SHA-256",
+                "2.16.840.1.101.3.4.2.1", "1.2.840.10045.4.3.2");
+
+        ECDSA_SHA384.init(HASH_ALG_SHA384, ALG_URI_ECDSA_SHA384, "SHA-384",
+                "2.16.840.1.101.3.4.2.2", "1.2.840.10045.4.3.3");
+
+        ECDSA_SHA512.init(HASH_ALG_SHA512, ALG_URI_ECDSA_SHA512, "SHA-512",
+                "2.16.840.1.101.3.4.2.3", "1.2.840.10045.4.3.4");
+    }
+
+    private void init(String digestAlgoUri, String sigAlgoUri, String messageDigestName,
+                      String digestAlgOid, String signAlgOid) {
+        this.digestAlgoUri = digestAlgoUri;
+        this.sigAlgoUri = sigAlgoUri;
+        this.messageDigestName = messageDigestName;
+        this.digestAlgOid = digestAlgOid;
+        this.signAlgOid = signAlgOid;
+    }
+
     public String getDigestAlgoUri() {
         return digestAlgoUri;
     }
 
-    String getSigAlgoUri() {
+    public String getSigAlgoUri() {
         return sigAlgoUri;
     }
 
@@ -97,49 +107,34 @@ public enum SignAlgorithm {
         return messageDigestName;
     }
 
-    String getDigestAlgOid() {
+    public String getDigestAlgOid() {
         return digestAlgOid;
     }
 
-    String getSignAlgOid() {
+    public String getSignAlgOid() {
         return signAlgOid;
     }
 
-    static SignAlgorithm getAlgoByURI(String algoURI) throws InvalidArgumentException {
-        if (algoURI.equalsIgnoreCase(ALG_URI_ECDSA_SHA256)) {
-            return ECDSA_SHA256;
+    public static SignAlgorithm getAlgoByURI(String algoURI) throws InvalidArgumentException {
+        for (SignAlgorithm alg : values()) {
+            if (alg.getSigAlgoUri().equalsIgnoreCase(algoURI)) {
+                return alg;
+            }
         }
-        if (algoURI.equalsIgnoreCase(ALG_URI_RSA_SSA_PSS_SHA512_MGF1)) {
-            return RSA_SSA_PSS_SHA512_MGF1;
-        }
-        if (algoURI.equalsIgnoreCase(ALG_URI_RSA_SHA512)) {
-            return RSA_SHA512;
-        }
-        if (algoURI.equalsIgnoreCase(ALG_URI_RSA_SHA256)) {
-            return RSA_SHA256;
-        }
-        if (algoURI.equalsIgnoreCase(ALG_URI_RSA_SHA1)) {
-            return RSA_SHA1;
-        }
-        throw new InvalidArgumentException("Unsupported Signature Algorithm: " + algoURI);
+        throw new InvalidArgumentException("Unsupported Signature Algorithm URI: " + algoURI);
     }
 
     public static SignAlgorithm getAlgoByJavaName(String algoName) throws MessageProcessingException {
-        if (algoName.equalsIgnoreCase(ALG_JAVA_ECDSA_SHA256)) {
-            return ECDSA_SHA256;
+        switch (algoName) {
+            case ALG_JAVA_RSA_SHA256: return RSA_SHA256;
+            case ALG_JAVA_RSA_SHA384: return RSA_SHA384;
+            case ALG_JAVA_RSA_SHA512: return RSA_SHA512;
+            case ALG_JAVA_RSA_SSA_PSS_SHA512_MGF1: return RSA_SSA_PSS_SHA512_MGF1;
+            case ALG_JAVA_ECDSA_SHA256: return ECDSA_SHA256;
+            case ALG_JAVA_ECDSA_SHA384: return ECDSA_SHA384;
+            case ALG_JAVA_ECDSA_SHA512: return ECDSA_SHA512;
+            default:
+                throw new MessageProcessingException("Unsupported Signature Algorithm: " + algoName);
         }
-        if (algoName.equalsIgnoreCase(ALG_JAVA_RSA_SSA_PSS_SHA512_MGF1)) {
-            return RSA_SSA_PSS_SHA512_MGF1;
-        }
-        if (algoName.equalsIgnoreCase(ALG_JAVA_RSA_SHA512)) {
-            return RSA_SHA512;
-        }
-        if (algoName.equalsIgnoreCase(ALG_JAVA_RSA_SHA256)) {
-            return RSA_SHA256;
-        }
-        if (algoName.equalsIgnoreCase(ALG_JAVA_RSA_SHA1)) {
-            return RSA_SHA1;
-        }
-        throw new MessageProcessingException("Unsupported Signature Algorithm: " + algoName);
     }
 }
