@@ -88,8 +88,8 @@
                     </CertificateExtensions>
                 </RevocationDataSkip>
                 <RevocationInfoAccessPresent Level="WARN" />
-                <RevocationDataAvailable Level="WARN" />
-                <AcceptableRevocationDataFound Level="WARN" />
+                <RevocationDataAvailable Level="FAIL" />
+                <AcceptableRevocationDataFound Level="FAIL" />
                 <CRLNextUpdatePresent Level="WARN" />
                 <RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
                 <KeyUsage Level="WARN">
