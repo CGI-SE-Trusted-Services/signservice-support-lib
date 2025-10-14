@@ -3,6 +3,13 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2510.1
+
+=== Enhancements
+
+* The eu.europa.ec.joinup.sd-dss library upgraded to version 6.3.
+* Default validation policy file that comes with this library updated to match the new eu.europa.ec.joinup.sd-dss version.
+
 == Version 2509.1
 
 === Enhancements
