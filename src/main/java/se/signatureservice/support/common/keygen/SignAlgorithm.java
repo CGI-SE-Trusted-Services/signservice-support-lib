@@ -46,32 +46,32 @@ public enum SignAlgorithm {
     public static final String HASH_ALG_SHA512 = "http://www.w3.org/2001/04/xmlenc#sha512";
 
     static {
-        RSA_SHA1.digestAlgo = HASH_ALG_SHA1;
-        RSA_SHA1.sigAlgo = ALG_URI_RSA_SHA1;
+        RSA_SHA1.digestAlgoUri = HASH_ALG_SHA1;
+        RSA_SHA1.sigAlgoUri = ALG_URI_RSA_SHA1;
         RSA_SHA1.messageDigestName = "SHA-1";
         RSA_SHA1.digestAlgOid = "1.3.14.3.2.26";
         RSA_SHA1.signAlgOid = "1.2.840.113549.1.1.5";
 
-        RSA_SHA256.digestAlgo = HASH_ALG_SHA256;
-        RSA_SHA256.sigAlgo = ALG_URI_RSA_SHA256;
+        RSA_SHA256.digestAlgoUri = HASH_ALG_SHA256;
+        RSA_SHA256.sigAlgoUri = ALG_URI_RSA_SHA256;
         RSA_SHA256.messageDigestName = "SHA-256";
         RSA_SHA256.digestAlgOid = "2.16.840.1.101.3.4.2.1";
         RSA_SHA256.signAlgOid = "1.2.840.113549.1.1.11";
 
-        RSA_SHA512.digestAlgo = HASH_ALG_SHA512;
-        RSA_SHA512.sigAlgo = ALG_URI_RSA_SHA512;
+        RSA_SHA512.digestAlgoUri = HASH_ALG_SHA512;
+        RSA_SHA512.sigAlgoUri = ALG_URI_RSA_SHA512;
         RSA_SHA512.messageDigestName = "SHA-512";
         RSA_SHA512.digestAlgOid = "2.16.840.1.101.3.4.2.3";
         RSA_SHA512.signAlgOid = "1.2.840.113549.1.1.13";
 
-        RSA_SSA_PSS_SHA512_MGF1.digestAlgo = HASH_ALG_SHA512;
-        RSA_SSA_PSS_SHA512_MGF1.sigAlgo = ALG_URI_RSA_SSA_PSS_SHA512_MGF1;
+        RSA_SSA_PSS_SHA512_MGF1.digestAlgoUri = HASH_ALG_SHA512;
+        RSA_SSA_PSS_SHA512_MGF1.sigAlgoUri = ALG_URI_RSA_SSA_PSS_SHA512_MGF1;
         RSA_SSA_PSS_SHA512_MGF1.messageDigestName = "SHA-512";
         RSA_SSA_PSS_SHA512_MGF1.digestAlgOid = "2.16.840.1.101.3.4.2.3";
         RSA_SSA_PSS_SHA512_MGF1.signAlgOid = "1.2.840.113549.1.1.10";
 
-        ECDSA_SHA256.digestAlgo = HASH_ALG_SHA256;
-        ECDSA_SHA256.sigAlgo = ALG_URI_ECDSA_SHA256;
+        ECDSA_SHA256.digestAlgoUri = HASH_ALG_SHA256;
+        ECDSA_SHA256.sigAlgoUri = ALG_URI_ECDSA_SHA256;
         ECDSA_SHA256.messageDigestName = "SHA-256";
         ECDSA_SHA256.digestAlgOid = "2.16.840.1.101.3.4.2.1";
         ECDSA_SHA256.signAlgOid = "1.2.840.10045.4.3.2";
@@ -79,18 +79,18 @@ public enum SignAlgorithm {
     }
 
     private static int[] sha256Prefix = new int[]{0x30, 0x31, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
-    private String digestAlgo;
-    private String sigAlgo;
+    private String digestAlgoUri;
+    private String sigAlgoUri;
     private String messageDigestName;
     private String digestAlgOid;
     private String signAlgOid;
 
-    public String getDigestAlgo() {
-        return digestAlgo;
+    public String getDigestAlgoUri() {
+        return digestAlgoUri;
     }
 
-    String getSigAlgo() {
-        return sigAlgo;
+    String getSigAlgoUri() {
+        return sigAlgoUri;
     }
 
     public String getMessageDigestName() {
