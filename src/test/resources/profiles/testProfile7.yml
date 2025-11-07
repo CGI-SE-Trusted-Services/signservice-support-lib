@@ -1,0 +1,13 @@
+# Invalid requestedCertAttributes attribute name type
+
+relatedProfile: "testProfile7"
+signatureAlgorithm: "SHA256withRSA"
+enableAuthnProfile: true
+authorizedConsumerURLs:
+  - "https://localhost"
+  - "http://localhost"
+requestedCertAttributes:
+  serialNumber:
+    samlAttributeName: {value: "urn:oid:1.2.752.29.4.13", order: 1}
+    certAttributeRef: "2.5.4.5"
+    required: true
