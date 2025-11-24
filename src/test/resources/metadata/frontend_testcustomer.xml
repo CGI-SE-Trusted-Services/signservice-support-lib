@@ -3,7 +3,7 @@
                      xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
                      xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
                      xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
-                     ID="_12312399" entityID="http://localhost:8080/signservice-frontend/metadata/1834c194136">
+                     ID="_12312399" entityID="http://localhost:8080/signservice-frontend/metadata/obf_dev_testcustomer1">
     <md:Extensions>
         <mdattr:EntityAttributes xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute">
             <saml:Attribute Name="http://macedir.org/entity-category"
