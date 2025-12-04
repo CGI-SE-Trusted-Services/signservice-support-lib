@@ -1,0 +1,295 @@
+= Changelog
+
+This document provides information about changes that have been made for each new version
+of the Signature Service Support Library.
+
+== Version 2511.1
+
+=== Enhancements
+
+* The eu.europa.ec.joinup.sd-dss library upgraded to version 6.3.
+* Default validation policy file that comes with this library updated to match the new eu.europa.ec.joinup.sd-dss version.
+* New signature algorithms enabled
+** SHA384withRSA
+** SHA384withECDSA
+** SHA512withECDSA
+
+== Version 2509.1
+
+=== Enhancements
+
+* Provides functionality for using SAML metadata to simplify the configuration of `SupportAPIProfile` instances.
+More information, detailed explanations, and examples can be found in the README under:
+- Configuration value: trustedAuthenticationServices
+- Configuration value: requestedCertAttributes
+- Configuration value: defaultAuthnContextClassRefs
+- Configuration value: DefaultUserIdAttributeMapping
+* Upgraded Gradle to `7.6.6`
+* Dependency upgrades:
+** `se.signatureservice.configuration:signservice-messages` to `2509.1`
+** `se.signatureservice.configuration:signservice-java-configuration` to `2509.1`
+* Vulnerability CVE-2025-48924 fixed via:
+** commons-lang3: upgraded to 3.18.0
+
+== Version 2506.1
+
+=== Upgrade notes
+NOTE: This release includes changes in preparation for migrating to Java 21 in Q4 2025.
+
+=== Changes
+- Bumped Gradle to `7.6.5`
+** Updated wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.jar`) to match.
+- Replaced `org.codehaus.groovy.modules.http-builder:http-builder` with `com.squareup.okhttp3:okhttp`.
+- Bumped:
+* `se.signatureservice.configuration:signservice-messages` to `2506.1`
+* `se.signatureservice.configuration:signservice-java-configuration` to `2506.1`
+* Apache XML Security from `2.3.4` to `2.3.5`
+* SLF4J from `2.0.16` to `2.0.17`
+* Groovy to `3.0.25`
+* Apache HttpClient to `5.5`
+* Jackson from `2.18.3` to `2.19.1`
+* Jakarta Activation API from `2.0.0` to `2.1.3`
+* Tomcat (test scope) from `10.1.39` to `10.1.42`
+* Spock Framework (Groovy 3) to `2.4-M6-groovy-3.0`
+
+=== Removals & Cleanups
+- Removed Joda-Time dependency (replaced with `java.time` API).
+- Removed unused `org.json:json` dependency.
+- Removed unrelated internal build logic from `build.gradle`.
+
+=== Fixes
+- Fixed incorrect dependency declaration for `signservice-messages` in `build.gradle`.
+- Addressed CVE-2025-27820 by upgrading:
+* `org.apache.httpcomponents.client5:httpclient5` to `5.5`
+* `httpcore5` and `httpcore5-h2` to `5.3.4`
+
+
+=== Enhancements
+- `SignTaskHelper`: now uses instance state for `SystemTime` instead of static access.
+- Added support for overriding `authnContextClassRefs` in `SupportServiceAPI.prepareSignature()`:
++
+    New method signatures for SupportServiceAPI.prepareSignature which take a 'authnContextClassRefs' parameter. The supplied list of strings
+    will override any profile settings for 'authnContextClassRefs', for that API call. As usual, the values must map to settings in the central system.
+    There is also a utility class 'AuthnContextClassRefUtils' to help resolve higher levels of assurance, for some loa hierarchies, e.g. \http://id.elegnamnden.se/loa/1.0/loa(1|2|3|4).
++
+A new utility `AuthnContextClassRefUtils` is available to help resolve assurance levels.
+
+- PDF certification level can now be set in `SupportAPIProfile.Builder`:
++
+[source, java]
+----
+SupportAPIProfile profile = new SupportAPIProfile.Builder()
+    .pdfCertificationPermission(1)
+    .build();
+----
++
+Values:
+1 = No changes allowed, 2 = Minimal changes, 3 = Any changes (incl. annotations).
+See: _Configuration value: pdfCertificationPermission_
+
+- Added support for document references using `DocumentRef` and `DocumentResolver`.
++
+See: _Handling Documents by Reference_ and _DocumentResolver Configuration_ in the documentation.
+
+== Version 2503.1
+
+=== Upgrade notes
+This release contains *breaking changes*.
+
+=== Changes
+* Dependency on se.signatureservice.messages:signservice.messages library replaces org.certificateservices.messages:certservice-messages
+* Upgraded eu.europa.ec.joinup.sd-dss to version 6.2
+* No longer possible to use config parameter allowSignWithExpiredCertificate
+* Bundled validation policy now accepts the RSASSA-PSS algorithm for signatures, and on signing certificate
+* Support-lib: Fixed issue with `Missing TSPSource` when handling multi-instance signing setups.
+setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
+* Upgraded Joda Time from 2.10.14 to 2.13.1.
+* Upgraded Jackson to 2.18.3.
+* Smaller optimizations for SimpleCacheProvider.
+
+== Version 2502.3
+
+=== Improvements and bug fixes
+* Changed to signservice-java-configuration to 2502.3.
+
+== Version 2502.2
+
+=== Improvements and bug fixes
+* Support-lib: Fixed issue with `Missing TSPSource` when handling multi-instance signing setups.
+setTspSource is now also called during the CompleteSignature step to prevent NullPointerException.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
+== Version 2502.1
+
+=== Improvements and bug fixes
+* Reformatted build.gradle to adopt the modern plugin application syntax.
+* Bump se.signatureservice.configuration:signservice-java-configuration to 2502.1.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
+== Version 2501.1
+
+=== Improvements and bug fixes
+* Bump Gradle to 7.6.4 in wrapper.
+* Bump Grails from 6.2.0 to 6.2.3.
+* Bump Grails Gradle Plugin from 6.2.0 to 6.2.4.
+* Bump Groovy to 3.0.23.
+* Bump Tomcat to 9.0.98.
+* Bump Jackson Databind from 2.17.2 to 2.17.3.
+* Bump JSON In Java from 20240303 to 20250107.
+* Bump org.certificateservices.messages:certservice-messages to 2411.1.
+* Bump se.signatureservice.configuration:signservice-java-configuration to 2501.1.
+* Updated README with some troubleshooting related to padesContentSize.
+* Fixed bug where Redis was unable to parse YAML config file.
+
+    java.lang.NoSuchMethodError: 'void org.yaml.snakeyaml.parser.ParserImpl.<init>(org.yaml.snakeyaml.reader.StreamReader)'
+
+=== Upgrade notes
+This release contains no breaking changes.
+
+== Version 2408.1
+
+=== Improvements and bug fixes
+* Bump SLF4J API Module to 2.0.16.
+* Bump SLF4J Simple Provider to 2.0.16.
+* Bump Jackson Databind to 2.17.2.
+* Bump Apache PDFBox to 2.0.32.
+* Bump Spring Context to 5.3.39.
+* Upgraded Gradle build tool to version 7.6.4.
+
+=== Upgrade notes
+This release contains no breaking changes.
+
+== Version 2405.1
+
+=== Improvements and bug fixes
+* Fixed bug NullPointerException bug when authentication was canceled by the user.
+* Fixed bug related to serialization of signature attributes.
+* Fixed bug when adding individual signer attribute using support library.
+* Improved error handling when authentication was canceled by the user.
+* DSS library dependency has been upgraded to 5.13.
+* Bump Apache PDFBox to 2.0.31.
+* Bump SLF4J Simple Provider to 2.0.13.
+* Bump SLF4J API Module to 2.0.13.
+* Bump JSON In Java to 20240303.
+* Bump Spring Context to 5.3.37.
+* Bump org.certificateservices.messages:certservice-messages to 2405.1.
+* Bump se.signatureservice.configuration:signservice-java-configuration to 2405.1.
+* Bump Joda Time to 2.10.14.
+* Bump Jackson Databind to 2.17.1.
+* Bump OkHttp to 4.12.0.
+* Bump Apache Groovy XML/YAML to 3.0.21.
+
+=== Upgrade notes
+Smaller improvements to logging. Now logging statements are using parameterized messages for improved performance.
+Improvements to resource management by converting existing code to use try-with-resources for automatic closure.
+
+New version of DSS library contains the following upgraded dependencies:
+
+|===
+| Group ID | Artifact ID | Version
+
+| org.apache.httpcomponents.client5
+| httpclient5
+| 5.3
+
+| org.apache.httpcomponents.core5
+| httpcore5
+| 5.2.4
+|===
+
+This might cause problems if an application using this library depends on older version of these dependencies, or using
+other libraries that in turn depends on older versions of these dependencies. To resolve this issue make sure to use the
+specific versions specified in above table within _build.gradle_ or _pom.xml_.
+
+== Version 2403.2
+
+=== Improvements and bug fixes
+* Fixed bug causing incorrect serialization of signature attributes.
+* Fixed bug when adding individual signer attributes using `SupportAPIProfile.Builder`.
+
+== Version 2403.1
+
+=== Improvements and bug fixes
+* Fixed bug related to signature attributes not being stored properly in cache.
+* Upgraded certservice-messages dependency to version 2402.1.
+* Upgraded signservice-java-configuration dependency to version 2402.1.
+* Upgraded Gradle build tool to version 7.2.
+* Minor upgrades of various dependencies in order to fix vulnerabilities.
+
+=== New features
+* Default display name of trusted identity provider can be specified in `SupportAPIProfile.Builder`.
+
+== Version 2401.2
+
+=== Improvements and bug fixes
+* DSS library dependency has been upgraded to 5.13.
+* Improved error handling when authentication was canceled by the user.
+
+=== Upgrade notes
+New version of DSS library contains the following upgraded dependencies:
+
+|===
+| Group ID | Artifact ID | Version
+
+| org.apache.httpcomponents.client5
+| httpclient5
+| 5.3
+
+| org.apache.httpcomponents.core5
+| httpcore5
+| 5.2.1
+|===
+
+This might cause problems if an application using this library depends on older version of these dependencies, or using
+other libraries that in turn depends on older versions of these dependencies. To resolve this issue make sure to use the
+specific versions specified in above table within _build.gradle_ or _pom.xml_.
+
+== Version 2401.1
+
+=== New features
+* Support for using text template for visible signatures.
+* Support for specifying signature attributes per document when signing multiple documents at the same time.
+* Support for reading visible signature logo image to use from signature attributes.
+
+=== Improvements and bug fixes
+* Improvements in `V2SupportServiceAPI.Builder` to give better errors if required configuration is missing.
+
+=== Upgrade notes
+This release contains no breaking changes. This section contains brie information about the
+included enhancements.
+
+==== Visible signature text template
+By using visible signature text template it is possible to get full control over the text
+that is presented within the visible signatures. Information and examples on how to use
+this feature is available in README.
+
+==== Signature attributes per document
+New overloaded version of the method `prepareSignature(...)` has been added to the SupportServiceAPI interface
+that takes an additional map-parameter `Map<String, List<Attribute>> documentSignatureAttributes`. Map-key is a document reference ID which is mapped to the list of signature attributes that should be used for
+that particular document.
+
+== Version 2312.1
+
+=== New features
+* Added support for LTA-level signatures with customizable time stamp source.
+
+=== Improvements and bug fixes
+* Fixed incorrect object reference in XAdES DataObjectFormat-element that caused warning during validation.
+
+=== Vulnerability mitigations
+* xmlsec upgraded to 2.3.4 (CVE-2023-44483)
+* json upgraded to 20231013 (CVE-2023-5072)
+
+=== Upgrade notes
+A new class TimeStampConfig has been added that contains information about time stamp configuration.
+An instance of this class must be provided to the SupportAPIProfile builder in order to customize time stamping
+when using signature levels that includes timestamps (-T, LT and -LTA).
+
+== Version 2308.1
+This is the first publicly available version of the Signature Support Service Library. The main purpose
+of the library is to help with creating signature requests, and processing signature responses, according
+to the technical framework specified by Sweden Connect (https://docs.swedenconnect.se/technical-framework/).
