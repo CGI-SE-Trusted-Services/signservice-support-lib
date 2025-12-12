@@ -30,6 +30,8 @@ dependencies {
     api "eu.europa.ec.joinup.sd-dss:dss-tsl-validation:${dssVersion}"
     api "eu.europa.ec.joinup.sd-dss:dss-diagnostic-jaxb:${dssVersion}"
     api "eu.europa.ec.joinup.sd-dss:dss-validation:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-policy-jaxb:${dssVersion}"
+    api "eu.europa.ec.joinup.sd-dss:dss-cms-object:${dssVersion}"
     api "org.apache.santuario:xmlsec:2.3.5"
     api "org.slf4j:slf4j-api:2.0.17"
     api "org.slf4j:slf4j-simple:2.0.17"

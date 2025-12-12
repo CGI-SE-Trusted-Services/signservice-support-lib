@@ -67,6 +67,7 @@ class V2SupportServiceAPISpec extends Specification {
 
     static SupportAPIProfile testProfile0 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile0.yml")) as Map)
     static SupportAPIProfile testProfile1 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1.yml")) as Map)
+    static SupportAPIProfile testProfile1_for_test = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile1-for-test.yml")) as Map)
     static SupportAPIProfile testProfile2 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile2.yml")) as Map)
     static SupportAPIProfile testProfile3 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile3.yml")) as Map)
     static SupportAPIProfile testProfile4 = getProfile(yamlSlurper.parse(new File("src/test/resources/profiles/testProfile4.yml")) as Map)
@@ -1113,7 +1114,7 @@ class V2SupportServiceAPISpec extends Specification {
     @Unroll
     def "Test verifyDocument on #documentType document"() {
         when:
-        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testDocument)
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1_for_test, testDocument)
         println new String(response.reportData)
         def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
         X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)
@@ -1163,7 +1164,7 @@ class V2SupportServiceAPISpec extends Specification {
 
     def "Test verifyDocument signed with XML DSig"() {
         when:
-        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1, testSignedXMLNonETSIDocument)
+        VerifyDocumentResponse response = supportServiceAPI.verifyDocument(testProfile1_for_test, testSignedXMLNonETSIDocument)
         println new String(response.reportData)
         def xmlReport = new XmlSlurper().parseText(new String(response.reportData))
         X509Certificate signingCertificate = CertUtils.getX509CertificateFromPEMorDER(response.signatures.signer.first().signerCertificate)

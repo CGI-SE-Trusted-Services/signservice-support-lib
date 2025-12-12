@@ -57,7 +57,6 @@ requestedCertAttributes:
 authorizedConsumerURLs:
   - "https://localhost"
   - "http://localhost"
-validationPolicy: basicpolicy
 trustedAuthenticationServices:
   testIdp:
     entityId: "https://idp.cgi.com/v2/metadata"

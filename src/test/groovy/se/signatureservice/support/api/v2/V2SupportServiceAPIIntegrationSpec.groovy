@@ -67,8 +67,8 @@ class V2SupportServiceAPIIntegrationSpec extends Specification  {
 
         // Create profile configuration to use for the transaction. This can be re-used if needed.
         profileConfig = new SupportAPIProfile.Builder()
-                .signServiceId("http://localhost:8080/signservice-frontend/metadata/1834c194136")
-                .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/1834c194136")
+                .signServiceId("http://localhost:8080/signservice-frontend/metadata/obf_dev_testcustomer1")
+                .signServiceRequestURL("http://localhost:8080/signservice-frontend/request/obf_dev_testcustomer1")
                 .addTrustedAuthenticationService("Dummy idP", "http://localhost:6060/eid2-dummy-idp/samlv2/idp/metadata", "Signature Service Dummy iDP")
 
                 // Required attributes fetched from metadata instead
