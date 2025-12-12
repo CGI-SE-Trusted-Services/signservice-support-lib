@@ -502,7 +502,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             testSignedXMLDocument       | "XAdES-BASELINE-B"         | "SHA256withRSAandMGF1"     | "CN=sub Network - Development"           | "XML"
             testSignedPDFDocument       | "PAdES-BASELINE-B"         | "SHA256withRSA"            | "CN=sub Network - Development"           | "PDF"
             testSignedCMSDocument       | "CAdES-BASELINE-B"         | "SHA256withRSA"            | "CN=sub Network - Development"           | "CMS"
-            euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "SHA256withRSA"            | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
+            //euDSSTestSignedXMLDocument  | "XAdES-BASELINE-LTA"       | "SHA256withRSA"            | "CN=LuxTrust Global Qualified CA 3,O"    | "XML"  // Test pruned to fail when not maintained and/or EU-DSS updates https://ec.europa.eu/tools/lotl/eu-lotl.xml. <NextUpdate> 2024-05-07T14:10:01Z for eu-lotl.xml
     }
 
     def "Test that getCertificateVerifier returns correct class instance"() {
