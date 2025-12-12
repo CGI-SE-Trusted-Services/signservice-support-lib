@@ -575,7 +575,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 schemaFactoryBuilder.removeAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA);
                 XmlDefinerUtils.getInstance().setSchemaFactoryBuilder(schemaFactoryBuilder);
 
-                // set tokenExtractionStategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStategy is NONE
+                // set tokenExtractionStrategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStrategy is NONE
                 validator.setTokenExtractionStrategy(TokenExtractionStrategy.EXTRACT_CERTIFICATES_ONLY);
                 reports = validator.validateDocument(getValidationPolicy(profileConfig));
 
@@ -910,7 +910,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      */
     private Messages getMessagesFromList(List<eu.europa.esig.dss.jaxb.object.Message> messageList, String language) {
         Messages messages = new Messages();
-        messages.message = new ArrayList<Message>();
+        messages.message = new ArrayList<>();
         for (eu.europa.esig.dss.jaxb.object.Message errorMessage : messageList) {
             Message message = new Message();
             message.setText(String.format("%s: %s", errorMessage.getKey(), errorMessage.getValue()));

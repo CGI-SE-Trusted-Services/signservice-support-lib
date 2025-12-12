@@ -182,7 +182,7 @@ public class SignTaskHelper {
             Element cert = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_CERT);
             Element certDigest = document.createElementNS(NS_ETSI_1_3_2, XADES_PREFIX + XADES_CERT_DIGEST);
             Element digestMethod = document.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTMETHOD);
-            digestMethod.setAttribute(XML_ATTRIBUTE_ALGORITHM, signAlgorithm.getDigestAlgo());
+            digestMethod.setAttribute(XML_ATTRIBUTE_ALGORITHM, signAlgorithm.getDigestAlgoUri());
             certDigest.appendChild(digestMethod);
             Element digestValue = document.createElementNS(NS_W3_XMLDSIG, DS_PREFIX + DS_DIGESTVALUE);
             byte[] certDigestValue = MessageDigest.getInstance(signAlgorithm.getMessageDigestName()).digest(signingCertificate.getEncoded());
@@ -216,7 +216,7 @@ public class SignTaskHelper {
         // Locate and update digest and reference ID within signedInfo
         if(!updateXAdESReference(signedInfo, "#xades-" + signedPropertiesId, updatedDigest)){
             // If XAdES reference was not found we construct it from scratch.
-            createSignedPropertiesReference(signedInfo, signedPropertiesId, canonicalizationMethod, signAlgorithm.getDigestAlgo(), updatedDigest);
+            createSignedPropertiesReference(signedInfo, signedPropertiesId, canonicalizationMethod, signAlgorithm.getDigestAlgoUri(), updatedDigest);
         }
 
         // Canonicalize and update sign task

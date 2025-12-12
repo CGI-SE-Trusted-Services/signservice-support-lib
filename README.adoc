@@ -886,7 +886,7 @@ setting is missing or if the specified attribute is missing the userId will be u
 | userIdAttributeMapping(String userIdAttributeMapping)
 | SAML Attribute name that will map against user ID. Deprecated Use defaultUserIdAttributeMapping (since 2019-05-25).
 
-| validationPolicy(String validationPolicy)
+| validationPolicy(String validationPolicy) [[validation-policy-property]]
 | Validation policy to use when verifying signed documents. Policy file must be present in the class path.
 (Default value: "/policy/basicpolicy.xml")
 
@@ -953,7 +953,7 @@ SupportAPIProfile profileConfig = new SupportAPIProfile.Builder()
 
 An invalid value (anything not equal to 1, 2, or 3) will result in an `InternalErrorException`.
 
-====== DocMDP Validation Policy Constraint
+====== DocMDP Validation Policy Constraint [[doc-mdp]]
 
 The constraints defined within the DSS XML Validation Policy and its associated rules can be customized as needed for specific validation requirements.
 
@@ -1505,6 +1505,16 @@ NOTE: If a `DocumentRef` is received but no `DocumentResolver` has been configur
 
 A basic implementation, `SimpleFileOrMapDocumentResolver`, is provided and can be used for testing or as a base for your own resolver.
 It supports resolving documents from the local file system or an in-memory map.
+
+== Validation Policy
+
+The eu.europa.ec.joinup.sd-dss library ships with a default validation policy, used for
+validating signed documents. The same file, unaltered, is provided with this library, as a possible starting point for customizations.
+
+See also:
+
+* A typical customization example <<doc-mdp>>
+* The api profile configuration property used to point out the validation policy <<validation-policy-property>>
 
 == Troubleshooting
 

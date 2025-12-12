@@ -10,8 +10,8 @@ padesSignaturePacking: "ENVELOPED"
 cadesSignatureLevel: "CAdES-BASELINE-B"
 cadesSignaturePacking: "ENVELOPING"
 signatureAlgorithm: "SHA256withRSA"
-signServiceId: "http://localhost:8080/signservice-frontend/metadata/116cc52a654"
-signServiceRequestURL: "http://localhost:8080/signservice-frontend/request/116cc52a654"
+signServiceId: "http://localhost:8080/signservice-frontend/metadata/obf_dev_testcustomer4"
+signServiceRequestURL: "http://localhost:8080/signservice-frontend/request/obf_dev_testcustomer4"
 enableAuthnProfile: true
 authorizedConsumerURLs:
   - "https://localhost"

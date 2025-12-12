@@ -157,7 +157,7 @@ public class MetadataSourceImpl implements MetadataSource {
      */
     private static void collectMetadata(Object metaData, List<ReducedMetadata> list) {
         if (metaData instanceof EntityDescriptorType) {
-            list.add(new ReducedMetadataImpl(((EntityDescriptorType) metaData)));
+            list.add(new ReducedMetadataImpl(((EntityDescriptorType) metaData), null));
         } else if (metaData instanceof EntitiesDescriptorType) {
             for (Object edt : ((EntitiesDescriptorType) metaData).getEntityDescriptorOrEntitiesDescriptor()) {
                 collectMetadata(edt, list);

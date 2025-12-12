@@ -367,16 +367,11 @@ public class MetadataService {
         try {
             ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
             if (metadata != null) {
-                List<?> acsList = metadata.getAttributeConsumingServices(serviceName);
-
-                for (Object acsObj : acsList) {
-                    ReducedMetadataImpl.AttributeConsumingService attributeConsumingService = (ReducedMetadataImpl.AttributeConsumingService) acsObj;
-
-                    List<?> requestedAttributes = attributeConsumingService.getRequestedAttributes();
+                var acsList = metadata.getAttributeConsumingServices(serviceName);
+                for (var attributeConsumingService : acsList) {
+                    var requestedAttributes = attributeConsumingService.getRequestedAttributes();
                     if (requestedAttributes != null) {
-                        for (Object raObj : requestedAttributes) {
-                            ReducedMetadataImpl.RequestedAttribute requestedAttribute = (ReducedMetadataImpl.RequestedAttribute) raObj;
-
+                        for (var requestedAttribute : requestedAttributes) {
                             Map<String, Object> requestedAttributeMap = new LinkedHashMap<>();
                             StringBuilder friendlyName = new StringBuilder();
 
@@ -524,25 +519,20 @@ public class MetadataService {
                 ));
 
                 ReducedMetadata metadata = metadataSource.getMetaData(supportAPIProfile.getSignServiceId());
+                ConfigUtils.parseString(
+                        serviceName,
+                        String.format("Input parameter 'serviceName' must be provided for profile '%s'. " +
+                                        "This parameter is required to locate UserIdAttributeMapping from metadata.",
+                                supportAPIProfile.getRelatedProfile()),
+                        true,
+                        null);
 
                 if (metadata != null) {
-                    ConfigUtils.parseString(
-                            serviceName,
-                            String.format("Input parameter 'serviceName' must be provided for profile '%s'. " +
-                                            "This parameter is required to locate UserIdAttributeMapping from metadata.",
-                                    supportAPIProfile.getRelatedProfile()),
-                            true,
-                            null);
-
-                    List<?> acsList = metadata.getAttributeConsumingServices(serviceName);
-
-                    for (Object acsObj : acsList) {
-                        ReducedMetadataImpl.AttributeConsumingService attributeConsumingService = (ReducedMetadataImpl.AttributeConsumingService) acsObj;
-
+                    var acsList = metadata.getAttributeConsumingServices(serviceName);
+                    for (var attributeConsumingService : acsList) {
                         List<String> requestedAttributeNames = new ArrayList<>();
                         if (attributeConsumingService.getRequestedAttributes() != null) {
-                            for (Object raObj : attributeConsumingService.getRequestedAttributes()) {
-                                ReducedMetadataImpl.RequestedAttribute ra = (ReducedMetadataImpl.RequestedAttribute) raObj;
+                            for (var ra : attributeConsumingService.getRequestedAttributes()) {
                                 if (ra.getName() != null) {
                                     requestedAttributeNames.add(ra.getName());
                                 }
