@@ -5,6 +5,19 @@ plugins {
 
 group = "se.signatureservice.support"
 
+pluginManager.withPlugin('org.certificateservices.gradle.certservice-gradle-plugin') {
+    certserviceSettings {
+        licenseName = "GNU Lesser General Public License v3.0 or later"
+        licenseURL = "https://www.gnu.org/licenses/lgpl-3.0-standalone.html"
+        useDeveloperPOM = true
+        useScmPOM = true
+        scmConnection = "scm:git:https://github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmDeveloperConnection = "scm:git:https://git@github.com/CGI-SE-Trusted-Services/signservice-support-lib.git"
+        scmUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+        projectUrl = "https://github.com/CGI-SE-Trusted-Services/signservice-support-lib"
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -42,30 +55,22 @@ dependencies {
         api project(":signservice-messages")
         api project(":signservice-java-configuration")
     } else {
-        api("se.signatureservice.messages:signservice-messages:2509.1")
-        api("se.signatureservice.configuration:signservice-java-configuration:2509.1")
+        api("se.signatureservice.messages:signservice-messages:2512.1")
+        api("se.signatureservice.configuration:signservice-java-configuration:2512.1")
     }
-    implementation "com.fasterxml.jackson.core:jackson-databind:2.20.0"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.20.1"
 
-    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
-    implementation 'jakarta.activation:jakarta.activation-api:2.1.3'
-
-    // To fix vulnerability CVE-2025-27820 derived from eu.europa.ec.joinup.sd-dss:dss-service
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.5'
-    implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
-    implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.3.4'
-
-    // To fix vulnerability CVE-2025-48924
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.4'
+    implementation 'jakarta.activation:jakarta.activation-api:2.1.4'
 
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.46"
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.50"
     testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
     testImplementation "org.codehaus.groovy:groovy-xml:3.0.25"
     testImplementation "org.codehaus.groovy:groovy-yaml:3.0.25"
 
-    testImplementation platform("org.spockframework:spock-bom:2.4-M6-groovy-3.0")
+    testImplementation platform("org.spockframework:spock-bom:2.4-groovy-3.0")
     testImplementation "org.spockframework:spock-core"
 }
 
