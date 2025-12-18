@@ -11,7 +11,7 @@ tasks.register('zipBin', Zip) {
     }
     from('build/libs/') {
         include("signservice-support-lib-${project.ext.get('shortVersionNumber')}.jar")
-        fileMode = 0644
+        filePermissions { unix(0644) }
         into(baseDir)
     }
     from("${project.rootDir}/signservice-doc/build/docs/integration-guide/en") {
