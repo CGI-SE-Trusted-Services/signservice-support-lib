@@ -3,6 +3,15 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2601.1
+
+=== Upgrade notes
+This release contains no breaking changes.
+
+=== Changes
+
+* Upgraded Gradle to 8.14.3.
+
 == Version 2512.2
 
 No changes.
