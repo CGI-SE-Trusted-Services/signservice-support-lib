@@ -6,7 +6,7 @@ of the Signature Service Support Library.
 == Version 2601.1
 
 === Upgrade notes
-This release contains no breaking changes.
+The project now targets Java 21.
 
 === Changes
 
