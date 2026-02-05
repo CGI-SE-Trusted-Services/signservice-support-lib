@@ -8,6 +8,7 @@ of the Signature Service Support Library.
 === Changes
 
 * Edited bundled validation policy, removing the iIDAS tag.
+* Unnecessary dependencies removed.
 
 == Version 2601.1
 
