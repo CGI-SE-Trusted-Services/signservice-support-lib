@@ -616,7 +616,7 @@
     <Model Value="SHELL" />
 
     <!-- eIDAS REGL 910/EU/2014 -->
-    <eIDAS>
+    <!--<eIDAS>
         <TLFreshness Level="WARN" Unit="HOURS" Value="6" />
         <TLNotExpired Level="WARN" />
         <TLWellSigned Level="WARN" />
@@ -625,5 +625,5 @@
             <Id>6</Id>
         </TLVersion>
         <TLStructure Level="WARN" />
-    </eIDAS>
+    </eIDAS>-->
 </ConstraintsParameters>

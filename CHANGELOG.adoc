@@ -3,6 +3,13 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2602.1
+
+=== Changes
+
+* Edited bundled validation policy, removing the iIDAS tag.
+* Unnecessary dependencies removed.
+
 == Version 2601.1
 
 === Upgrade notes
