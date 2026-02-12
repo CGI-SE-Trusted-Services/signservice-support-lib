@@ -78,7 +78,7 @@ dependencies {
     testImplementation "org.apache.groovy:groovy-xml:$groovyVersion"
     testImplementation "org.apache.groovy:groovy-yaml:$groovyVersion"
 
-    testImplementation platform("org.spockframework:spock-bom:$spokVersion")
+    testImplementation platform("org.spockframework:spock-bom:$spockVersion")
     testImplementation "org.spockframework:spock-core"
 }
 
