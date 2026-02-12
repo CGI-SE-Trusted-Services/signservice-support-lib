@@ -5,7 +5,10 @@ of the Signature Service Support Library.
 
 == Version 2602.2
 
-No changes.
+=== Changes
+
+* Upgraded Gradle to 9.3.1.
+* Upgraded Spock to 2.4.
 
 == Version 2602.1
 
@@ -13,8 +16,6 @@ No changes.
 
 * Edited bundled validation policy, removing the iIDAS tag.
 * Unnecessary dependencies removed.
-* Upgraded Gradle to 9.3.1.
-* Upgraded Spock to 2.4.
 
 == Version 2601.1
 
