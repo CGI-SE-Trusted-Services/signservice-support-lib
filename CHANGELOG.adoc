@@ -8,6 +8,7 @@ of the Signature Service Support Library.
 === Changes
 
 * Bundled validation policy updated.
+* Load validation policy based on profile, or fail.
 
 == Version 2602.2
 
