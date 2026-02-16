@@ -1111,6 +1111,53 @@ class V2SupportServiceAPISpec extends Specification {
         }
     }
 
+    def "Test load validation policy, wrong path"() {
+        when:
+        supportServiceAPI.getValidationPolicy("")
+
+        then:
+        def ex = thrown(ClientErrorException)
+        ex.message == "Failed to load validation policy."
+
+        when:
+        supportServiceAPI.getValidationPolicy("policy/nosuchfile.xml")
+
+        then:
+        def ex2 = thrown(ClientErrorException)
+        ex2.message == "Failed to load validation policy."
+    }
+
+    def "Test load validation policy, invalid policy contents"() {
+        when:
+        supportServiceAPI.getValidationPolicy("policy/empty-policy.xml")
+
+        then:
+        def ex = thrown(ClientErrorException)
+        ex.message.startsWith("Failed to load validation policy, ")
+
+        when:
+        supportServiceAPI.getValidationPolicy("policy/invalid-policy.xml")
+
+        then:
+        def ex2 = thrown(ClientErrorException)
+        ex2.message.startsWith("Failed to load validation policy, ")
+    }
+
+    def "Test load validation policy, from directory path"() {
+        when:
+        supportServiceAPI.getValidationPolicy("build/resources/test/policy/basicpolicy")
+
+        then:
+        def ex = thrown(ClientErrorException)
+        ex.message == "Failed to load validation policy."
+
+        when:
+        supportServiceAPI.getValidationPolicy("build/resources/test/policy/basicpolicy-for-test")
+
+        then:
+        true
+    }
+
     @Unroll
     def "Test verifyDocument on #documentType document"() {
         when:
