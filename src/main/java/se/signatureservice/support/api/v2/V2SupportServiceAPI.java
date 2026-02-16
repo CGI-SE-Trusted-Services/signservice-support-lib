@@ -20,6 +20,7 @@ import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.DSSException;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.policy.ValidationPolicy;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.*;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -41,6 +42,7 @@ import eu.europa.esig.dss.spi.x509.revocation.crl.CRLSource;
 import eu.europa.esig.dss.spi.x509.revocation.ocsp.OCSPSource;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
+import eu.europa.esig.dss.validation.policy.ValidationPolicyLoader;
 import eu.europa.esig.dss.validation.reports.Reports;
 import eu.europa.esig.dss.xades.XAdESSignatureParameters;
 import eu.europa.esig.dss.xades.signature.XAdESService;
@@ -577,7 +579,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 // set tokenExtractionStrategy to get certificate binary data from the report.diagnosticData, by default tokenExtractionStrategy is NONE
                 validator.setTokenExtractionStrategy(TokenExtractionStrategy.EXTRACT_CERTIFICATES_ONLY);
-                reports = validator.validateDocument(getValidationPolicy(profileConfig));
+                reports = validator.validateDocument(getValidationPolicy(profileConfig.getValidationPolicy()));
 
                 for (String signatureId : reports.getSimpleReport().getSignatureIdList()) {
                     String certId = reports.getDiagnosticData().getSigningCertificateId(signatureId);
@@ -922,14 +924,34 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     }
 
     /**
-     * Get validation policy path to use based on a given
-     * profile and the API configuration.
+     * Load validation policy to use based on a given
+     * policyFileName and apiConfig.
      *
-     * @param profile API Profile
+     * @param policyFileName String
+     * @return Validation policy to use.
+     */
+    private ValidationPolicy getValidationPolicy(String policyFileName) throws ClientErrorException {
+        InputStream policyStream = getValidationPolicyStream(policyFileName);
+        if(policyStream == null) {
+            throw (ClientErrorException) ErrorCode.INVALID_PROFILE.toException("Failed to load validation policy.");
+        }
+
+        try (policyStream) {
+            ValidationPolicyLoader validationPolicyLoader = ValidationPolicyLoader.fromValidationPolicy(policyStream);
+            return validationPolicyLoader.create();
+        } catch (Exception e) {
+            throw (ClientErrorException) ErrorCode.INVALID_PROFILE.toException("Failed to load validation policy, " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get validation policy path to use based on a given
+     * policyFileName and apiConfig.
+     *
+     * @param policyFileName String
      * @return Path to validation policy to use.
      */
-    InputStream getValidationPolicy(SupportAPIProfile profile) {
-        String policyFileName = profile.getValidationPolicy();
+    private InputStream getValidationPolicyStream(String policyFileName) {
         if (!policyFileName.endsWith(".xml")) {
             policyFileName += ".xml";
         }
