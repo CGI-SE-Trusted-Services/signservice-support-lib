@@ -80,7 +80,7 @@
                 <Signature Level="FAIL" />
                 <NotExpired Level="FAIL" />
                 <SunsetDate Level="FAIL" />
-                <AuthorityInfoAccessPresent Level="WARN" />
+                <AuthorityInfoAccessPresent Level="IGNORE" />
                 <RevocationDataSkip Level="INFORM">
                     <CertificateExtensions>
                         <Id>0.4.0.194121.2.1</Id> <!-- valassured-ST-certs -->
@@ -450,7 +450,7 @@
         <RevocationAfterCertificateIssuance Level="FAIL" />
         <RevocationHasInformationAboutCertificate Level="FAIL" />
         <OCSPResponderIdMatch Level="FAIL" />
-        <SelfIssuedOCSP Level="WARN" />
+        <SelfIssuedOCSP Level="IGNORE" />
         <BasicSignatureConstraints>
             <ReferenceDataExistence Level="FAIL" />
             <ReferenceDataIntact Level="FAIL" />
