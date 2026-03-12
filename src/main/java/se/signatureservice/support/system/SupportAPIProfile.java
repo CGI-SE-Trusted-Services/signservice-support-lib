@@ -378,6 +378,13 @@ public class SupportAPIProfile implements SupportProfile {
      */
     private String signRequestExtensionVersion = "1.5";
 
+
+    /**
+     * Flag indicating that the completedSignature response should additionally contain a
+     * copy for each PDF document, without signatures.
+     */
+    private boolean createSignatureFreePdfData;
+
     /**
      * Visible signature configuration.
      */
@@ -790,6 +797,14 @@ public class SupportAPIProfile implements SupportProfile {
         this.timeStamp = timeStamp;
     }
 
+    public boolean isCreateSignatureFreePdfData() {
+        return createSignatureFreePdfData;
+    }
+
+    public void setCreateSignatureFreePdfData(boolean createSignatureFreePdfData) {
+        this.createSignatureFreePdfData = createSignatureFreePdfData;
+    }
+
     public CertificationPermission getPdfCertificationPermission() {
         return pdfCertificationPermission;
     }
@@ -1128,6 +1143,11 @@ public class SupportAPIProfile implements SupportProfile {
 
         public Builder timeStamp(TimeStampConfig timeStampConfig){
             config.setTimeStamp(timeStampConfig);
+            return this;
+        }
+
+        public Builder setCreateSignatureFreePdfData(boolean createSignatureFreePdfData) {
+            config.setCreateSignatureFreePdfData(createSignatureFreePdfData);
             return this;
         }
 
