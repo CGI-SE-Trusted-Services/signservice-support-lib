@@ -90,6 +90,7 @@ import se.signatureservice.support.api.ErrorCode;
 import se.signatureservice.support.api.SupportServiceAPI;
 import se.signatureservice.support.common.cache.SimpleCacheProvider;
 import se.signatureservice.support.pdf.PdfBoxSupportObjectFactory;
+import se.signatureservice.support.pdf.PdfDrawing;
 import se.signatureservice.support.signer.*;
 import se.signatureservice.support.system.SupportAPIConfiguration;
 import se.signatureservice.support.system.SupportAPIProfile;
@@ -493,7 +494,13 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 }
 
                 if (documentDataForSigning != null) {
-                    signedDocuments.add(signDocument(documentDataForSigning, signTask, signatureCertificateChain, transactionState, profileConfig));
+                    Document signedDocument = signDocument(documentDataForSigning, signTask, signatureCertificateChain, transactionState, profileConfig);
+                    if (SigType.valueOf(getSigTypeFromMimeType(documentDataForSigning.getType())) == SigType.PDF && profileConfig.isCreateSignatureFreePdfData()) {
+                        signedDocument.setSignatureFreePdfData(
+                                documentDataForSigning.data
+                        );
+                    }
+                    signedDocuments.add(signedDocument);
                 } else {
                     log.error("No related document (DocumentSigningRequest or resolvable DocumentRef) found in transaction state for SignTaskID: {}. Skipping this task.", signTaskReferenceId);
                 }
@@ -830,8 +837,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                     pAdESParameters.getContext().setDeterministicId(SignTaskHelper.generateDeterministicId(null, pAdESParameters.getSigningDate(), "id-"));
                     if (config.getVisibleSignature().isEnable()) {
                         if (validateVisibleSignatureAttributesFromCache(strongReferenceId)) {
-                            List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(document).preProcess(relatedTransaction.getDocumentSignatureAttributes() != null ? relatedTransaction.getDocumentSignatureAttributes().getOrDefault(document.referenceId, relatedTransaction.getSignatureAttributes()) : relatedTransaction.getSignatureAttributes(), document);
-                            setVisibleSignature(config, pAdESParameters, pAdESParameters.getSignerName(), strongReferenceId, preProcessedSignatureAttributes);
+                            if (config.isCreateSignatureFreePdfData()) {
+                                // we have already included the visual parts of the signature, avoid doing it again.
+                                pAdESParameters.setImageParameters(null);
+                            } else {
+                                List<Attribute> preProcessedSignatureAttributes = getSignatureAttributePreProcessor(document).preProcess(relatedTransaction.getDocumentSignatureAttributes() != null ? relatedTransaction.getDocumentSignatureAttributes().getOrDefault(document.referenceId, relatedTransaction.getSignatureAttributes()) : relatedTransaction.getSignatureAttributes(), document);
+                                var ip = getSignatureImageParameters(config, pAdESParameters.bLevel().getSigningDate(), pAdESParameters.getSignerName(), strongReferenceId, preProcessedSignatureAttributes);
+                                pAdESParameters.setImageParameters(ip);
+                            }
                         } else {
                             log.warn("Visible signatures are enabled in configuration (enableVisibleSignature) but required signature attributes are missing. The following attributes are required: " +
                                     AvailableSignatureAttributes.VISIBLE_SIGNATURE_POSITION_X + ", " +
@@ -1361,7 +1374,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
     private byte[] generateToBeSignedBytes(SignTaskDataType signTask, DocumentSigningRequest document, String transactionId,
                                            String signingId, SupportAPIProfile config, List<Attribute> signatureAttributes) throws BaseAPIException, InvalidArgumentException, IOException, InternalErrorException, ClassNotFoundException, ParserConfigurationException, MessageProcessingException, SAXException, InvalidCanonicalizerException, CanonicalizationException, CertificateEncodingException, NoSuchAlgorithmException, TransformerException {
         SigType sigType = SigType.valueOf(getSigTypeFromMimeType(document.getType()));
-        DSSDocument dssDocument = DSSLibraryUtils.createDSSDocument(document);
+        InMemoryDocument dssDocument = DSSLibraryUtils.createDSSDocument(document);
         AbstractSignatureParameters dssParameters = getSignatureParameters(sigType, config);
 
         switch (sigType) {
@@ -1376,7 +1389,19 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
                 pAdESParameters.setSignerName(signingId);
                 pAdESParameters.setContentSize(config.getPadesContentSize());
                 if (config.getVisibleSignature().isEnable()) {
-                    setVisibleSignature(config, pAdESParameters, signingId, SupportLibraryUtils.generateStrongReferenceId(transactionId, document.getReferenceId()), signatureAttributes);
+                    var ip = getSignatureImageParameters(config, pAdESParameters.bLevel().getSigningDate(), signingId, SupportLibraryUtils.generateStrongReferenceId(transactionId, document.getReferenceId()), signatureAttributes);
+                    if (config.isCreateSignatureFreePdfData()) {
+                        // Modify the PDF to include the visual contents of the signature.
+                        var updatedDocumentBytes = PdfDrawing.draw(dssDocument, ip);
+                        // Store the modified document that will be put in the cache.
+                        document.data = updatedDocumentBytes;
+                        // Update the document used for calculating the bytes to be signed.
+                        dssDocument.setBytes(updatedDocumentBytes);
+                        // Since we have already drawn the visible signature, avoid doing it again.
+                        pAdESParameters.setImageParameters(null);
+                    } else {
+                        pAdESParameters.setImageParameters(ip);
+                    }
                 }
                 pAdESService.setPdfObjFactory(new PdfBoxSupportObjectFactory());
                 if (!config.getPadesSignatureLevel().equals(SignatureLevel.PAdES_BASELINE_B.toString())) {
@@ -1480,13 +1505,14 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      * Method to set parameters for the visible signature.
      *
      * @param config              Profile configuration.
-     * @param parameters          Signature parameters to update with parameters for visible signature.
+     * @param signingDate         Date of signing.
      * @param signerName          Name of signatory.
      * @param contextId           Context ID in cache to use for the visible signature attributes.
      * @param signatureAttributes Related signature attributes.
+     * @return SignatureImageParameters
      */
-    protected void setVisibleSignature(SupportAPIProfile config, PAdESSignatureParameters parameters, String signerName,
-                                       String contextId, List<Attribute> signatureAttributes) throws BaseAPIException {
+    public SignatureImageParameters getSignatureImageParameters(SupportAPIProfile config, Date signingDate, String signerName,
+                                                                String contextId, List<Attribute> signatureAttributes) throws BaseAPIException {
         try {
             SignatureImageParameters imageParameters = getImageParameters(contextId, signatureAttributes);
 
@@ -1531,7 +1557,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             if (cacheProvider.get(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME) == null) {
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat(config.getVisibleSignature().getTimeStampFormat());
-                    cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(parameters.bLevel().getSigningDate()));
+                    cacheProvider.set(contextId, Constants.VISIBLE_SIGNATURE_REQUEST_TIME, sdf.format(signingDate));
                 } catch (Exception e) {
                     throw ErrorCode.INVALID_CONFIGURATION.toException("Invalid configuration value for timeStampFormat: " + config.getVisibleSignature().getTimeStampFormat() + " (" + e.getMessage() + ")");
                 }
@@ -1599,7 +1625,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             textParameters.getFont().setSize(config.getVisibleSignature().getFontSize());
             textParameters.setPadding(config.getVisibleSignature().getTextPadding());
             imageParameters.setTextParameters(textParameters);
-            parameters.setImageParameters(imageParameters);
+            return imageParameters;
         } catch (Exception e) {
             log.error("Can't set visible signature parameters for the PAdESSignatureParameters. Message: {}", e.getMessage());
             throw ErrorCode.SIGN_REQUEST_FAILED.toException(e, messageSource);
