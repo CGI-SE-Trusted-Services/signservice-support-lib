@@ -39,6 +39,9 @@ public class AbstractDocument implements Externalizable {
     @XmlElement(required = true)
     protected byte[] data;
 
+    @XmlElement(required = false)
+    protected byte[] signatureFreePdfData;
+
     @XmlElement(required = true)
     protected String name;
 
@@ -59,6 +62,14 @@ public class AbstractDocument implements Externalizable {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public byte[] getSignatureFreePdfData() {
+        return signatureFreePdfData;
+    }
+
+    public void setSignatureFreePdfData(byte[] signatureFreePdfData) {
+        this.signatureFreePdfData = signatureFreePdfData;
     }
 
     public String getName() {
