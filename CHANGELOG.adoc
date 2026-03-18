@@ -3,6 +3,12 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2603.1
+
+=== Changes
+
+* Implement an option "createSignatureFreePdfData" to output a copy with only visual signature parts, for PDF signing.
+
 == Version 2602.4
 
 == Version 2602.3
