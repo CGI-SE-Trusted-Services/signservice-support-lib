@@ -8,6 +8,7 @@ of the Signature Service Support Library.
 === Changes
 
 * Implement an option "createSignatureFreePdfData" to output a copy with only visual signature parts, for PDF signing.
+* PdfBox vulnerability CVE-2026-23907 suppressed.
 
 == Version 2602.4
 
