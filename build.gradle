@@ -73,7 +73,7 @@ dependencies {
 
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.50"
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.52"
     testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
     testImplementation "org.apache.groovy:groovy-xml:$groovyVersion"
     testImplementation "org.apache.groovy:groovy-yaml:$groovyVersion"
