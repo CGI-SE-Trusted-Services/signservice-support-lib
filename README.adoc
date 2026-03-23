@@ -918,6 +918,10 @@ Supported values: +
 | documentResolver(se.signatureservice.support.api.v2.DocumentResolver resolver)
 | Specify the DocumentResolver to use for handling DocumentRef objects (document by reference).
 
+| createSignatureFreePdfData(boolean createSignatureFreePdfData)
+| Specify that PDF signing should produce a copy, containing only the
+visible parts of the signature. This PDF data will be assigned to CompleteSignatureResponse.signatureFreePdfData.
+
 | build()
 | Build the SupportAPIProfile instance.
 |===
