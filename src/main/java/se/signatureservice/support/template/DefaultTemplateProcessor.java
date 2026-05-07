@@ -40,7 +40,7 @@ public class DefaultTemplateProcessor implements TemplateProcessor {
             for (Map.Entry<String, String> entry : values.entrySet()) {
                 String variableName = entry.getKey();
                 String variableValue = entry.getValue();
-                String dollarSignPattern = "\\{" + variableName + "\\}";
+                String dollarSignPattern = "\\{" + variableName + "}";
                 template = template.replaceAll(dollarSignPattern, variableValue);
             }
         }
