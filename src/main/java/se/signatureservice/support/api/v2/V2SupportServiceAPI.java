@@ -1248,7 +1248,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
             requestedAttribute.getSamlAttributeName().add(preferredSAMLAttributeNameType);
         } else if (parameters.get("samlAttributeName") instanceof List) {
             for (Map samlAttributeNameMap : (List<Map<String, String>>) parameters.get("samlAttributeName")) {
-                if (samlAttributeNameMap.get("order") != null && !samlAttributeNameMap.get("order").equals("")) {
+                if (samlAttributeNameMap.get("order") != null && !samlAttributeNameMap.get("order").isEmpty()) {
                     int order;
                     try {
                         order = Integer.parseInt(samlAttributeNameMap.get("order").toString());
