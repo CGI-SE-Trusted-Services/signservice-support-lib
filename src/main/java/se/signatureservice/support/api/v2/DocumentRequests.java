@@ -30,6 +30,7 @@ import java.util.List;
         "documents"
 })
 public class DocumentRequests implements Externalizable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final int LATEST_VERSION = 1;
