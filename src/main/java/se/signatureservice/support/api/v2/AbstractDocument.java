@@ -18,10 +18,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 import se.signatureservice.support.utils.SerializableUtils;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 
 /**
  * Created by philip on 2017-04-13.
@@ -29,6 +26,7 @@ import java.io.ObjectOutput;
 @XmlType(name="AbstractDocumentType")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AbstractDocument implements Externalizable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final int LATEST_VERSION = 1;
