@@ -461,7 +461,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
 
                 if (documentObjectFromState instanceof DocumentSigningRequest) {
                     documentDataForSigning = (DocumentSigningRequest) documentObjectFromState;
-                } else if (documentObjectFromState instanceof DocumentRef) {
+                } else if (documentObjectFromState != null) {
                     if (this.documentResolver == null) {
                         log.error("DocumentResolver not configured. Cannot resolve DocumentRef for SignTaskID: {}", signTaskReferenceId);
                         throw ErrorCode.INTERNAL_ERROR.toException("DocumentResolver is required to handle DocumentRef. Set it via V2SupportServiceAPI.Builder().documentResolver(...).");
