@@ -142,7 +142,7 @@ public class SimpleCacheProvider implements CacheProvider {
         } else objects.remove(key);
 
         if (metaData != null && metaData.getTimeToLive() != null) {
-            expireDates.put(key, new Date(systemTime.getSystemTimeMS() + (metaData.getTimeToLive() * 1000)));
+            expireDates.put(key, new Date(systemTime.getSystemTimeMS() + (metaData.getTimeToLive() * 1000L)));
         } else expireDates.remove(key);
     }
 

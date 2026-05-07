@@ -813,7 +813,7 @@ public class MetadataService {
                         samlAttributeName,
                         certAttributeRef,
                         certNameType,
-                        friendlyName.toString()
+                        friendlyName
                 ));
             }
         } catch (Exception e) {
