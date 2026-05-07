@@ -57,7 +57,7 @@ public class DefaultUserIdAttributeMappingValues {
                 .stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
-                .collect(Collectors.toList());
+                .toList();
 
         var trimmedValues = values.stream()
                 .filter(Objects::nonNull)
