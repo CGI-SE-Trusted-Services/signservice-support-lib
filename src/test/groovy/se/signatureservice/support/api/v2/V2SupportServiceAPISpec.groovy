@@ -1200,7 +1200,7 @@ class V2SupportServiceAPISpec extends Specification {
 
         then:
         !response.verifies
-        response.signatures.signer.size() == 0
+        response.signatures.signer.isEmpty()
         response.reportData == null
         response.referenceId == testDocument.referenceId
 

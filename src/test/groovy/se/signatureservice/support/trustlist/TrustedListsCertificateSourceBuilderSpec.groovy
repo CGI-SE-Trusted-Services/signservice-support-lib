@@ -391,7 +391,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
         then:
             !response.verifies
-            response.signatures.signer.size() == 0
+            response.signatures.signer.isEmpty()
             response.reportData == null
             response.referenceId == testDocument.referenceId
 
@@ -630,7 +630,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             def tlcsb = new TrustedListsCertificateSourceBuilder("http://localhost:${mockedServer.port}/lotlurl", "http://localhost:${mockedServer.port}/ojurl", true, "build/tmp/TrustedListsCertificateSourceBuilderSpec/cacheTest", 0, 0)
 
         then:
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).tlInfos.size() == 0
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).tlInfos.isEmpty()
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getUrl() == "http://localhost:${mockedServer.port}/lotlurl"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getDownloadCacheInfo().cacheState.toString() == "ERROR"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getDownloadCacheInfo().exceptionMessage.toString() == "Cannot retrieve data from url [http://localhost:${mockedServer.port}/lotlurl]. Empty content is obtained!"
