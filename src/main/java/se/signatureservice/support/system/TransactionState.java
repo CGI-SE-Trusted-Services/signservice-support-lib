@@ -28,6 +28,7 @@ import java.util.*;
  * @author Tobias Agerberg
  */
 public class TransactionState implements Externalizable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
