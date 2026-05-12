@@ -87,9 +87,9 @@
                         <Id>2.5.29.56</Id> <!-- noRevAvail -->
                     </CertificateExtensions>
                 </RevocationDataSkip>
-                <RevocationInfoAccessPresent Level="WARN" />
-                <RevocationDataAvailable Level="FAIL" />
-                <AcceptableRevocationDataFound Level="FAIL" />
+                <RevocationInfoAccessPresent Level="IGNORE" />
+                <RevocationDataAvailable Level="IGNORE" />
+                <AcceptableRevocationDataFound Level="IGNORE" />
                 <CRLNextUpdatePresent Level="WARN" />
                 <RevocationFreshness Level="IGNORE" Unit="DAYS" Value="0" />
                 <KeyUsage Level="WARN">

@@ -125,8 +125,8 @@ class TransactionStateSpec extends Specification {
 
         if (state.documents.documents == null) {
             assert restoredState.documents.documents == null
-        } else if (state.documents.documents.size() == 0) {
-            assert restoredState.documents.documents.size() == 0
+        } else if (state.documents.documents.isEmpty()) {
+            assert restoredState.documents.documents.isEmpty()
         } else {
             state.documents.documents.each {
                 assert it instanceof DocumentRef || it instanceof DocumentSigningRequest

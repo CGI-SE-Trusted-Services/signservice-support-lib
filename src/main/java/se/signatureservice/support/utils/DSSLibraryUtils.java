@@ -36,9 +36,9 @@ public class DSSLibraryUtils {
     /**
      * Create DSSDocument from a given AbstractDocument
      * @param document AbstractDocument to create DSSDocument from
-     * @return DSSDocument based on given AbstractDocument
+     * @return InMemoryDocument based on given AbstractDocument
      */
-    public static DSSDocument createDSSDocument(AbstractDocument document) {
+    public static InMemoryDocument createDSSDocument(AbstractDocument document) {
         InMemoryDocument dssDocument = new InMemoryDocument();
         dssDocument.setName(document.getName());
         dssDocument.setBytes(document.getData());

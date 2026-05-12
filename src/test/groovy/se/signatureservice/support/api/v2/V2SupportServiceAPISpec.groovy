@@ -14,6 +14,7 @@ package se.signatureservice.support.api.v2
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import eu.europa.esig.dss.pades.PAdESSignatureParameters
+import eu.europa.esig.dss.pades.SignatureImageParameters
 import eu.europa.esig.dss.service.crl.OnlineCRLSource
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader
 import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader
@@ -801,28 +802,28 @@ class V2SupportServiceAPISpec extends Specification {
 
         when:
         Attribute attribute = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", [attribute])
         then:
         def e = thrown(Exception)
         e.message == "Invalid sign attribute configured. Can't set visible_signature_position_x with empty value or null."
 
         when:
         attribute = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: null)
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner","11223344", [attribute])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner","11223344", [attribute])
         then:
         e = thrown(Exception)
         e.message == "Invalid sign attribute configured. Can't set visible_signature_position_x with empty value or null."
 
         when:
         Attribute attribute1 = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "one")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute1])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", [attribute1])
         then:
         def e1 = thrown(Exception)
         e1.message == "Invalid sign attribute visible_signature_position_x=one configured. Can't convert one to float value."
 
         when:
         Attribute attribute2 = new Attribute(key: VISIBLE_SIGNATURE_POSITION_X, value: "-1")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [attribute2])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", [attribute2])
         then:
         def e2 = thrown(Exception)
         e2.message == "Make sure attribute: visible_signature_position_x is configured with a value equal or larger than 0."
@@ -832,14 +833,14 @@ class V2SupportServiceAPISpec extends Specification {
         Attribute att_y = new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "1")
         Attribute att_width = new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200")
         Attribute attribute5 = new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "10")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [att_x, att_y, att_width, attribute5])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", [att_x, att_y, att_width, attribute5])
         then:
         def e5 = thrown(Exception)
         e5.message == "Make sure attribute: visible_signature_height is configured with a value larger than 40. The minimum image size is: 180*40."
 
         when:
         Attribute attribute6 = new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "10")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", [att_x, att_y, attribute6])
+        supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", [att_x, att_y, attribute6])
         then:
         def e6 = thrown(Exception)
         e6.message == "Make sure attribute: visible_signature_width is configured with a value larger than 180. The minimum image size is: 180*40."
@@ -855,14 +856,14 @@ class V2SupportServiceAPISpec extends Specification {
                           new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "30"),
                           new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200"),
                           new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
+        def imageParameters = supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", attributes)
         then:
-        parameters.imageParameters.fieldParameters.page == 1
-        parameters.imageParameters.fieldParameters.originX == 20
-        parameters.imageParameters.fieldParameters.originY == 30
-        parameters.imageParameters.fieldParameters.width == 200
-        parameters.imageParameters.fieldParameters.height == 50
-        parameters.imageParameters.image != null
+        imageParameters.fieldParameters.page == 1
+        imageParameters.fieldParameters.originX == 20
+        imageParameters.fieldParameters.originY == 30
+        imageParameters.fieldParameters.width == 200
+        imageParameters.fieldParameters.height == 50
+        imageParameters.image != null
     }
 
     def "test setVisibleSignature with valid attributes from caches"(){
@@ -876,14 +877,14 @@ class V2SupportServiceAPISpec extends Specification {
         supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_POSITION_Y, "30")
         supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_WIDTH, "40")
         supportServiceAPI.cacheProvider.set("11223344", VISIBLE_SIGNATURE_HEIGHT, "50")
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", null)
+        def imageParameters = supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", null)
         then:
-        parameters.imageParameters.fieldParameters.page == 1
-        parameters.imageParameters.fieldParameters.originX == 20
-        parameters.imageParameters.fieldParameters.originY == 30
-        parameters.imageParameters.fieldParameters.width == 40
-        parameters.imageParameters.fieldParameters.height == 50
-        parameters.imageParameters.textParameters.text == "Document Digital Signed\nSigner: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
+        imageParameters.fieldParameters.page == 1
+        imageParameters.fieldParameters.originX == 20
+        imageParameters.fieldParameters.originY == 30
+        imageParameters.fieldParameters.width == 40
+        imageParameters.fieldParameters.height == 50
+        imageParameters.textParameters.text == "Document Digital Signed\nSigner: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
     }
 
     def "test setVisibleSignature with valid attributes input but invalid image resource"(){
@@ -896,14 +897,14 @@ class V2SupportServiceAPISpec extends Specification {
                           new Attribute(key: VISIBLE_SIGNATURE_POSITION_Y, value: "30"),
                           new Attribute(key: VISIBLE_SIGNATURE_WIDTH, value: "200"),
                           new Attribute(key: VISIBLE_SIGNATURE_HEIGHT, value: "50")]
-        supportServiceAPI.setVisibleSignature(testProfile1, parameters, "someSigner", "11223344", attributes)
+        def imageParameters = supportServiceAPI.getSignatureImageParameters(testProfile1, parameters.bLevel().getSigningDate(), "someSigner", "11223344", attributes)
         then:
-        parameters.imageParameters.fieldParameters.page == 1
-        parameters.imageParameters.fieldParameters.originX == 20
-        parameters.imageParameters.fieldParameters.originY == 30
-        parameters.imageParameters.fieldParameters.width == 200
-        parameters.imageParameters.fieldParameters.height == 50
-        parameters.imageParameters.image != null
+        imageParameters.fieldParameters.page == 1
+        imageParameters.fieldParameters.originX == 20
+        imageParameters.fieldParameters.originY == 30
+        imageParameters.fieldParameters.width == 200
+        imageParameters.fieldParameters.height == 50
+        imageParameters.image != null
     }
 
     void "test setVisibleSignature with signature text template"(){
@@ -920,35 +921,35 @@ class V2SupportServiceAPISpec extends Specification {
 
         when:
         profile.visibleSignature.signatureTextTemplate = "Document has been signed\nSigner name: {signerName}\nTime: {timestamp}"
-        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "11223344", attributes)
+        def imageParameters = supportServiceAPI.getSignatureImageParameters(profile, parameters.bLevel().getSigningDate(), "someSigner", "11223344", attributes)
 
         then:
-        parameters.imageParameters.textParameters.text == "Document has been signed\nSigner name: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
+        imageParameters.textParameters.text == "Document has been signed\nSigner name: someSigner\nTime: ${dateFormat.format(parameters.bLevel().signingDate)}"
 
         when:
         profile.visibleSignature.signatureTextTemplate = "Signed document"
-        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "22334455", attributes)
+        imageParameters = supportServiceAPI.getSignatureImageParameters(profile, parameters.bLevel().getSigningDate(), "someSigner", "22334455", attributes)
 
         then:
-        parameters.imageParameters.textParameters.text == "Signed document"
+        imageParameters.textParameters.text == "Signed document"
 
         when:
         profile.visibleSignature.timeStampFormat = "yyyy-MM-dd"
         dateFormat = new SimpleDateFormat(profile.visibleSignature.timeStampFormat)
         profile.visibleSignature.signatureTextTemplate = "Document signed by:\n{signerName} @ {timestamp}"
-        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "33445566", attributes)
+        imageParameters = supportServiceAPI.getSignatureImageParameters(profile, parameters.bLevel().getSigningDate(), "someSigner", "33445566", attributes)
 
         then:
-        parameters.imageParameters.textParameters.text == "Document signed by:\nsomeSigner @ ${dateFormat.format(parameters.bLevel().signingDate)}"
+        imageParameters.textParameters.text == "Document signed by:\nsomeSigner @ ${dateFormat.format(parameters.bLevel().signingDate)}"
 
         when:
         attributes.add(new Attribute(key: "customName", value: "Johnny Cash"))
         attributes.add(new Attribute(key: "department", value: "Men in black"))
         profile.visibleSignature.signatureTextTemplate = "Signed by: {signatureAttribute.customName}\nDepartment: {signatureAttribute.department}"
-        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "44556677", attributes)
+        imageParameters = supportServiceAPI.getSignatureImageParameters(profile, parameters.bLevel().getSigningDate(), "someSigner", "44556677", attributes)
 
         then:
-        parameters.imageParameters.textParameters.text == "Signed by: Johnny Cash\nDepartment: Men in black"
+        imageParameters.textParameters.text == "Signed by: Johnny Cash\nDepartment: Men in black"
     }
 
     def "test to specify logo image as signature parameter"() {
@@ -959,9 +960,9 @@ class V2SupportServiceAPISpec extends Specification {
         def attributes = [new Attribute(key: VISIBLE_SIGNATURE_LOGO_IMAGE, value: new String(Base64.encode(imageData)))]
 
         when:
-        supportServiceAPI.setVisibleSignature(profile, parameters, "someSigner", "99887766", attributes)
+        def imageParameters = supportServiceAPI.getSignatureImageParameters(profile, parameters.bLevel().getSigningDate(), "someSigner", "99887766", attributes)
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-        parameters.imageParameters.image.writeTo(outputStream)
+        imageParameters.image.writeTo(outputStream)
 
         then:
         outputStream.toByteArray() == imageData
@@ -1014,7 +1015,7 @@ class V2SupportServiceAPISpec extends Specification {
 
         then:
         response != null
-        3 * supportServiceAPISpy.setVisibleSignature(_,_,_,_,_,) >> { SupportAPIProfile config, PAdESSignatureParameters parameters, String signerName, String contextId, List<Attribute> attributes ->
+        3 * supportServiceAPISpy.getSignatureImageParameters(_,_,_,_,_,) >> { SupportAPIProfile config, Date signingDate, String signerName, String contextId, List<Attribute> attributes ->
             assert signerName == "190101010001"
 
             if(contextId == strongReferenceId1){
@@ -1035,6 +1036,7 @@ class V2SupportServiceAPISpec extends Specification {
             // Verify 3 unique context IDs were used.
             assert !verifiedContextIds.contains(contextId)
             verifiedContextIds.add(contextId)
+            return new SignatureImageParameters()
         }
     }
 
@@ -1198,7 +1200,7 @@ class V2SupportServiceAPISpec extends Specification {
 
         then:
         !response.verifies
-        response.signatures.signer.size() == 0
+        response.signatures.signer.isEmpty()
         response.reportData == null
         response.referenceId == testDocument.referenceId
 
