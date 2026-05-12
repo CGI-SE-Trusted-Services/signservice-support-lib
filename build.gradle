@@ -55,8 +55,8 @@ dependencies {
         api project(":signservice-messages")
         api project(":signservice-java-configuration")
     } else {
-        api("se.signatureservice.messages:signservice-messages:2603.1")
-        api("se.signatureservice.configuration:signservice-java-configuration:2603.1")
+        api("se.signatureservice.messages:signservice-messages:2605.1")
+        api("se.signatureservice.configuration:signservice-java-configuration:2605.1")
     }
     implementation "com.fasterxml.jackson.core:jackson-databind:2.20.1"
 
@@ -73,7 +73,7 @@ dependencies {
 
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-token:${dssVersion}"
     testImplementation "eu.europa.ec.joinup.sd-dss:dss-test:${dssVersion}"
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:10.1.52"
+    testImplementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.21'
     testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
     testImplementation "org.apache.groovy:groovy-xml:$groovyVersion"
     testImplementation "org.apache.groovy:groovy-yaml:$groovyVersion"
