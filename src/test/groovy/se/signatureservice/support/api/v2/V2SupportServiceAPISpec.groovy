@@ -1179,7 +1179,7 @@ class V2SupportServiceAPISpec extends Specification {
         response.signatures.signer.size() == 1
         response.signatures.signer.get(0).levelOfAssurance == "http://id.elegnamnden.se/loa/1.0/loa3"
         response.signatures.signer.get(0).signerId == expectedSignerId
-        response.signatures.signer.get(0).issuerId == "CN=sub Network - Development"
+        response.signatures.signer.get(0).issuerId == issuerId
         response.signatures.signer.get(0).signingAlgorithm == expectedSigningAlgorithm
         response.signatures.signer.get(0).signingDate.after(signingCertificate.notBefore)
         response.signatures.signer.get(0).signingDate.before(signingCertificate.notAfter)
@@ -1187,10 +1187,10 @@ class V2SupportServiceAPISpec extends Specification {
         response.signatures.signer.get(0).validTo == signingCertificate.notAfter
 
         where:
-        testDocument            | documentType | expectedSignatureFormat | expectedSignerId     | expectedSigningAlgorithm
-        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072" | "SHA256withRSAandMGF1"
-        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"
-        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"
+        testDocument            | documentType | expectedSignatureFormat | expectedSignerId     | expectedSigningAlgorithm  | issuerId
+        testSignedXMLDocument   | "XML"        | "XAdES-BASELINE-B"      | "PNOSE-195207092072" | "SHA256withRSAandMGF1"    | "CN=TestIntermediateCA"
+        testSignedPDFDocument   | "PDF"        | "PAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"           | "CN=sub Network - Development"
+        testSignedCMSDocument   | "CMS"        | "CAdES-BASELINE-B"      | "195207092072"       | "SHA256withRSA"           | "CN=sub Network - Development"
     }
 
     @Unroll
