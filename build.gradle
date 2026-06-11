@@ -48,7 +48,7 @@ dependencies {
     api "org.apache.santuario:xmlsec:2.3.5"
     api "org.slf4j:slf4j-api:2.0.17"
     api "org.slf4j:slf4j-simple:2.0.17"
-    api("org.springframework:spring-context:${springVersion}") {
+    api("org.springframework:spring-context:${property('spring-framework.version')}") {
         exclude module: "spring-beans"
     }
     if (project.rootProject.name == "signservice") {
