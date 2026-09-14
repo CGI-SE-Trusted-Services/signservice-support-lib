@@ -43,7 +43,7 @@ import java.io.IOException;
 public class PdfDrawing {
 
     /**
-     * Method draw the visual signature, according to the imageParameters.
+     * Method to draw the visual signature, according to the imageParameters.
      *
      * @param document The original PDF document.
      * @param imageParameters SignatureImageParameters specifying what to draw.
@@ -52,7 +52,12 @@ public class PdfDrawing {
     public static byte[] draw(InMemoryDocument document, SignatureImageParameters imageParameters) throws IOException {
         try (var pdDocument = Loader.loadPDF(document.getBytes()); var bout = new ByteArrayOutputStream()) {
             var result = drawInternal(pdDocument, imageParameters);
-            result.save(bout);
+            if (result.getSignatureDictionaries().isEmpty()) {
+                result.save(bout);
+            } else {
+                // Save the PDF as an incremental update, preserving the existing signature objects
+                result.saveIncremental(bout);
+            }
             return bout.toByteArray();
         }
     }
