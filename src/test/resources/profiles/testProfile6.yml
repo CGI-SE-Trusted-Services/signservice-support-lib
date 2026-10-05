@@ -1,0 +1,14 @@
+# Invalid requestedCertAttributes order value
+
+relatedProfile: "testProfile6"
+signatureAlgorithm: "SHA256withRSA"
+enableAuthnProfile: true
+authorizedConsumerURLs:
+  - "https://localhost"
+  - "http://localhost"
+requestedCertAttributes:
+  serialNumber:
+    samlAttributeName: [ { value: "urn:oid:1.2.752.29.4.13", order: -1 }, # personal identity number
+                         { value: "urn:oid:1.2.752.29.6.2.1", order: 0 } ] # employee Hsa ID
+    certAttributeRef: "2.5.4.5"
+    required: true
