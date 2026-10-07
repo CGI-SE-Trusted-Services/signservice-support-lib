@@ -3,6 +3,11 @@
 This document provides information about changes that have been made for each new version
 of the Signature Service Support Library.
 
+== Version 2610.1
+
+* Upgraded EU DSS lib to 6.5
+* Upgraded BC to 1.85
+
 == Version 2609.3
 
 === Changes
