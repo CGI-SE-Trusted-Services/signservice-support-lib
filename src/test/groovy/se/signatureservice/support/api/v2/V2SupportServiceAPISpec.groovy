@@ -18,7 +18,6 @@ import eu.europa.esig.dss.pades.SignatureImageParameters
 import eu.europa.esig.dss.service.crl.OnlineCRLSource
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader
 import eu.europa.esig.dss.service.http.commons.FileCacheDataLoader
-import eu.europa.esig.dss.service.http.commons.OCSPDataLoader
 import eu.europa.esig.dss.service.http.proxy.ProxyConfig
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource
 import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
@@ -1250,10 +1249,28 @@ class V2SupportServiceAPISpec extends Specification {
         testSignedXMLDocument.data = originalData
     }
 
+    def "test validationCacheExpirationTimeMS setting"() {
+        when:
+        V2SupportServiceAPI api = new V2SupportServiceAPI.Builder()
+                .messageSecurityProvider(Mock(MessageSecurityProvider))
+                .validationCacheExpirationTimeMS(5000)
+                .build() as V2SupportServiceAPI
+
+        FileCacheDataLoader crlLoader = ((OnlineCRLSource) api.certificateVerifier.crlSource).dataLoader
+        FileCacheDataLoader ocspLoader = ((OnlineOCSPSource) api.certificateVerifier.ocspSource).dataLoader
+        then:
+        crlLoader.cacheExpirationTime == 5000
+        crlLoader.fileCacheDirectory.name.startsWith("signservice-validation-cache-")
+        ocspLoader.cacheExpirationTime == 5000
+        ocspLoader.fileCacheDirectory.name.startsWith("signservice-validation-cache-")
+        crlLoader.fileCacheDirectory.name != ocspLoader.fileCacheDirectory.name
+
+    }
+
     def "test that proxy settings are not used if not specified"(){
         when:
         ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)supportServiceAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
-        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)supportServiceAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
+        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineOCSPSource)supportServiceAPI.certificateVerifier.ocspSource).dataLoader).dataLoader).proxyConfig
 
         then:
         crlProxyConfig == null
@@ -1267,7 +1284,7 @@ class V2SupportServiceAPISpec extends Specification {
             .validationProxy("proxy.test.com", 1234, "user", "pass", ["google.com", "ikea.se"])
             .build() as V2SupportServiceAPI
         ProxyConfig crlProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineCRLSource)proxyAPI.certificateVerifier.crlSource).dataLoader).dataLoader).proxyConfig
-        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((OCSPDataLoader)((OnlineOCSPSource)proxyAPI.certificateVerifier.ocspSource).dataLoader)).proxyConfig
+        ProxyConfig ocspProxyConfig = ((CommonsDataLoader)((FileCacheDataLoader)((OnlineOCSPSource)proxyAPI.certificateVerifier.ocspSource).dataLoader).dataLoader).proxyConfig
 
         then:
         crlProxyConfig != null
