@@ -1001,7 +1001,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @return CertificateVerifier to use during validation.
      */
-    private CertificateVerifier getCertificateVerifier() {
+    private CertificateVerifier getCertificateVerifier() throws IOException {
         if (certificateVerifier == null) {
             if (apiConfig.getCertificateVerifier() == null) {
                 certificateVerifier = new CommonCertificateVerifier();
@@ -1044,16 +1044,23 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @return DataLoader
      */
-    private DataLoader getFileCacheDataLoader() {
-        FileCacheDataLoader cacheDataLoader = new FileCacheDataLoader();
-        CommonsDataLoader dataLoader = new CommonsDataLoader();
+    private DataLoader getFileCacheDataLoader() throws IOException {
+        return getFileCacheDataLoader(new CommonsDataLoader());
+    }
 
+    /**
+     * Get File Cache Data Loader for a given CommonsDataLoader.
+     *
+     * @param dataLoader The DataLoader to wrap with a file cache.
+     * @return DataLoader.
+     */
+    private DataLoader getFileCacheDataLoader(CommonsDataLoader dataLoader) throws IOException {
         if (apiConfig.getValidationProxyConfig() != null) {
             dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
         }
 
-        cacheDataLoader.setDataLoader(dataLoader);
-        cacheDataLoader.setFileCacheDirectory(new File(System.getProperty("java.io.tmpdir")));
+        FileCacheDataLoader cacheDataLoader = new FileCacheDataLoader(dataLoader);
+        cacheDataLoader.setFileCacheDirectory(Files.createTempDirectory("signservice-validation-cache-").toFile());
 
         long cacheExpirationTime = apiConfig.getValidationCacheExpirationTimeMS();
         log.info("Setting validation cache expiration time to {} ms", cacheExpirationTime);
@@ -1066,7 +1073,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @return Default AIA source
      */
-    private DefaultAIASource getAIASource() {
+    private DefaultAIASource getAIASource() throws IOException {
         if (aiaSource == null) {
             log.debug("Initializing AIA loader");
             aiaSource = new DefaultAIASource(getFileCacheDataLoader());
@@ -1080,7 +1087,7 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @return CRL source
      */
-    private CRLSource getCRLSource() {
+    private CRLSource getCRLSource() throws IOException {
         if (crlSource == null) {
             log.debug("Initializing CRL loader");
             crlSource = new OnlineCRLSource(getFileCacheDataLoader());
@@ -1094,14 +1101,10 @@ public class V2SupportServiceAPI implements SupportServiceAPI {
      *
      * @return OCSP source.
      */
-    private OCSPSource getOCSPSource() {
+    private OCSPSource getOCSPSource() throws IOException {
         if (ocspSource == null) {
             log.debug("Initializing OCSP loader");
-            OCSPDataLoader dataLoader = new OCSPDataLoader();
-            if (apiConfig.getValidationProxyConfig() != null) {
-                dataLoader.setProxyConfig(apiConfig.getValidationProxyConfig());
-            }
-            ocspSource = new OnlineOCSPSource(dataLoader);
+            ocspSource = new OnlineOCSPSource(getFileCacheDataLoader(new OCSPDataLoader()));
         }
         return ocspSource;
     }

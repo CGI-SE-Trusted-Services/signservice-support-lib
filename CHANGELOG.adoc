@@ -7,6 +7,7 @@ of the Signature Service Support Library.
 
 * Upgraded EU DSS lib to 6.5
 * Upgraded BC to 1.85
+* Ocsp responses are cached using the validationCacheExpirationTimeMS setting, just like crl:s
 
 == Version 2609.3
 
