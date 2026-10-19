@@ -96,7 +96,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
 
     def setupSpec() {
         Security.addProvider(new BouncyCastleProvider())
-        new File("build/tmp/TrustedListsCertificateSourceBuilderSpec").mkdirs()
+        new File(tempFolder).mkdirs()
 
         mockedServer = new TestHTTPServer()
         mockedServer.addHandler(mockedRemoteSignServerHandler(), "/")
@@ -148,10 +148,11 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
     }
 
     def cleanupSpec() {
-        new File("build/tmp/TrustedListsCertificateSourceBuilderSpec").deleteDir()
-
         if (mockedServer && mockedServer.isRunning()) {
             mockedServer.stop()
+        }
+        if (mockedServerSE && mockedServerSE.isRunning()) {
+            mockedServerSE.stop()
         }
     }
 
@@ -633,7 +634,7 @@ class TrustedListsCertificateSourceBuilderSpec extends Specification {
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).tlInfos.isEmpty()
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getUrl() == "http://localhost:${mockedServer.port}/lotlurl"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getDownloadCacheInfo().cacheState.toString() == "ERROR"
-            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getDownloadCacheInfo().exceptionMessage.toString() == "Cannot retrieve data from url [http://localhost:${mockedServer.port}/lotlurl]. Empty content is obtained!"
+            tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getDownloadCacheInfo().exceptionMessage.toString() == "Cannot retrieve data from url [http://localhost:${mockedServer.port}/lotlurl]"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getParsingCacheInfo().cacheState.toString() == "REFRESH_NEEDED"
             tlcsb.trustedListsCertificateSource.getSummary().getLOTLInfos().get(0).getValidationCacheInfo().cacheState.toString() == "REFRESH_NEEDED"
 
